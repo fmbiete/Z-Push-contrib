@@ -1,0 +1,9 @@
+BackendIMAP - NOTES
+===================
+
+This backend support the Search operation in the mailbox.
+Since the IMAP search operation is pretty slow, with a medium/big mailbox, or with a lots of folders, 
+the mobile device will timeout the operation before this is completed on server.
+
+I'm using Dovecot + FTS-SOLR plugin so the real search is done against an Apache SOLR server.
+It reduces a 1-2 minutes search to 1-5 seconds, and the response is given to the mobile device in time.

@@ -83,7 +83,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     public function Logon($username, $domain, $password) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->Logon('%s', '****', '%s')", $username, $domain));
         
-        $url = ZCARDDAV_PROTOCOL . '://' . ZCARDDAV_SERVER . ':' . ZCARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, ZCARDDAV_PATH));
+        $url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_PATH));
         $this->server = new carddav_backend($url);
         $this->server->set_auth($username, $password);
         
@@ -324,7 +324,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $addressbook = new SyncFolder();
             $addressbook->serverid = $id;
             $addressbook->parentid = "0";
-            $addressbook->displayname = str_replace("%d", $this->domain, str_replace("%u", $this->username, ZCARDDAV_CONTACTS_FOLDER_NAME));
+            $addressbook->displayname = str_replace("%d", $this->domain, str_replace("%u", $this->username, CARDDAV_CONTACTS_FOLDER_NAME));
             $addressbook->type = SYNC_FOLDER_TYPE_CONTACT;
         }
 

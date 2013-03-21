@@ -1,0 +1,9 @@
+This is a CardDAV backend based in the vcarddir backend.
+
+I have only tested it with davical, so if you test it with other carddav server let me know.
+
+
+REQUISITES:
+libawl-php
+
+You have to include that installation path in the php.ini include_path

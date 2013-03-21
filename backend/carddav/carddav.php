@@ -54,6 +54,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $url = null;
     private $server = null;
     private $sinkcontacts;
+    private $foldername = "root";
 
     /**
      * Constructor
@@ -64,7 +65,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             throw new FatalException("BackendCardDAV(): php-curl is not found", 0, null, LOGLEVEL_FATAL);
         }
         
-        //$this->maxtime = $this->CalculateMinDate();
+        $this->sinkcontacts = array();
     }
     
     /**
@@ -94,9 +95,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $this->url = $url;
             $this->username = $username;
             $this->domain = $domain;
-            
-            // We need the changesink initialized early
-            $this->ChangesSinkInitialize("root");
             
             $connected = true;
         }
@@ -208,7 +206,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $xml_vcards = new SimpleXMLElement($vcards);
             foreach ($xml_vcards->element as $vcard) {
                 $this->sinkcontacts[$vcard->id->__toString()] = $vcard->last_modified->__toString();
-                ZLog::Write(LOGLEVEL_WBXML, sprintf("BackendCardDAV->ChangesSinkInitialize - Id='%s' Last Modified='%s'", $vcard->id->__toString(), $vcard->last_modified->__toString()));
             }
             unset($xml_vcards);
         }
@@ -228,6 +225,11 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return array
      */
     public function ChangesSink($timeout = 30) {
+        //We can get here and the ChangesSink not be initialized
+        if (count($this->sinkcontacts) == 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Not initialized ChangesSink, forcing"));
+            $this->ChangesSinkInitialize($this->foldername);
+        }
         $notifications = array();
         $stopat = time() + $timeout - 1;
         $changed = false;
@@ -274,7 +276,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             }
             
             if ($changed) {
-                $notifications[] = "root";
+                $notifications[] = $this->foldername;
                 
             }
 
@@ -301,7 +303,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         //TODO: support multiple addressbooks, autodiscover thems
         $addressbooks = array();
-        $addressbook = $this->StatFolder("root");
+        $addressbook = $this->StatFolder($this->foldername);
         $addressbooks[] = $addressbook;
 
         return $addressbooks;
@@ -320,7 +322,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         $addressbook = false;
         
-        if ($id == "root") {
+        if ($id == $this->foldername) {
             $addressbook = new SyncFolder();
             $addressbook->serverid = $id;
             $addressbook->parentid = "0";
@@ -415,6 +417,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $xml_vcards = new SimpleXMLElement($vcards);
             foreach ($xml_vcards->element as $vcard) {
                 $id = $vcard->id->__toString();
+                $this->sinkcontacts[$id] = $vcard->last_modified->__toString();
                 $messages[] = $this->StatMessage($folderid, $id);
             }
         }
@@ -1076,9 +1079,18 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         if(!empty($vcard['org'][0]['val'][0]))
             $message->companyname = w2ui($vcard['org'][0]['val'][0]);
         if(!empty($vcard['note'][0]['val'][0])){
-            $message->body = w2ui($vcard['note'][0]['val'][0]);
-            $message->bodysize = strlen($vcard['note'][0]['val'][0]);
-            $message->bodytruncated = 0;
+            if (Request::GetProtocolVersion() >= 12.0) {
+                $message->asbody = new SyncBaseBody();
+                $message->asbody->data = w2ui($vcard['note'][0]['val'][0]);
+                $message->asbody->truncated = 0;
+                $message->asbody->type = SYNC_BODYPREFERENCE_PLAIN;
+                $message->asbody->estimatedDataSize = strlen($message->asbody->data);                
+            }
+            else {
+                $message->body = w2ui($vcard['note'][0]['val'][0]);
+                $message->bodysize = strlen($vcard['note'][0]['val'][0]);
+                $message->bodytruncated = 0;
+            }
         }
         if(!empty($vcard['role'][0]['val'][0]))
             $message->jobtitle = w2ui($vcard['role'][0]['val'][0]);//$vcard['title'][0]['val'][0]

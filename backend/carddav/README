@@ -4,6 +4,4 @@ I have only tested it with davical, so if you test it with other carddav server 
 
 
 REQUISITES:
-libawl-php
-
-You have to include that installation path in the php.ini include_path
+php-curl

@@ -314,27 +314,24 @@ class carddav_backend
 </D:sync-collection>
 EOFCONTENTGET;
 
-		$content_type = 'application/xml';
-		$result = $this->query($this->url, 'REPORT', $content, $content_type);
+        return $this->query_search($content, $include_vcards, $raw);
+	}
+	
+	public function get_list_vcards() {
+        $content = <<<EOFCONTENTGETLIST
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+     <D:prop>
+       <D:getetag/>
+       <C:address-data>
+         <C:prop name="REV"/>
+         <C:prop name="UID"/>
+       </C:address-data>
+     </D:prop>
+</C:addressbook-query>
+EOFCONTENTGETLIST;
 
-		switch ($result['http_code'])
-		{
-			case 200:
-			case 207:
-				if ($raw === true)
-				{
-					return $result['response'];
-				}
-				else
-				{
-					return $this->simplify($result['response'], $include_vcards);
-				}
-			break;
-
-			default:
-				throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET);
-			break;
-		}
+        return $this->query_search($content);
 	}
 	
 	/**
@@ -367,7 +364,11 @@ EOFCONTENTGET;
   </C:limit>
 </C:addressbook-query>
 EOFCONTENTSEARCH;
-        
+
+        return $this->query_search($content, $include_vcards, $raw);
+	}
+	
+	private function query_search($content, $include_vcards = true, $raw = false) {
         $content_type = 'text/xml';
         $result = $this->query($this->url, 'REPORT', $content, $content_type);
 
@@ -389,7 +390,7 @@ EOFCONTENTSEARCH;
                 throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET);
             break;
         }
-	}
+    }
 
 	/**
 	* Gets a clean vCard from the CardDAV server

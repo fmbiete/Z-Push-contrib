@@ -54,7 +54,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $url = null;
     private $server = null;
     private $sinkcontacts;
-    private $foldername = "root";
+    // Android only supports synchronizing 1 AddressBook per account
+    private $foldername = "contacts";
     private $changessinkinit = false;
 
     /**
@@ -83,21 +84,15 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function Logon($username, $domain, $password) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->Logon('%s', '****', '%s')", $username, $domain));
-        
         $url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_PATH));
         $this->server = new carddav_backend($url);
         $this->server->set_auth($username, $password);
         
-        $connected = false;
-        
-        if ($this->server->check_connection()) {
+        if (($connected = $this->server->check_connection())) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->Logon(): User '%s' is authenticated on '%s'", $username, $url));
             $this->url = $url;
             $this->username = $username;
             $this->domain = $domain;
-            
-            $connected = true;
         }
         else {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $url));
@@ -189,12 +184,10 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $this->sinkcontacts = array();
         $this->changessinkinit = true;
         
-        //TODO: multiple folders
-
         // Get all id's and all rev's
         $vcards = false;
         try {
-            $vcards = $this->server->get_all_vcards();
+            $vcards = $this->server->get_list_vcards();
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error getting the vcards: %s", $ex->getMessage()));
@@ -231,7 +224,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $stopat = time() + $timeout - 1;
         $changed = false;
 
-        //We can get here and the ChangesSink not be initialized
+        //We can get here and the ChangesSink not be initialized yet
         if (!$this->changessinkinit) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Not initialized ChangesSink, exiting"));
             return $notifications;
@@ -241,7 +234,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             // Get all id's and all rev's
             $vcards = false;
             try {
-                $vcards = $this->server->get_all_vcards();
+                $vcards = $this->server->get_list_vcards();
             }
             catch (Exception $ex) {
                 ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the vcards: %s", $ex->getMessage()));
@@ -407,7 +400,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         $vcards = false;
         try {
-            $vcards = $this->server->get_all_vcards();
+            $vcards = $this->server->get_list_vcards();
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->GetMessageList - Error getting the vcards: %s", $ex->getMessage()));

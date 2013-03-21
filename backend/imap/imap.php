@@ -110,7 +110,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->mboxFolder = "";
 
         if ($this->mbox) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): User '%s' is authenticated on IMAP",$username));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): User '%s' is authenticated on '%s'", $username, $this->server));
             $this->username = $username;
             $this->password = $password;
             $this->domain = $domain;
@@ -119,7 +119,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return true;
         }
         else {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendIMAP->Logon(): can't connect as user %s: %s", $username, imap_last_error()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendIMAP->Logon(): can't connect as user '%s' on '%s': %s", $username, $this->server, imap_last_error()));
             return false;
         }
     }

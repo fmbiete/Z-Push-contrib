@@ -55,6 +55,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $server = null;
     private $sinkcontacts;
     private $foldername = "root";
+    private $changessinkinit = false;
 
     /**
      * Constructor
@@ -186,6 +187,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
         
         $this->sinkcontacts = array();
+        $this->changessinkinit = true;
         
         //TODO: multiple folders
 
@@ -225,14 +227,15 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return array
      */
     public function ChangesSink($timeout = 30) {
-        //We can get here and the ChangesSink not be initialized
-        if (count($this->sinkcontacts) == 0) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Not initialized ChangesSink, forcing"));
-            $this->ChangesSinkInitialize($this->foldername);
-        }
         $notifications = array();
         $stopat = time() + $timeout - 1;
         $changed = false;
+
+        //We can get here and the ChangesSink not be initialized
+        if (!$this->changessinkinit) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Not initialized ChangesSink, exiting"));
+            return $notifications;
+        }
         
         while($stopat > time() && empty($notifications)) {
             // Get all id's and all rev's

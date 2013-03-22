@@ -321,13 +321,12 @@ EOFCONTENTGET;
         $content = <<<EOFCONTENTGETLIST
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-     <D:prop>
-       <D:getetag/>
-       <C:address-data>
-         <C:prop name="REV"/>
-         <C:prop name="UID"/>
-       </C:address-data>
-     </D:prop>
+  <D:prop>
+    <D:getlastmodified/>
+    <C:address-data>
+      <C:prop name="UID"/>
+    </C:address-data>
+  </D:prop>
 </C:addressbook-query>
 EOFCONTENTGETLIST;
 

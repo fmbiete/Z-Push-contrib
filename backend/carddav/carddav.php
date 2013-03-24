@@ -61,9 +61,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $contactsetag;
 
     /**
-     * Constructor
-     *
-     */
+    * Constructor
+    *
+    */
     public function BackendCardDAV() {
         if (!function_exists("curl_init")) {
             throw new FatalException("BackendCardDAV(): php-curl is not found", 0, null, LOGLEVEL_FATAL);
@@ -73,18 +73,18 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
     
     /**
-     * Authenticates the user - NOT EFFECTIVELY IMPLEMENTED
-     * Normally some kind of password check would be done here.
-     * Alternatively, the password could be ignored and an Apache
-     * authentication via mod_auth_* could be done
-     *
-     * @param string        $username
-     * @param string        $domain
-     * @param string        $password
-     *
-     * @access public
-     * @return boolean
-     */
+    * Authenticates the user - NOT EFFECTIVELY IMPLEMENTED
+    * Normally some kind of password check would be done here.
+    * Alternatively, the password could be ignored and an Apache
+    * authentication via mod_auth_* could be done
+    *
+    * @param string        $username
+    * @param string        $domain
+    * @param string        $password
+    *
+    * @access public
+    * @return boolean
+    */
     public function Logon($username, $domain, $password) {
         $url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_PATH));
         $this->server = new carddav_backend($url);
@@ -106,11 +106,11 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Logs off
-     *
-     * @access public
-     * @return boolean
-     */
+    * Logs off
+    *
+    * @access public
+    * @return boolean
+    */
     public function Logoff() {
         $this->server = null;
         
@@ -122,66 +122,66 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Sends an e-mail
-     * Not implemented here
-     *
-     * @param SyncSendMail  $sm     SyncSendMail object
-     *
-     * @access public
-     * @return boolean
-     * @throws StatusException
-     */
+    * Sends an e-mail
+    * Not implemented here
+    *
+    * @param SyncSendMail  $sm     SyncSendMail object
+    *
+    * @access public
+    * @return boolean
+    * @throws StatusException
+    */
     public function SendMail($sm) {
         return false;
     }
 
     /**
-     * Returns the waste basket
-     * Not implemented here
-     *
-     * @access public
-     * @return string
-     */
+    * Returns the waste basket
+    * Not implemented here
+    *
+    * @access public
+    * @return string
+    */
     public function GetWasteBasket() {
         return false;
     }
 
     /**
-     * Returns the content of the named attachment as stream
-     * Not implemented here
-     *
-     * @param string        $attname
-     *
-     * @access public
-     * @return SyncItemOperationsAttachment
-     * @throws StatusException
-     */
+    * Returns the content of the named attachment as stream
+    * Not implemented here
+    *
+    * @param string        $attname
+    *
+    * @access public
+    * @return SyncItemOperationsAttachment
+    * @throws StatusException
+    */
     public function GetAttachmentData($attname) {
         return false;
     }
     
     /**
-     * Indicates if the backend has a ChangesSink.
-     * A sink is an active notification mechanism which does not need polling.
-     * The CardDAV backend simulates a sink by polling revision dates from the vcards
-     *
-     * @access public
-     * @return boolean
-     */
+    * Indicates if the backend has a ChangesSink.
+    * A sink is an active notification mechanism which does not need polling.
+    * The CardDAV backend simulates a sink by polling revision dates from the vcards
+    *
+    * @access public
+    * @return boolean
+    */
     public function HasChangesSink() {
         return true;
     }
 
     /**
-     * The folder should be considered by the sink.
-     * Folders which were not initialized should not result in a notification
-     * of IBackend->ChangesSink().
-     *
-     * @param string        $folderid
-     *
-     * @access public
-     * @return boolean      false if found can not be found
-     */
+    * The folder should be considered by the sink.
+    * Folders which were not initialized should not result in a notification
+    * of IBackend->ChangesSink().
+    *
+    * @param string        $folderid
+    *
+    * @access public
+    * @return boolean      false if found can not be found
+    */
     public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
         
@@ -209,16 +209,16 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * The actual ChangesSink.
-     * For max. the $timeout value this method should block and if no changes
-     * are available return an empty array.
-     * If changes are available a list of folderids is expected.
-     *
-     * @param int           $timeout        max. amount of seconds to block
-     *
-     * @access public
-     * @return array
-     */
+    * The actual ChangesSink.
+    * For max. the $timeout value this method should block and if no changes
+    * are available return an empty array.
+    * If changes are available a list of folderids is expected.
+    *
+    * @param int           $timeout        max. amount of seconds to block
+    *
+    * @access public
+    * @return array
+    */
     public function ChangesSink($timeout = 30) {
         $notifications = array();
         $stopat = time() + $timeout - 1;
@@ -266,16 +266,16 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }    
 
     /**----------------------------------------------------------------------------------------------------------
-     * implemented DiffBackend methods
-     */
+    * implemented DiffBackend methods
+    */
 
     /**
-     * Returns a list (array) of folders.
-     * In simple implementations like this one, probably just one folder is returned.
-     *
-     * @access public
-     * @return array
-     */
+    * Returns a list (array) of folders.
+    * In simple implementations like this one, probably just one folder is returned.
+    *
+    * @access public
+    * @return array
+    */
     public function GetFolderList() {
         ZLog::Write(LOGLEVEL_DEBUG, 'BackendCardDAV::GetFolderList()');
         
@@ -288,13 +288,13 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Returns an actual SyncFolder object
-     *
-     * @param string        $id           id of the folder
-     *
-     * @access public
-     * @return object       SyncFolder with information
-     */
+    * Returns an actual SyncFolder object
+    *
+    * @param string        $id           id of the folder
+    *
+    * @access public
+    * @return object       SyncFolder with information
+    */
     public function GetFolder($id) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::GetFolder('%s')", $id));
         
@@ -312,13 +312,13 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Returns folder stats. An associative array with properties is expected.
-     *
-     * @param string        $id             id of the folder
-     *
-     * @access public
-     * @return array
-     */
+    * Returns folder stats. An associative array with properties is expected.
+    *
+    * @param string        $id             id of the folder
+    *
+    * @access public
+    * @return array
+    */
     public function StatFolder($id) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::StatFolder('%s')", $id));
         
@@ -333,48 +333,48 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Creates or modifies a folder
-     * Not implemented here
-     *
-     * @param string        $folderid       id of the parent folder
-     * @param string        $oldid          if empty -> new folder created, else folder is to be renamed
-     * @param string        $displayname    new folder name (to be created, or to be renamed to)
-     * @param int           $type           folder type
-     *
-     * @access public
-     * @return boolean                      status
-     * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
-     *
-     */
+    * Creates or modifies a folder
+    * Not implemented here
+    *
+    * @param string        $folderid       id of the parent folder
+    * @param string        $oldid          if empty -> new folder created, else folder is to be renamed
+    * @param string        $displayname    new folder name (to be created, or to be renamed to)
+    * @param int           $type           folder type
+    *
+    * @access public
+    * @return boolean                      status
+    * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
+    *
+    */
     public function ChangeFolder($folderid, $oldid, $displayname, $type){
         return false;
     }
 
     /**
-     * Deletes a folder
-     * Not implemented here
-     *
-     * @param string        $id
-     * @param string        $parent         is normally false
-     *
-     * @access public
-     * @return boolean                      status - false if e.g. does not exist
-     * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
-     *
-     */
+    * Deletes a folder
+    * Not implemented here
+    *
+    * @param string        $id
+    * @param string        $parent         is normally false
+    *
+    * @access public
+    * @return boolean                      status - false if e.g. does not exist
+    * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
+    *
+    */
     public function DeleteFolder($id, $parentid){
         return false;
     }
 
     /**
-     * Returns a list (array) of messages
-     *
-     * @param string        $folderid       id of the parent folder
-     * @param long          $cutoffdate     timestamp in the past from which on messages should be returned
-     *
-     * @access public
-     * @return array/false  array with messages or false if folder is not available
-     */
+    * Returns a list (array) of messages
+    *
+    * @param string        $folderid       id of the parent folder
+    * @param long          $cutoffdate     timestamp in the past from which on messages should be returned
+    *
+    * @access public
+    * @return array/false  array with messages or false if folder is not available
+    */
     public function GetMessageList($folderid, $cutoffdate) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->GetMessageList('%s', '%s')", $folderid, $cutoffdate));
         
@@ -406,15 +406,15 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Returns the actual SyncXXX object type.
-     *
-     * @param string            $folderid           id of the parent folder
-     * @param string            $id                 id of the message
-     * @param ContentParameters $contentparameters  parameters of the requested message (truncation, mimesupport etc)
-     *
-     * @access public
-     * @return object/false     false if the message could not be retrieved
-     */
+    * Returns the actual SyncXXX object type.
+    *
+    * @param string            $folderid           id of the parent folder
+    * @param string            $id                 id of the message
+    * @param ContentParameters $contentparameters  parameters of the requested message (truncation, mimesupport etc)
+    *
+    * @access public
+    * @return object/false     false if the message could not be retrieved
+    */
     public function GetMessage($folderid, $id, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->GetMessage('%s', '%s')", $folderid, $id));
         
@@ -443,14 +443,14 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     
 
     /**
-     * Returns message stats, analogous to the folder stats from StatFolder().
-     *
-     * @param string        $folderid       id of the folder
-     * @param string        $id             id of the message
-     *
-     * @access public
-     * @return array
-     */
+    * Returns message stats, analogous to the folder stats from StatFolder().
+    *
+    * @param string        $folderid       id of the folder
+    * @param string        $id             id of the message
+    *
+    * @access public
+    * @return array
+    */
     public function StatMessage($folderid, $id) {
         //ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->StatMessage('%s', '%s')", $folderid, $id));
 
@@ -466,18 +466,18 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Called when a message has been changed on the mobile.
-     * This functionality is not available for emails.
-     *
-     * @param string              $folderid            id of the folder
-     * @param string              $id                  id of the message
-     * @param SyncXXX             $message             the SyncObject containing a message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return array                        same return value as StatMessage()
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
+    * Called when a message has been changed on the mobile.
+    * This functionality is not available for emails.
+    *
+    * @param string              $folderid            id of the folder
+    * @param string              $id                  id of the message
+    * @param SyncXXX             $message             the SyncObject containing a message
+    * @param ContentParameters   $contentParameters
+    *
+    * @access public
+    * @return array                        same return value as StatMessage()
+    * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+    */
     public function ChangeMessage($folderid, $id, $message, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangeMessage('%s', '%s')", $folderid, $id));
 
@@ -524,50 +524,50 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }   
 
     /**
-     * Changes the 'read' flag of a message on disk
-     * Not implemented here
-     *
-     * @param string              $folderid            id of the folder
-     * @param string              $id                  id of the message
-     * @param int                 $flags               read flag of the message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
+    * Changes the 'read' flag of a message on disk
+    * Not implemented here
+    *
+    * @param string              $folderid            id of the folder
+    * @param string              $id                  id of the message
+    * @param int                 $flags               read flag of the message
+    * @param ContentParameters   $contentParameters
+    *
+    * @access public
+    * @return boolean                      status of the operation
+    * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+    */
     public function SetReadFlag($folderid, $id, $flags, $contentParameters) {
         return false;
     }
 
     /**
-     * Changes the 'star' flag of a message on disk
-     * Not implemented here
-     *
-     * @param string        $folderid       id of the folder
-     * @param string        $id             id of the message
-     * @param int           $flags          star flag of the message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
+    * Changes the 'star' flag of a message on disk
+    * Not implemented here
+    *
+    * @param string        $folderid       id of the folder
+    * @param string        $id             id of the message
+    * @param int           $flags          star flag of the message
+    * @param ContentParameters   $contentParameters
+    *
+    * @access public
+    * @return boolean                      status of the operation
+    * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+    */
     public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
         return false;
     }
 
     /**
-     * Called when the user has requested to delete (really delete) a message
-     *
-     * @param string              $folderid             id of the folder
-     * @param string              $id                   id of the message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
+    * Called when the user has requested to delete (really delete) a message
+    *
+    * @param string              $folderid             id of the folder
+    * @param string              $id                   id of the message
+    * @param ContentParameters   $contentParameters
+    *
+    * @access public
+    * @return boolean                      status of the operation
+    * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+    */
     public function DeleteMessage($folderid, $id, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->DeleteMessage('%s', '%s')", $folderid, $id));
         
@@ -590,73 +590,73 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Called when the user moves an item on the PDA from one folder to another
-     * Not implemented here
-     *
-     * @param string              $folderid            id of the source folder
-     * @param string              $id                  id of the message
-     * @param string              $newfolderid         id of the destination folder
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_MOVEITEMSSTATUS_* exceptions
-     */
+    * Called when the user moves an item on the PDA from one folder to another
+    * Not implemented here
+    *
+    * @param string              $folderid            id of the source folder
+    * @param string              $id                  id of the message
+    * @param string              $newfolderid         id of the destination folder
+    * @param ContentParameters   $contentParameters
+    *
+    * @access public
+    * @return boolean                      status of the operation
+    * @throws StatusException              could throw specific SYNC_MOVEITEMSSTATUS_* exceptions
+    */
     public function MoveMessage($folderid, $id, $newfolderid, $contentParameters) {
         return false;
     }
 
     
     /**
-     * Indicates which AS version is supported by the backend.
-     *
-     * @access public
-     * @return string       AS version constant
-     */
+    * Indicates which AS version is supported by the backend.
+    *
+    * @access public
+    * @return string       AS version constant
+    */
     public function GetSupportedASVersion() {
         return ZPush::ASV_14;
     }
 
 
     /**
-     * Returns the BackendCardDAV as it implements the ISearchProvider interface
-     * This could be overwritten by the global configuration
-     *
-     * @access public
-     * @return object       Implementation of ISearchProvider
-     */
+    * Returns the BackendCardDAV as it implements the ISearchProvider interface
+    * This could be overwritten by the global configuration
+    *
+    * @access public
+    * @return object       Implementation of ISearchProvider
+    */
     public function GetSearchProvider() {
         return $this;
     }
 
 
     /**----------------------------------------------------------------------------------------------------------
-     * public ISearchProvider methods
-     */
+    * public ISearchProvider methods
+    */
 
     /**
-     * Indicates if a search type is supported by this SearchProvider
-     * Currently only the type ISearchProvider::SEARCH_GAL (Global Address List) is implemented
-     *
-     * @param string        $searchtype
-     *
-     * @access public
-     * @return boolean
-     */
+    * Indicates if a search type is supported by this SearchProvider
+    * Currently only the type ISearchProvider::SEARCH_GAL (Global Address List) is implemented
+    *
+    * @param string        $searchtype
+    *
+    * @access public
+    * @return boolean
+    */
     public function SupportsType($searchtype) {
         return ($searchtype == ISearchProvider::SEARCH_GAL);
     }
 
 
     /**
-     * Queries the CardDAV backend
-     *
-     * @param string        $searchquery        string to be searched for
-     * @param string        $searchrange        specified searchrange
-     *
-     * @access public
-     * @return array        search results
-     */
+    * Queries the CardDAV backend
+    *
+    * @param string        $searchquery        string to be searched for
+    * @param string        $searchrange        specified searchrange
+    *
+    * @access public
+    * @return array        search results
+    */
     public function GetGALSearchResults($searchquery, $searchrange) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->GetGALSearchResults(%s, %s)", $searchquery, $searchrange));
         if (isset($this->server) && $this->server !== false) {
@@ -775,12 +775,12 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Searches for the emails on the server
-     *
-     * @param ContentParameter $cpo
-     *
-     * @return array
-     */
+    * Searches for the emails on the server
+    *
+    * @param ContentParameter $cpo
+    *
+    * @return array
+    */
     public function GetMailboxSearchResults($cpo) {
         return false;
     }
@@ -797,29 +797,29 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Disconnects from CardDAV
-     *
-     * @access public
-     * @return boolean
-     */
+    * Disconnects from CardDAV
+    *
+    * @access public
+    * @return boolean
+    */
     public function Disconnect() {
         return true;
     }
     
 
     /**----------------------------------------------------------------------------------------------------------
-     * private vcard-specific internals
-     */
+    * private vcard-specific internals
+    */
 
 
     /**
-     * Escapes a string
-     *
-     * @param string        $data           string to be escaped
-     *
-     * @access private
-     * @return string
-     */
+    * Escapes a string
+    *
+    * @param string        $data           string to be escaped
+    *
+    * @access private
+    * @return string
+    */
     private function escape($data){
         if (is_array($data)) {
             foreach ($data as $key => $val) {
@@ -830,22 +830,22 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $data = str_replace("\r\n", "\n", $data);
         $data = str_replace("\r", "\n", $data);
         $data = str_replace(array('\\', ';', ',', "\n"), array('\\\\', '\\;', '\\,', '\\n'), $data);
-        return u2wi($data);
+        return $data;
     }
 
     /**
-     * Un-escapes a string
-     *
-     * @param string        $data           string to be un-escaped
-     *
-     * @access private
-     * @return string
-     */
+    * Un-escapes a string
+    *
+    * @param string        $data           string to be un-escaped
+    *
+    * @access private
+    * @return string
+    */
     private function unescape($data){
         $data = str_replace(array('\\\\', '\\;', '\\,', '\\n','\\N'),array('\\', ';', ',', "\n", "\n"),$data);
         return $data;
     }
-       
+    
     private function ParseFromVCard($data, $truncsize = -1) {
         ZLog::Write(LOGLEVEL_WBXML, sprintf("BackendCardDAV->ParseFromVCard : vCard\n%s\n", $data));
         

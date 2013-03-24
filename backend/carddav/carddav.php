@@ -53,10 +53,12 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $username = '';
     private $url = null;
     private $server = null;
-    private $sinkcontacts;
+
     // Android only supports synchronizing 1 AddressBook per account
     private $foldername = "contacts";
+    
     private $changessinkinit = false;
+    private $contactsetag;
 
     /**
      * Constructor
@@ -66,8 +68,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         if (!function_exists("curl_init")) {
             throw new FatalException("BackendCardDAV(): php-curl is not found", 0, null, LOGLEVEL_FATAL);
         }
-        
-        $this->sinkcontacts = array();
+
+        $this->contactsetag = array();
     }
     
     /**
@@ -113,6 +115,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $this->server = null;
         
         $this->SaveStorages();
+        
+        unset($this->contactsetag);
         
         return true;
     }
@@ -181,30 +185,26 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
         
-        $this->sinkcontacts = array();
         $this->changessinkinit = true;
+
+        // We don't need the actual cards, we only need to get the changes since this moment
+        //FIXME: we need to get the changes since the last actual sync
         
-        // Get all id's and all rev's
         $vcards = false;
         try {
-            $vcards = $this->server->get_list_vcards();
+            $vcards = $this->server->do_sync(true, false);
         }
         catch (Exception $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error getting the vcards: %s", $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error doing the initial sync: %s", $ex->getMessage()));
         }
         
         if ($vcards === false) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error getting the vcards"));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error initializing the sink"));
             return false;
         }
-        else {
-            $xml_vcards = new SimpleXMLElement($vcards);
-            foreach ($xml_vcards->element as $vcard) {
-                $this->sinkcontacts[$vcard->id->__toString()] = $vcard->last_modified->__toString();
-            }
-            unset($xml_vcards);
-        }
-
+        
+        unset($vcards);
+        
         return true;
     }
 
@@ -231,49 +231,31 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         }
         
         while($stopat > time() && empty($notifications)) {
-            // Get all id's and all rev's
             $vcards = false;
             try {
-                $vcards = $this->server->get_list_vcards();
+                $vcards = $this->server->do_sync(false, false);
             }
             catch (Exception $ex) {
-                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the vcards: %s", $ex->getMessage()));
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error resyncing vcards: %s", $ex->getMessage()));
             }
             
             if ($vcards === false) {
-                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the vcards"));
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the changes"));
                 return false;
             }
             else {
                 $xml_vcards = new SimpleXMLElement($vcards);
-                if (count($xml_vcards->element) != count($this->sinkcontacts)) {
+                unset($vcards);
+                
+                if (count($xml_vcards->element) > 0) {
                     $changed = true;
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected: number of vcards (%d/%d)", count($xml_vcards->element), count($this->sinkcontacts)));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
                 }
-
-                //new sink array
-                $sinkcontacts = array();
-
-                foreach ($xml_vcards->element as $vcard) {
-                    $id = $vcard->id->__toString();
-                    $rev = $vcard->last_modified->__toString();
-                    $sinkcontacts[$id] = $rev;
-                    
-                    if (array_key_exists($id, $this->sinkcontacts)) {
-                        if ($rev != $this->sinkcontacts[$id]) {
-                            $changed = true;
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected: modified vcard"));
-                        }
-                    }
-                }
-                unset($this->sinkcontacts);
-                $this->sinkcontacts = $sinkcontacts;
                 unset($xml_vcards);
             }
             
             if ($changed) {
                 $notifications[] = $this->foldername;
-                
             }
 
             if (empty($notifications))
@@ -400,7 +382,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         $vcards = false;
         try {
-            $vcards = $this->server->get_list_vcards();
+            // We don't need the actual vcards here, we only need a list of all them
+            //$vcards = $this->server->get_list_vcards();
+            $vcards = $this->server->do_sync(true, false);
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->GetMessageList - Error getting the vcards: %s", $ex->getMessage()));
@@ -413,7 +397,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $xml_vcards = new SimpleXMLElement($vcards);
             foreach ($xml_vcards->element as $vcard) {
                 $id = $vcard->id->__toString();
-                $this->sinkcontacts[$id] = $vcard->last_modified->__toString();
+                $this->contactsetag[$id] = $vcard->etag->__toString();
                 $messages[] = $this->StatMessage($folderid, $id);
             }
         }
@@ -449,8 +433,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->GetMessage(): getting vCard"));
         }
         else {
+            $truncsize = Utils::GetTruncSize($contentparameters->GetTruncation());
             $xml_data = new SimpleXMLElement($xml_vcard);
-            $message = $this->ParseFromVCard($xml_data->element[0]->vcard->__toString());
+            $message = $this->ParseFromVCard($xml_data->element[0]->vcard->__toString(), $truncsize);
         }
         
         return $message;
@@ -467,17 +452,12 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return array
      */
     public function StatMessage($folderid, $id) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->StatMessage('%s', '%s')", $folderid, $id));
+        //ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->StatMessage('%s', '%s')", $folderid, $id));
 
         //TODO: change to folderid
         
         $message = array();
-        if (array_key_exists($id, $this->sinkcontacts)) {
-            $message["mod"] = $this->sinkcontacts[$id];
-        }
-        else {
-            $message["mod"] = new DateTime();
-        }
+        $message["mod"] = $this->contactsetag[$id];
         $message["id"] = $id;
         $message["flags"] = 1;
         $message["star"] = 0;
@@ -534,21 +514,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             
             if ($updated !== false) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangeMessage - vCard updated"));
-                
-                $xml_vcard = false;
-                try {
-                    $xml_vcard = $this->server->get_xml_vcard($id);
-                }
-                catch (Exception $ex) {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangeMessage - Error getting vcard updated: %s", $ex->getMessage()));
-                }
-                if ($xml_vcard === false) {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangeMessage : getting vCard"));
-                }
-                else {
-                    $xml_data = new SimpleXMLElement($xml_vcard);
-                    $this->sinkcontacts[$xml_data->id->__toString()] = $xml_data->last_modified->__toString();
-                }
             }
             else {
                 ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangeMessage - vCard not updated"));
@@ -616,7 +581,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         if ($deleted) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->DeleteMessage - vCard deleted"));
-            unset($this->sinkcontacts[$id]);
         } 
         else {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->DeleteMessage - cannot delete vCard"));
@@ -882,7 +846,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         return $data;
     }
        
-    private function ParseFromVCard($data) {
+    private function ParseFromVCard($data, $truncsize = -1) {
         ZLog::Write(LOGLEVEL_WBXML, sprintf("BackendCardDAV->ParseFromVCard : vCard\n%s\n", $data));
         
         $types = array ('dom' => 'type', 'intl' => 'type', 'postal' => 'type', 'parcel' => 'type', 'home' => 'type', 'work' => 'type',
@@ -946,7 +910,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 case 'categories':
                     //case 'nickname':
                     $val = preg_split('/(?<!\\\\)(\,)/i', $value);
-                    $val = array_map("w2ui", $val);
                     break;
                 default:
                     $val = preg_split('/(?<!\\\\)(\;)/i', $value);
@@ -1033,39 +996,39 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 }
                 if(!empty($adr['val'][2])){
                     $b=$a.'street';
-                    $message->$b = w2ui($adr['val'][2]);
+                    $message->$b = $adr['val'][2];
                 }
                 if(!empty($adr['val'][3])){
                     $b=$a.'city';
-                    $message->$b = w2ui($adr['val'][3]);
+                    $message->$b = $adr['val'][3];
                 }
                 if(!empty($adr['val'][4])){
                     $b=$a.'state';
-                    $message->$b = w2ui($adr['val'][4]);
+                    $message->$b = $adr['val'][4];
                 }
                 if(!empty($adr['val'][5])){
                     $b=$a.'postalcode';
-                    $message->$b = w2ui($adr['val'][5]);
+                    $message->$b = $adr['val'][5];
                 }
                 if(!empty($adr['val'][6])){
                     $b=$a.'country';
-                    $message->$b = w2ui($adr['val'][6]);
+                    $message->$b = $adr['val'][6];
                 }
             }
         }
 
         if(!empty($vcard['fn'][0]['val'][0]))
-            $message->fileas = w2ui($vcard['fn'][0]['val'][0]);
+            $message->fileas = $vcard['fn'][0]['val'][0];
         if(!empty($vcard['n'][0]['val'][0]))
-            $message->lastname = w2ui($vcard['n'][0]['val'][0]);
+            $message->lastname = $vcard['n'][0]['val'][0];
         if(!empty($vcard['n'][0]['val'][1]))
-            $message->firstname = w2ui($vcard['n'][0]['val'][1]);
+            $message->firstname = $vcard['n'][0]['val'][1];
         if(!empty($vcard['n'][0]['val'][2]))
-            $message->middlename = w2ui($vcard['n'][0]['val'][2]);
+            $message->middlename = $vcard['n'][0]['val'][2];
         if(!empty($vcard['n'][0]['val'][3]))
-            $message->title = w2ui($vcard['n'][0]['val'][3]);
+            $message->title = $vcard['n'][0]['val'][3];
         if(!empty($vcard['n'][0]['val'][4]))
-            $message->suffix = w2ui($vcard['n'][0]['val'][4]);
+            $message->suffix = $vcard['n'][0]['val'][4];
         if(!empty($vcard['bday'][0]['val'][0])){
             $tz = date_default_timezone_get();
             date_default_timezone_set('UTC');
@@ -1073,25 +1036,38 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             date_default_timezone_set($tz);
         }
         if(!empty($vcard['org'][0]['val'][0]))
-            $message->companyname = w2ui($vcard['org'][0]['val'][0]);
+            $message->companyname = $vcard['org'][0]['val'][0];
         if(!empty($vcard['note'][0]['val'][0])){
             if (Request::GetProtocolVersion() >= 12.0) {
                 $message->asbody = new SyncBaseBody();
-                $message->asbody->data = w2ui($vcard['note'][0]['val'][0]);
-                $message->asbody->truncated = 0;
                 $message->asbody->type = SYNC_BODYPREFERENCE_PLAIN;
+                $message->asbody->data = $vcard['note'][0]['val'][0];
+                if ($truncsize > 0 && $truncsize < strlen($message->asbody->data)) {
+                    $message->asbody->truncated = 1;
+                    $message->asbody->data = Utils::Utf8_truncate($message->asbody->data, $truncsize);
+                }
+                else {
+                    $message->asbody->truncated = 0;
+                }
+                
                 $message->asbody->estimatedDataSize = strlen($message->asbody->data);                
             }
             else {
-                $message->body = w2ui($vcard['note'][0]['val'][0]);
-                $message->bodysize = strlen($vcard['note'][0]['val'][0]);
-                $message->bodytruncated = 0;
+                $message->body = $vcard['note'][0]['val'][0];
+                if ($truncsize > 0 && $truncsize < strlen($message->body)) {
+                    $message->bodytruncated = 1;
+                    $message->body = Utils::Utf8_truncate($message->body, $truncsize);
+                }
+                else {
+                    $message->bodytruncated = 0;
+                }
+                $message->bodysize = strlen($message->body);
             }
         }
         if(!empty($vcard['role'][0]['val'][0]))
-            $message->jobtitle = w2ui($vcard['role'][0]['val'][0]);//$vcard['title'][0]['val'][0]
+            $message->jobtitle = $vcard['role'][0]['val'][0];//$vcard['title'][0]['val'][0]
         if(!empty($vcard['url'][0]['val'][0]))
-            $message->webpage = w2ui($vcard['url'][0]['val'][0]);
+            $message->webpage = $vcard['url'][0]['val'][0];
         if(!empty($vcard['categories'][0]['val']))
             $message->categories = $vcard['categories'][0]['val'];
 

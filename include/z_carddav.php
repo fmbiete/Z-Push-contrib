@@ -175,6 +175,14 @@ class carddav_backend
 	 * @var	array
 	 */
 	private $debug_information = array();
+	
+	
+	/**
+	 * Sync-token for sync-collection operations.
+	 *
+	 * @var string
+	 */
+	private $synctoken = "";
 
 	/**
 	 * Exception codes
@@ -255,6 +263,16 @@ class carddav_backend
 	{
 		return $this->debug_information;
 	}
+	
+	/**
+	 * Get the sync-token
+	 *
+	 * @return string sync-token
+	 */
+	public function get_synctoken()
+	{
+        return $this->synctoken;
+    }
 
 	/**
 	 * Gets all vCards including additional information from the CardDAV server
@@ -297,7 +315,7 @@ class carddav_backend
 	 */
 	public function get_all_vcards($include_vcards = true, $raw = false)
 	{
-		$content = <<<EOFCONTENTGET
+		$xml = <<<EOFCONTENTGET
 <?xml version="1.0" encoding="utf-8" ?>
 <D:sync-collection xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
   <D:sync-token>
@@ -314,23 +332,7 @@ class carddav_backend
 </D:sync-collection>
 EOFCONTENTGET;
 
-        return $this->query_search($content, $include_vcards, $raw);
-	}
-	
-	public function get_list_vcards() {
-        $content = <<<EOFCONTENTGETLIST
-<?xml version="1.0" encoding="utf-8" ?>
-<C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-  <D:prop>
-    <D:getlastmodified/>
-    <C:address-data>
-      <C:prop name="UID"/>
-    </C:address-data>
-  </D:prop>
-</C:addressbook-query>
-EOFCONTENTGETLIST;
-
-        return $this->query_search($content);
+        return $this->do_query_report($xml, $include_vcards, $raw);
 	}
 	
 	/**
@@ -344,7 +346,7 @@ EOFCONTENTGETLIST;
      */
 	public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false)
 	{
-        $content = <<<EOFCONTENTSEARCH
+        $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
   <D:prop>
@@ -364,12 +366,49 @@ EOFCONTENTGETLIST;
 </C:addressbook-query>
 EOFCONTENTSEARCH;
 
-        return $this->query_search($content, $include_vcards, $raw);
+        return $this->do_query_report($xml, $include_vcards, $raw);
 	}
 	
-	private function query_search($content, $include_vcards = true, $raw = false) {
-        $content_type = 'text/xml';
-        $result = $this->query($this->url, 'REPORT', $content, $content_type);
+	/**
+	 * Get all vcards or changes since the last sync.
+	 *
+	 * @param boolean $initial              If the sync should be full
+	 * @param boolean $include_vcards       If the vCards should be included within the response
+	 * @return string                       Simplified XML response
+	 */
+	public function do_sync($initial = true, $include_vcards = false)
+	{
+        $token = $this->synctoken;
+        if ($initial)
+        {
+            $token = "";
+        }
+        
+        $xml = <<< EOFXMLINITIALSYNC
+<?xml version="1.0" encoding="utf-8"?>
+<D:sync-collection xmlns:D="DAV:">
+  <D:sync-token>$token</D:sync-token>
+  <D:sync-level>1</D:sync-level>
+  <D:prop>
+    <D:getetag/>
+    <D:getlastmodified/>
+  </D:prop>
+</D:sync-collection>
+EOFXMLINITIALSYNC;
+
+        return $this->do_query_report($xml, $include_vcards, false);
+	}
+	
+	/**
+	 * Do a REPORT query against the server
+	 *
+	 * @param string $xml               XML body request
+	 * @param boolean $include_vcards   If the vCards should be included within the response
+	 * @param boolean $raw              If the response should be raw or XML simplified
+	 * @return string
+	 */
+	private function do_query_report($xml, $include_vcards = true, $raw = false) {
+        $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
 
         switch ($result['http_code'])
         {
@@ -425,36 +464,20 @@ EOFCONTENTSEARCH;
 	 */
 	public function get_xml_vcard($vcard_id)
 	{
-		$vcard_id = str_replace('.vcf', null, $vcard_id);
+        $href = $this->url_parts['path'] . str_replace('.vcf', null, $vcard_id) . '.vcf';
+        
+        $xml = <<<EOFXMLGETXMLVCARD
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+  <D:prop>
+    <D:getetag/>
+    <D:getlastmodified/>
+  </D:prop>
+  <D:href>$href</D:href>
+</C:addressbook-multiget>
+EOFXMLGETXMLVCARD;
 
-		$xml = new XMLWriter();
-		$xml->openMemory();
-		$xml->setIndent(4);
-		$xml->startDocument('1.0', 'utf-8');
-			$xml->startElement('C:addressbook-multiget');
-				$xml->writeAttribute('xmlns:D', 'DAV:');
-				$xml->writeAttribute('xmlns:C', 'urn:ietf:params:xml:ns:carddav');
-				$xml->startElement('D:prop');
-					$xml->writeElement('D:getetag');
-					$xml->writeElement('D:getlastmodified');
-				$xml->endElement();
-				$xml->writeElement('D:href', $this->url_parts['path'] . $vcard_id . '.vcf');
-			$xml->endElement();
-		$xml->endDocument();
-
-		$result = $this->query($this->url, 'REPORT', $xml->outputMemory(), 'text/xml');
-
-		switch ($result['http_code'])
-		{
-			case 200:
-			case 207:
-				return $this->simplify($result['response'], true);
-			break;
-
-			default:
-				throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET_XML_VCARD);
-			break;
-		}
+        return $this->do_query_report($xml);
 	}
 
 	/**
@@ -588,6 +611,11 @@ EOFCONTENTSEARCH;
 		{
 			throw new Exception('The XML response seems to be malformed and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE, $e);
 		}
+		
+        if (!empty($xml->{'sync-token'})) 
+        {
+            $this->synctoken = $xml->{'sync-token'};
+        }
 
 		$simplified_xml = new XMLWriter();
 		$simplified_xml->openMemory();

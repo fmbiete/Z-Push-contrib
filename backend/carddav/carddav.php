@@ -1112,9 +1112,10 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             'body' => 'NOTE',
             'jobtitle' => 'ROLE',
             'webpage' => 'URL',
+            'nickname' => 'NICKNAME'
         );
         
-        $data = "BEGIN:VCARD\nVERSION:2.1\nPRODID:Z-Push\n";
+        $data = "BEGIN:VCARD\nVERSION:3.0\nPRODID:Z-Push\n";
         foreach($mapping as $k => $v){
             $val = '';
             $ks = explode(';', $k);

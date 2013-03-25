@@ -713,8 +713,11 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                     }
                     else {
                         $items[$rc][SYNC_GAL_EMAILADDRESS] = $contact->email1address;
-                        if (isset($contact->firstname) || isset($contact->middlename) || isset($contact->lastname)) {
-                            $items[$rc][SYNC_GAL_DISPLAYNAME] = $contact->firstname . " " . $contact->middlename . " " . $contact->lastname;
+                        if (isset($contact->fileas)) {
+                            $items[$rc][SYNC_GAL_DISPLAYNAME] = $contact->fileas;
+                        } 
+                        else if (isset($contact->firstname) || isset($contact->middlename) || isset($contact->lastname)) {
+                            $items[$rc][SYNC_GAL_DISPLAYNAME] = $contact->firstname . (isset($contact->middlename) ? " " . $contact->middlename : "") . (isset($contact->lastname) ? " " . $contact->lastname : "");
                         }
                         else {
                             $items[$rc][SYNC_GAL_DISPLAYNAME] = $contact->email1address;
@@ -743,17 +746,11 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         if (isset($contact->title)) {
                             $items[$rc][SYNC_GAL_TITLE] = $contact->title;
                         }
-                        else {
-                            $items[$rc][SYNC_GAL_TITLE] = "";
-                        }
                         if (isset($contact->companyname)) {
                             $items[$rc][SYNC_GAL_COMPANY] = $contact->companyname;
                         }
                         if (isset($contact->department)) {
                             $items[$rc][SYNC_GAL_OFFICE] = $contact->department;
-                        }
-                        else {
-                            $items[$rc][SYNC_GAL_COMPANY] = '';
                         }
                         if (isset($contact->nickname)) {
                             $items[$rc][SYNC_GAL_ALIAS] = $contact->nickname;

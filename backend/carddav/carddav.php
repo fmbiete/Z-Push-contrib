@@ -1141,7 +1141,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $data .= 'BDAY:'.date('Y-m-d', $message->birthday)."\n";
         $data .= "END:VCARD";
 
-// not supported: anniversary, assistantname, assistnamephonenumber, children, department, officelocation, radiophonenumber, spouse, rtf
+        // http://en.wikipedia.org/wiki/VCard
+        // TODO: add support for v4.0
+        // not supported: anniversary, assistantname, assistnamephonenumber, children, department, officelocation, radiophonenumber, spouse, rtf
 
         return $data;
     }

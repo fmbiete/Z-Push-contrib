@@ -1033,6 +1033,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $message->title = $vcard['n'][0]['val'][3];
         if(!empty($vcard['n'][0]['val'][4]))
             $message->suffix = $vcard['n'][0]['val'][4];
+        if(!empty($vcard['nickname'][0]['val'][0]))
+            $message->nickname = $vcard['nickname'][0]['val'][0];
         if(!empty($vcard['bday'][0]['val'][0])){
             $tz = date_default_timezone_get();
             date_default_timezone_set('UTC');

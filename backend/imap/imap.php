@@ -191,12 +191,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("HTMLBody [%s] PlainBody [%s] IsHTML [%s]", $htmlBody, $plainBody, Utils::PrintAsString($hasHtmlBody)));
         
         $Mail_RFC822 = new Mail_RFC822();
-        $toaddr = $ccaddr = $bccaddr = "";
-        if(isset($message->headers["to"]))
+        $fromaddr = $toaddr = $ccaddr = $bccaddr = "";
+        if (isset($message->headers["from"]))
+            $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
+        if (isset($message->headers["to"]))
             $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
-        if(isset($message->headers["cc"]))
+        if (isset($message->headers["cc"]))
             $ccaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["cc"]));
-        if(isset($message->headers["bcc"]))
+        if (isset($message->headers["bcc"]))
             $bccaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["bcc"]));
 
         // save some headers when forwarding mails (content type & transfer-encoding)
@@ -262,8 +264,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     // Empty From, but default defined
                     if (!trim($v) && IMAP_DEFAULTFROM) {
                         $v = $this->getDefaultFromValue();
+                        $envelopefrom = "-f$v";
                     }
-                    $envelopefrom = "-f$v";
+                    else {
+                        $envelopefrom = "-f$fromaddr";
+                    }
                     break;
 
                 // check if "Return-Path"-header is set

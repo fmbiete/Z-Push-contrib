@@ -1231,8 +1231,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $toaddr = $Mail_RFC822->parseAddressList($message->headers["to"]);
             if(isset($message->headers["cc"]))
                 $ccaddr = $Mail_RFC822->parseAddressList($message->headers["cc"]);
-            if(isset($message->headers["reply_to"]))
-                $replytoaddr = $Mail_RFC822->parseAddressList($message->headers["reply_to"]);
+            if(isset($message->headers["reply-to"]))
+                $replytoaddr = $Mail_RFC822->parseAddressList($message->headers["reply-to"]);
 
             $output->to = array();
             $output->cc = array();
@@ -1240,7 +1240,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             foreach(array("to" => $toaddr, "cc" => $ccaddr, "reply_to" => $replytoaddr) as $type => $addrlist) {
                 if ($addrlist === false) {
                     //If we couldn't parse the addresslist we put the raw header (decoded)
-                    array_push($output->$type, $message->headers[$type]);
+                    if ($type == "reply_to") {
+                        array_push($output->$type, $message->headers["reply-to"]);
+                    }
+                    else {
+                        array_push($output->$type, $message->headers[$type]);
+                    }
                 }
                 else {
                     foreach($addrlist as $addr) {

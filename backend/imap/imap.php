@@ -207,7 +207,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $forward_h_cte = "";
         $envelopefrom = "";
 
-        $use_orgbody = false;
+        $is_multipart = false;
 
         // clean up the transmitted headers
         // remove default headers because we are using imap_mail
@@ -228,16 +228,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     break;
                     
                 case "content-type":
-                    // if the message is a multipart message, then we should use the sent body
+                    // if the message is multipart
                     if (preg_match("/multipart/i", $v)) {
-                        $use_orgbody = true;
+                        $is_multipart = true;
                         $org_boundary = $message->ctype_parameters["boundary"];
                     }
-
-                    // save the original content-type header for the body part when forwarding
-                    if ($sm->forwardflag && !$use_orgbody) {
-                        $forward_h_ct = $v;
-                        $addHeader = false;
+                    else {
+                        // if it's a forward we store the content-type for later
+                        if ($sm->forwardflag) {
+                            $forward_h_ct = $v;
+                            $addHeader = false;
+                        }
                     }
 
                     // set charset always to utf-8
@@ -307,72 +308,105 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $headers .= 'Return-Path: '.$v;
         }
 
-        // if this is a multipart message with a boundary, we must use the original body
-        if ($use_orgbody) {
+        // if it's a new message we use the sent body
+        if (!$sm->replyflag && !$sm->forwardflag) {
             list(,$body) = $mobj->_splitBodyHeader($sm->mime);
-            $repl_body = $hasHtmlBody ? $htmlBody : $plainBody;
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): New message"));
         }
         else {
             $body = $hasHtmlBody ? $htmlBody : $plainBody;
-        }
-        
-        ZLog::Write(LOGLEVEL_DEBUG, "Body before reply: ". $body);
-        
-        
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body before reply: %s", $body));
+        }        
 
         // reply
-        if ((!isset($sm->replacemime) || $sm->replacemime == false) && $sm->replyflag && $parent) {
-            $this->imap_reopenFolder($parent);
-            // receive entire mail (header + body) to decode body correctly
-            $replyMail = @imap_fetchheader($this->mbox, $reply, FT_UID) . @imap_body($this->mbox, $reply, FT_PEEK | FT_UID);
+        if ((!isset($sm->replacemime) || $sm->replacemime == false) && $sm->replyflag) {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Replying message");
+            $replyMail = false;
+            if ($parent) {
+                $this->imap_reopenFolder($parent);
+                $replyMail = @imap_fetchheader($this->mbox, $reply, FT_UID) . @imap_body($this->mbox, $reply, FT_PEEK | FT_UID);
+            }
+
             if (!$replyMail) {
                 throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not open message id '%s' in folder id '%s' to be replied: %s", $reply, $parent, imap_last_error()), SYNC_COMMONSTATUS_ITEMNOTFOUND);
             }
 
             $replyMime = new Mail_mimeDecode($replyMail);
             $replyMessage = $replyMime->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
-            if ($hasHtmlBody) {
-                $body .= "<br><br>";
+            
+            // The new message is multipart
+            if ($is_multipart) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Multipart reply message");
                 $replyHtmlBody = "";
                 $this->getBodyRecursive($replyMessage, "html", $replyHtmlBody);
-                if (strlen($replyHtmlBody) > 0) {
-                    $body .= $replyHtmlBody;
-                }
-                else {
-                    $this->getBodyRecursive($replyMessage, "plain", $replyHtmlBody);
-                    $body .= "<html><body><p>" . str_replace("\r", "", str_replace("\n", "<br>", $replyHtmlBody)) . "</p></body></html>";
-                }
-                unset($replyHtmlBody);
+                $htmlBody .= "<br><br>" . $replyHtmlBody;
+                
+                $replyPlainBody = "";
+                $this->getBodyRecursive($replyMessage, "plain", $replyPlainBody);
+                $plainBody .= "\r\n\r\n" . $replyPlainBody;
+
+
+                // create new mime
+                $body = "\n--$att_boundary".
+                        "\nContent-Type: text/plain; charset=utf-8".
+                        "\nContent-Transfer-Encoding: base64\n\n".
+                        chunk_split(base64_encode($plainBody)).
+                        "\n\n--$att_boundary".
+                        "\nContent-Type: text/html; charset=utf-8".
+                        "\nContent-Transfer-Encoding: base64\n\n".
+                        chunk_split(base64_encode($htmlBody)).
+                        "\n\n";
             }
             else {
-                $body .= "\r\n\r\n";
-                $this->getBodyRecursive($replyMessage, "plain", $body);
+                if ($hasHtmlBody) {
+                    $body = "$htmlBody<br><br>";
+                    $replyHtmlBody = "";
+                    $this->getBodyRecursive($replyMessage, "html", $replyHtmlBody);
+                    if (strlen($replyHtmlBody) > 0) {
+                        $body .= $replyHtmlBody;
+                    }
+                    else {
+                        $this->getBodyRecursive($replyMessage, "plain", $replyHtmlBody);
+                        $body .= "<html><body><p>" . str_replace("\r", "", str_replace("\n", "<br>", $replyHtmlBody)) . "</p></body></html>";
+                    }
+                    unset($replyHtmlBody);
+                }
+                else {
+                    $body = "$plainBody\r\n\r\n";
+                    $this->getBodyRecursive($replyMessage, "plain", $body);
+                }
+
+                // if the message was base64 encoded, reencode it
+                if ($body_base64) {
+                    $body = chunk_split(base64_encode($body));
+                }
             }
-            
-            ZLog::Write(LOGLEVEL_DEBUG, "Body after reply: ". $body);
 
             unset($replyMessage);
             unset($replyMime);
             unset($replyMail);
         }
 
-        // encode the body to base64 if it was sent originally in base64 by the pda
-        // contrib - chunk base64 encoded body
-        if ($body_base64 && !$sm->forwardflag) {
-            $body = chunk_split(base64_encode($body));
-        }
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body after reply: %s", $body));
 
         // forward
-        if ((!isset($sm->replacemime) || $sm->replacemime == false) && $sm->forwardflag && $parent) {
-            $this->imap_reopenFolder($parent);
-            // receive entire mail (header + body)
-            $forwardMail = @imap_fetchheader($this->mbox, $forward, FT_UID) . @imap_body($this->mbox, $forward, FT_PEEK | FT_UID);
+        if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime == false)) {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message");
+
+            $forwardMail = false;
+            if ($parent) {
+                $this->imap_reopenFolder($parent);
+                // original mail
+                $forwardMail = @imap_fetchheader($this->mbox, $forward, FT_UID) . @imap_body($this->mbox, $forward, FT_PEEK | FT_UID);
+            }
 
             if (!$forwardMail) {
                 throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not open message id '%s' in folder id '%s' to be forwarded: %s", $forward, $parent, imap_last_error()), SYNC_COMMONSTATUS_ITEMNOTFOUND);
             }
 
             if (!defined('IMAP_INLINE_FORWARD') || IMAP_INLINE_FORWARD === false) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as attached file - eml");
+
                 // contrib - chunk base64 encoded body
                 if ($body_base64) {
                     $body = chunk_split(base64_encode($body));
@@ -385,50 +419,29 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $headers .= "\n" . $aheader;
             }
             else {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as inlined text");
                 $forwardMime = new Mail_mimeDecode($forwardMail);
                 $forwardMessage = $forwardMime->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
 
-                if (!$use_orgbody) {
-                    $nbody = $body;
-                }
-                else {
-                    $nbody = $repl_body;
-                }
-
-                $nbody .= "\r\n\r\n";
-                $nbody .= "-----Original Message-----\r\n";
+                $body .= "\r\n\r\n";
+                $body .= "-----Original Message-----\r\n";
                 if(isset($forwardMessage->headers['from']))
-                    $nbody .= "From: " . $forwardMessage->headers['from'] . "\r\n";
+                    $body .= "From: " . $forwardMessage->headers['from'] . "\r\n";
                 if(isset($forwardMessage->headers['to']) && strlen($forwardMessage->headers['to']) > 0)
-                    $nbody .= "To: " . $forwardMessage->headers['to'] . "\r\n";
+                    $body .= "To: " . $forwardMessage->headers['to'] . "\r\n";
                 if(isset($forwardMessage->headers['cc']) && strlen($forwardMessage->headers['cc']) > 0)
-                    $nbody .= "Cc: " . $forwardMessage->headers['cc'] . "\r\n";
+                    $body .= "Cc: " . $forwardMessage->headers['cc'] . "\r\n";
                 if(isset($forwardMessage->headers['date']))
-                    $nbody .= "Sent: " . $forwardMessage->headers['date'] . "\r\n";
+                    $body .= "Sent: " . $forwardMessage->headers['date'] . "\r\n";
                 if(isset($forwardMessage->headers['subject']))
-                    $nbody .= "Subject: " . $forwardMessage->headers['subject'] . "\r\n";
-                $nbody .= "\r\n";
-                $nbody .= $this->getBody($forwardMessage);
+                    $body .= "Subject: " . $forwardMessage->headers['subject'] . "\r\n";
+                $body .= "\r\n";
+                $body .= $this->getBody($forwardMessage);
 
                 if ($body_base64) {
                     // contrib - chunk base64 encoded body
-                    $nbody = chunk_split(base64_encode($nbody));
-                    if ($use_orgbody)
-                    // contrib - chunk base64 encoded body
-                        $repl_body = chunk_split(base64_encode($repl_body));
+                    $body = chunk_split(base64_encode($body));
                 }
-
-                if ($use_orgbody) {
-                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): -------------------");
-                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): old:\n'$repl_body'\nnew:\n'$nbody'\nbody:\n'$body'");
-                    //$body is quoted-printable encoded while $repl_body and $nbody are plain text,
-                    //so we need to decode $body in order replace to take place
-                    $body = str_replace($repl_body, $nbody, quoted_printable_decode($body));
-                }
-                else {
-                    $body = $nbody;
-                }
-
 
                 if(isset($forwardMessage->parts)) {
                     $attached = false;
@@ -461,7 +474,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                 continue;
                             }
                             //
-                            if ($use_orgbody || $attached) {
+                            if ($attached) {
                                 $body .= $this->enc_attach_file($att_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
                             }
                             // first attachment
@@ -487,7 +500,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                 "\nContent-Type: {$forwardMessage->headers['content-type']}\n\n".
                                 @imap_body($this->mbox, $forward, FT_PEEK | FT_UID)."\n\n";
                     }
-                    $body .= "--$att_boundary--\n\n";
+                    $body .= "--$att_boundary\n\n";
                 }
 
                 unset($forwardMessage);

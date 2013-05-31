@@ -347,11 +347,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
                 // create new mime
-                $body = "\n--$att_boundary".
+                $body = "\n--$org_boundary".
                         "\nContent-Type: text/plain; charset=utf-8".
                         "\nContent-Transfer-Encoding: base64\n\n".
                         chunk_split(base64_encode($plainBody)).
-                        "\n\n--$att_boundary".
+                        "\n\n--$org_boundary".
                         "\nContent-Type: text/html; charset=utf-8".
                         "\nContent-Transfer-Encoding: base64\n\n".
                         chunk_split(base64_encode($htmlBody)).

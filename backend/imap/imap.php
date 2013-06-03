@@ -356,6 +356,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         "\nContent-Transfer-Encoding: base64\n\n".
                         chunk_split(base64_encode($htmlBody)).
                         "\n\n";
+
+                //It could have attachments
+                foreach ($message->parts as $part) {
+                    if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
+                        $attname = $this->getAttachmentName($part);
+                        
+                        $body .= $this->enc_attach_file($org_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
+                    }
+                }
             }
             else {
                 if ($hasHtmlBody) {
@@ -461,13 +470,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     foreach($forwardMessage->parts as $part) {
                         if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
 
-                            if(isset($part->d_parameters['filename']))
-                                $attname = $part->d_parameters['filename'];
-                            else if(isset($part->ctype_parameters['name']))
-                                $attname = $part->ctype_parameters['name'];
-                            else if(isset($part->headers['content-description']))
-                                $attname = $part->headers['content-description'];
-                            else $attname = "unknown attachment";
+                            $attname = $this->getAttachmentName($part);
 
                             // ignore html content
                             if ($part->ctype_primary == "text" && $part->ctype_secondary == "html") {
@@ -610,6 +613,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
         }
+
+        unset($message);
 
         return $send;
     }
@@ -2256,6 +2261,23 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         
         return $v;
+    }
+
+    /**
+     * Returns the name of the attachment
+     *
+     * @access private
+     * @return string
+     */
+    private function getAttachmentName($part) {
+        if (isset($part->d_parameters['filename']))
+            return $part->d_parameters['filename'];
+        else if (isset($part->ctype_parameters['name']))
+            return $part->ctype_parameters['name'];
+        else if (isset($part->headers['content-description']))
+            return $part->headers['content-description'];
+        else 
+            return "unknown attachment";
     }
 
 

@@ -408,7 +408,7 @@ EOFCONTENTSEARCH;
 
     private function store_state($data, $token)
     {
-        $id = md5($this->url . ':' . $this->username . ':' . $this->password);
+        $id = md5($this->url . ':' . $this->username . ':' . $this->password . ':' . $this->folder);
         $d = serialize($data);
         $file = STATE_DIR.'/cachesync/'.$id.'.php';
         if (!is_dir('cachesync')) mkdir('cachesync');
@@ -418,7 +418,7 @@ EOFCONTENTSEARCH;
 
     private function get_state()
     {
-        $id = md5($this->url . ':' . $this->username . ':' . $this->password);
+        $id = md5($this->url . ':' . $this->username . ':' . $this->password . ':' . $this->folder);
         $file = STATE_DIR.'/cachesync/'.$id.'.php';
         if (!is_file($file)) return array(null, '');
         require $file;

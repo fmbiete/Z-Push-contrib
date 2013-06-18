@@ -300,7 +300,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // set "Return-Path" header if not set on the device
-        if(IMAP_DEFAULTFROM && !$returnPathSet){
+        if(IMAP_DEFAULTFROM && !$returnPathSet) {
             $v = $this->getDefaultFromValue();
             if ($headers) {
                 $headers .= "\n";
@@ -323,8 +323,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body before reply: %s", $body));
         }        
 
-        // reply
-        if ((!isset($sm->replacemime) || $sm->replacemime == false) && $sm->replyflag) {
+        // SmartReply without original message modified
+        if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime == false)) {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Replying message");
             $replyMail = false;
             if ($parent) {
@@ -357,16 +357,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Multipart reply message");
                 
                 // create new mime
-                $body = $this->getMultipartBody($org_boundary, $plainBody, $htmlBody);
+                $body = $this->getMultipartBody($org_boundary, 
+                            $body_base64 ? chunk_split(base64_encode($plainBody)) : $plainBody, 
+                            $body_base64 ? chunk_split(base64_encode($htmlBody)) : $htmlBody);
 
-                //It could have attachments
-                foreach ($message->parts as $part) {
-                    if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
-                        $attname = $this->getAttachmentName($part);
-                        
-                        $body .= $this->enc_attach_file($org_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
-                    }
-                }
+                //FIXME: the original message was multipart and could have inline parts
             }
             else {
                 if ($hasHtmlBody) {
@@ -382,6 +377,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
 
+            // The reply could have attachments
+            foreach ($message->parts as $part) {
+                if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
+                    $attname = $this->getAttachmentName($part);
+                        
+                    $body .= $this->enc_attach_file($org_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
+                }
+            }
+
             unset($replyHtmlBody);
             unset($replyPlainBody);
             unset($replyMessage);
@@ -391,7 +395,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body after reply: %s", $body));
 
-        // forward
+        // SmartForward, with the original message unmodified
         if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime == false)) {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message");
 
@@ -441,15 +445,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $forwardBody .= $this->getBody($forwardMessage);
 
 
+                // The message sent it's multipart, we create a new multipart body with the forwarded body
                 if ($is_multipart) {
+                    $body = $this->getMultipartBody($org_boundary, 
+                                $body_base64 ? chunk_split(base64_encode($plainBody . $forwardBody)) : $plainBody . $forwardBody, 
+                                $body_base64 ? chunk_split(base64_encode($htmlBody . $forwardBody)) : $htmlBody . $forwardBody);
                 }
                 else {
                     $body .= $forwardBody;
-                }
-
-                if ($body_base64) {
-                    // contrib - chunk base64 encoded body
-                    $body = chunk_split(base64_encode($body));
+                    if ($body_base64) {
+                        $body = chunk_split(base64_encode($body));
+                    }
                 }
 
                 if(isset($forwardMessage->parts)) {
@@ -480,7 +486,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             if ($attached) {
                                 $body .= $this->enc_attach_file($att_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
                             }
-                            // first attachment
+                            // first attachment, we create a part with the body text
                             else {
                                 $encmail = $body;
                                 $attached = true;

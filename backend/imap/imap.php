@@ -152,6 +152,189 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         $this->SaveStorages();
     }
+    
+    public function NewSendMail($sm) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): RFC822: %d bytes  forward-id: '%s' reply-id: '%s' parent-id: '%s' SaveInSent: '%s' ReplaceMIME: '%s'",
+                                            strlen($sm->mime), Utils::PrintAsString($sm->forwardflag), Utils::PrintAsString($sm->replyflag),
+                                            Utils::PrintAsString((isset($sm->source->folderid) ? $sm->source->folderid : false)),
+                                            Utils::PrintAsString(($sm->saveinsent)), Utils::PrintAsString(isset($sm->replacemime))));
+
+        // by splitting the message in several lines we can easily grep later
+        foreach(preg_split("/((\r)?\n)/", $sm->mime) as $rfc822line)
+            ZLog::Write(LOGLEVEL_WBXML, "RFC822: ". $rfc822line);
+
+        $sourceMessage = false;
+        // If we have a reference to a source message and we are not replacing mime (since we wouldn't use it)
+        if (isset($sm->source->folderid) && isset($sm->source->itemid) && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We have a source message and we try to fetch it"));
+            $parent = $this->getImapIdFromFolderId($sm->source->folderid);
+            if ($parent === false) {
+                throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not get imapid from source folderid '%'", $sm->source->folderid), SYNC_COMMONSTATUS_ITEMNOTFOUND);
+            }
+            else {
+                $this->imap_reopenFolder($parent);
+                $sourceMail = @imap_fetchheader($this->mbox, $sm->source->itemid, FT_UID) . @imap_body($this->mbox, $sm->source->itemid, FT_PEEK | FT_UID);
+                $mobj = new Mail_mimeDecode($sourceMail);
+                $sourceMessage = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+                unset($mobj);
+                unset($sourceMail);
+            }
+        }
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the new message"));
+        $mobj = new Mail_mimeDecode($sm->mime);
+        $message = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+        unset($mobj);        
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
+        $Mail_RFC822 = new Mail_RFC822();
+        $fromaddr = $toaddr "";
+        // We get the vanilla from address
+        if (isset($message->headers["from"])) {
+            $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
+        }
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No From address defined, we try for a default one"));
+            $fromaddr = $this->getDefaultFromValue();
+        }
+        if (!isset($message->headers["return-path"])) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No Return-Path address defined, we use From"));
+            $message->headers["return-path"] = $fromaddr;
+        }
+        if (isset($message->headers["to"])) {
+            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
+        }
+        else {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): No To address defined, we should try to use CC or BCC as last instance");
+        }
+        unset($Mail_RFC822);
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
+        $finalEmail = $finalBody = $finalHeaders = false;
+        //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
+        //http://pear.php.net/manual/en/package.mail.mail.send.php
+        //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
+        if (isset($message->headers["content-type"]) && preg_match("/multipart/i", $message->headers["content-type"])) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The message sent is multipart"));
+            
+            //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
+            $finalEmail = new Mail_mimePart('', array('content_type' => $message->headers["content-type"]));
+            
+            if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+                //TODO: get the original body and append the reply body
+
+                
+                // We add extra parts from the replying message
+                $this->addExtraSubParts($finalEmail, $message->parts);
+                // We add extra parts from the replied message
+                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+            }
+            else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            //TODO: forward: add forwarded message
+            
+                // We add extra parts from the forwarding message
+                $this->addExtraSubParts($finalEmail, $message->parts);
+                // We add extra parts from the forwarded message
+                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new multipart message or we are replacing mime"));
+                foreach ($message->parts as $part) {
+                    $this->addSubPart($finalEmail, $part);
+                }
+            }
+        }
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The message sent is not multipart"));
+            if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+                
+            //TODO: reply: if multipart create a new mime multipart
+            //TODO: reply: if not multipart add replied body            
+            }
+            else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            //TODO: forward: if multipart create a new mime multipart
+            //TODO: forward: if not multipart add forwarded body
+            
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
+                $finalBody = $message->body;
+            }           
+        }
+        
+        if ($finalEmail !== false) {
+            $finalEmail = $finaEmail->encode();
+            $finalEmail['headers']['Mime-Version'] = '1.0';
+            $finalBody = $finalEmail['body'];
+            $finalHeaders = $finalEmail['headers'];
+            unset($finalEmail);
+        }
+        else {
+            $finalHeaders = $message->headers;
+        }
+        
+        //clear $message
+        unset($message);
+        unset($sourceMessage);
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Final mail to send:"));
+        foreach ($finalHeaders as $k => $v)
+            ZLog::Write(LOGLEVEL_WBXML, sprintf("%s: %s", $k, $v));
+        foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline)
+            ZLog::Write(LOGLEVEL_WBXML, sprintf("Body: %s", $bodyline));
+        
+        //TODO: select send method
+        $sendingMethod = 'mail';
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
+        $mail =& Mail::factory($sendingMethod);
+        $mail->send($fromaddr, $finalHeaders, $finalBody);
+
+        
+        if ($sm->saveinsent) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sents folder"));
+            //TODO: save sent message
+        }
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
+        
+    }
+    
+    private function addExtraSubParts($email, $parts) {
+        foreach ($parts as $part) {
+            if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
+                $this->addSubPart($email, $part);
+            }
+        }
+    }
+    
+    private function addSubPart($email, $part) {
+        //http://tools.ietf.org/html/rfc4021
+        $params = new Array();
+        if (isset($part->ctype_primary)) {
+            $params['content_type'] = $part->ctype_primary;
+        }
+        if (isset($part->ctype_secondary)) {
+            $params['content_type'] .= '/' . $part->ctype_secondary;
+        }
+        if (isset($part->ctype_parameters)) { 
+            foreach ($part->ctype_parameters as $k => $v) {
+                $params['content_type'] .= '; ' . $k . '=' . $v;
+            }
+        }
+        if (isset($part->disposition)) {
+            $params['disposition'] = $part->disposition;
+        }
+        if (isset($part->d_parameters)) {
+            foreach ($part->d_parameters as $k => $v) {
+                $params['d'.$k] = $v;
+            }
+        }
+        foreach ($part->headers as $k => $v) {
+            $params[$k] = $v;
+        }
+        $email->addSubPart($part->body, $params);
+        unset($params);    
+    }
 
     /**
      * Sends an e-mail

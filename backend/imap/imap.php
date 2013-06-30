@@ -221,8 +221,40 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $finalEmail = new Mail_mimePart('', array('content_type' => $message->headers["content-type"]));
             
             if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-                //TODO: get the original body and append the reply body
-
+                $htmlBody = $plainBody = '';
+                $this->getBodyRecursive($message, "html", $htmlBody);
+                $this->getBodyRecursive($message, "plain", $plainBody);
+                $htmlSource = $plainSource = '';
+                $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
+                $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
+                
+                if (strlen($htmlBody) > 0) {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The reply message has HTML body"));
+                    if (strlen($htmlSource) > 0) {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has HTML body"));
+                        $finalEmail->addSubPart($htmlBody . '<br/><br/>' . $htmlSource, array('content_type' => 'text/html'));
+                    }
+                    else {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has not HTML body, we use PLAIN body"));
+                        $finalEmail->addSubPart($htmlBody . '<br/><br/>' . $plainSource, array('content_type' => 'text/html'));
+                    }
+                }
+                if (strlen($plainBody) > 0) {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The reply message has PLAIN body"));
+                    if (strlen($htmlSource) > 0) {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has HTML body, we cast PLAIN to HTML"));
+                        $finalEmail->addSubPart('<html><body>' . $plainBody . '<br/><br/>' . $htmlSource, array('content_type' => 'text/html'));
+                    }
+                    if (strlen($plainSource) > 0) {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has PLAIN body"));
+                        $finalEmail->addSubPart($plainBody . '\r\n\r\n' . $plainSource, array('content_type' => 'text/plain'));
+                    }                    
+                }
+                
+                unset($htmlBody);
+                unset($htmlSource);
+                unset($plainBody);
+                unset($plainSource);
                 
                 // We add extra parts from the replying message
                 $this->addExtraSubParts($finalEmail, $message->parts);
@@ -247,11 +279,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The message sent is not multipart"));
             if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+                if (isset($sourceMessage->headers["content-type"]) && preg_match("/multipart/i", $sourceMessage->headers["content-type"])) {
+                }
+                else {
+                }
                 
             //TODO: reply: if multipart create a new mime multipart
             //TODO: reply: if not multipart add replied body            
             }
             else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+                //TODO: forward as eml
+                if (isset($sourceMessage->headers["content-type"]) && preg_match("/multipart/i", $sourceMessage->headers["content-type"])) {
+                }
+                else {
+                }            
             //TODO: forward: if multipart create a new mime multipart
             //TODO: forward: if not multipart add forwarded body
             
@@ -326,7 +367,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         if (isset($part->d_parameters)) {
             foreach ($part->d_parameters as $k => $v) {
-                $params['d'.$k] = $v;
+                $params[$k] = $v;
             }
         }
         foreach ($part->headers as $k => $v) {

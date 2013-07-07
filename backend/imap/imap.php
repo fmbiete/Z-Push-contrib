@@ -210,111 +210,42 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($Mail_RFC822);
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
-        $finalEmail = $finalBody = $finalHeaders = false;
         //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
         //http://pear.php.net/manual/en/package.mail.mail.send.php
         //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
-        if (isset($message->headers["content-type"]) && preg_match("/multipart/i", $message->headers["content-type"])) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The message sent is multipart"));
+        //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
+        
+        // I don't mind if the new message is multipart or not, I always will create a multipart. It's simpler
+        $finalEmail = new Mail_mimePart('', array('content_type' => $message->headers["content-type"]));
             
-            //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
-            $finalEmail = new Mail_mimePart('', array('content_type' => $message->headers["content-type"]));
+        if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            $this->addTextParts($finalEmail, $message, $sourceMessage, true);
+                
+            // We add extra parts from the replying message
+            $this->addExtraSubParts($finalEmail, $message->parts);
+            // A replied message doesn't include the original attachments
+        }
+        else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            $this->addTextParts($finalEmail, $message, $sourceMessage, false);
             
-            if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-                $htmlBody = $plainBody = '';
-                $this->getBodyRecursive($message, "html", $htmlBody);
-                $this->getBodyRecursive($message, "plain", $plainBody);
-                $htmlSource = $plainSource = '';
-                $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
-                $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
-                
-                if (strlen($htmlBody) > 0) {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The reply message has HTML body"));
-                    if (strlen($htmlSource) > 0) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has HTML body"));
-                        $finalEmail->addSubPart($htmlBody . '<br/><br/>' . $htmlSource, array('content_type' => 'text/html'));
-                    }
-                    else {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has not HTML body, we use PLAIN body"));
-                        $finalEmail->addSubPart($htmlBody . '<br/><br/>' . $plainSource, array('content_type' => 'text/html'));
-                    }
-                }
-                if (strlen($plainBody) > 0) {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The reply message has PLAIN body"));
-                    if (strlen($htmlSource) > 0) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has HTML body, we cast PLAIN to HTML"));
-                        $finalEmail->addSubPart('<html><body>' . $plainBody . '<br/><br/>' . $htmlSource, array('content_type' => 'text/html'));
-                    }
-                    if (strlen($plainSource) > 0) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The replied message has PLAIN body"));
-                        $finalEmail->addSubPart($plainBody . '\r\n\r\n' . $plainSource, array('content_type' => 'text/plain'));
-                    }                    
-                }
-                
-                unset($htmlBody);
-                unset($htmlSource);
-                unset($plainBody);
-                unset($plainSource);
-                
-                // We add extra parts from the replying message
-                $this->addExtraSubParts($finalEmail, $message->parts);
-                // We add extra parts from the replied message
-                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
-            }
-            else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-            //TODO: forward: add forwarded message
-            
-                // We add extra parts from the forwarding message
-                $this->addExtraSubParts($finalEmail, $message->parts);
-                // We add extra parts from the forwarded message
-                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
-            }
-            else {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new multipart message or we are replacing mime"));
-                foreach ($message->parts as $part) {
-                    $this->addSubPart($finalEmail, $part);
-                }
-            }
+            // We add extra parts from the forwarding message
+            $this->addExtraSubParts($finalEmail, $message->parts);
+            // We add extra parts from the forwarded message
+            $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
         }
         else {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The message sent is not multipart"));
-            if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-                if (isset($sourceMessage->headers["content-type"]) && preg_match("/multipart/i", $sourceMessage->headers["content-type"])) {
-                }
-                else {
-                }
-                
-            //TODO: reply: if multipart create a new mime multipart
-            //TODO: reply: if not multipart add replied body            
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
+            foreach ($message->parts as $part) {
+                $this->addSubPart($finalEmail, $part);
             }
-            else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-                //TODO: forward as eml
-                if (isset($sourceMessage->headers["content-type"]) && preg_match("/multipart/i", $sourceMessage->headers["content-type"])) {
-                }
-                else {
-                }            
-            //TODO: forward: if multipart create a new mime multipart
-            //TODO: forward: if not multipart add forwarded body
-            
-            }
-            else {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
-                $finalBody = $message->body;
-            }           
         }
         
-        if ($finalEmail !== false) {
-            $finalEmail = $finaEmail->encode();
-            $finalEmail['headers']['Mime-Version'] = '1.0';
-            $finalBody = $finalEmail['body'];
-            $finalHeaders = $finalEmail['headers'];
-            unset($finalEmail);
-        }
-        else {
-            $finalHeaders = $message->headers;
-        }
+        $finalEmail = $finaEmail->encode();
+        $finalEmail['headers']['Mime-Version'] = '1.0';
+        $finalBody = $finalEmail['body'];
+        $finalHeaders = $finalEmail['headers'];
+        unset($finalEmail);
         
-        //clear $message
         unset($message);
         unset($sourceMessage);
         
@@ -340,7 +271,84 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
     }
     
-    private function addExtraSubParts($email, $parts) {
+    private function addTextParts(&$email, &$message, &$sourceMessage, $isReply = true) {
+        $htmlBody = $plainBody = '';
+        $this->getBodyRecursive($message, "html", $htmlBody);
+        $this->getBodyRecursive($message, "plain", $plainBody);
+        $htmlSource = $plainSource = '';
+        $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
+        $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
+        
+        $dateSource = isset($message->headers["sent"]) ? $message->headers["sent"] : "";
+        $fromSource = isset($message->headers["from"]) ? $message->headers["from"] : "";
+        $toSource = isset($message->headers["to"]) ? $message->headers["to"] : "";
+        $ccSource = isset($message->headers["cc"]) ? $message->headers["cc"] : "";
+        $subjectSource = isset($message->headers["subject"]) ? $message->headers["subject"] : "";
+                
+        $separator = '';
+        if ($isReply) {
+            $separator = "On $dateSource, $fromSource, wrote:\r\n>\r\n";
+            $separatorHtml = "<div>On $dateSource, $fromSource, wrote:<br/></div><blockquote>"
+            $separatorHtmlEnd = "</blockquote></body></html>";
+        }
+        else {
+            $separator = "-------- Original Message --------\r\n";
+            $separatorHtml = "<div><br/><br/>-------- Original Message --------<table><tbody>";
+            if (strlen($fromSource) > 0) {
+                $separator .= "From: $fromSource\r\n";
+                $separatorHtml .= "<tr><th>From:</th><td>$fromSource</td></tr>";
+            }
+            if (strlen($toSource) > 0) {
+                $separator .= "To: $toSource\r\n";
+                $separatorHtml .= "<tr><th>To:</th><td>$toSource</td></tr>";
+            }
+            if (strlen($ccSource) > 0) {
+                $separator .= "Cc: $ccSource\r\n";
+                $separatorHtml .= "<tr><th>Cc:</th><td>$ccSource</td></tr>";
+            }
+            if (strlen($dateSource) > 0) {
+                $separator .= "Sent: $dateSource\r\n";
+                $separatorHtml .= "<tr><th>Sent:</th><td>$dateSource</td></tr>";
+            }
+            if (strlen($subjectSource) > 0) {
+                $separator .= "Subject: $subjectSource\r\n";
+                $separatorHtml .= "<tr><th>Subject:</th><td>$subjectSource</td></tr>";
+            }
+            $separator .= "\r\n\r\n";
+            $separatorHtml .= "</tbody></table><br/><br/>";
+            $separatorHtmlEnd = "</div>";
+        }
+
+        if (strlen($htmlBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has HTML body"));
+            if (strlen($htmlSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body"));
+                $email->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html'));
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had not HTML body, we use original PLAIN body to create HTML"));
+                $email->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html'));
+            }
+        }
+        if (strlen($plainBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has PLAIN body"));
+            if (strlen($htmlSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body, we cast new PLAIN to HTML"));
+                $email->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html'));
+            }
+            if (strlen($plainSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had PLAIN body"));
+                $email->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", $plainSource), array('content_type' => 'text/plain'));
+            }
+        }
+        
+        unset($htmlBody);
+        unset($htmlSource);
+        unset($plainBody);
+        unset($plainSource);        
+    }
+        
+    private function addExtraSubParts(&$email, $parts) {
         foreach ($parts as $part) {
             if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
                 $this->addSubPart($email, $part);
@@ -348,7 +356,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
     }
     
-    private function addSubPart($email, $part) {
+    private function addSubPart(&$email, $part) {
         //http://tools.ietf.org/html/rfc4021
         $params = new Array();
         if (isset($part->ctype_primary)) {

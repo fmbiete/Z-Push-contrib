@@ -226,12 +226,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // A replied message doesn't include the original attachments
         }
         else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
-            $this->addTextParts($finalEmail, $message, $sourceMessage, false);
+            if (!defined('IMAP_INLINE_FORWARD') || IMAP_INLINE_FORWARD === false) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as attached file - eml");
+                //TODO:
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding inlined message");
+                $this->addTextParts($finalEmail, $message, $sourceMessage, false);
             
-            // We add extra parts from the forwarding message
-            $this->addExtraSubParts($finalEmail, $message->parts);
-            // We add extra parts from the forwarded message
-            $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+                // We add extra parts from the forwarding message
+                $this->addExtraSubParts($finalEmail, $message->parts);
+                // We add extra parts from the forwarded message
+                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+            }
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
@@ -263,9 +270,36 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         
         if ($sm->saveinsent) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sents folder"));
-            //TODO: save sent message
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sent Items folder"));
+            $saved = false;
+            if ($this->sentID) {
+                $saved = $this->addSentMessage($this->sentID, $finalHeaders, $finalBody);
+            }
+            else if (IMAP_SENTFOLDER) {
+                $saved = $this->addSentMessage(IMAP_SENTFOLDER, $finalHeaders, $finalBody);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s': %s", IMAP_SENTFOLDER, Utils::PrintAsString($asf)));
+            }
+            // No Sent folder set, try defaults
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): No Sent mailbox set");
+                if(($saved = $this->addSentMessage("INBOX.Sent", $finalHeaders, $finalBody))) {
+                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'INBOX.Sent'");
+                }
+                else if (($saved = $this->addSentMessage("Sent", $finalHeaders, $finalBody))) {
+                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'Sent'");
+                }
+                else if (($saved = $this->addSentMessage("Sent Items", $finalHeaders, $finalBody))) {
+                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail():IMAP-SendMail: Outgoing mail saved in 'Sent Items'");
+                }
+            }
+
+            if (!$saved) {
+                ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->SendMail(): The email could not be saved to Sent Items folder. Check your configuration.");
+            }
         }
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
+        }            
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
         

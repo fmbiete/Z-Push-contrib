@@ -153,7 +153,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->SaveStorages();
     }
     
-    public function NewSendMail($sm) {
+    /**
+     * Sends an e-mail
+     * This messages needs to be saved into the 'sent items' folder
+     *
+     * @param SyncSendMail  $sm     SyncSendMail object
+     *
+     * @access public
+     * @return boolean
+     * @throws StatusException
+     */    
+    public function SendMail($sm) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): RFC822: %d bytes  forward-id: '%s' reply-id: '%s' parent-id: '%s' SaveInSent: '%s' ReplaceMIME: '%s'",
                                             strlen($sm->mime), Utils::PrintAsString($sm->forwardflag), Utils::PrintAsString($sm->replyflag),
                                             Utils::PrintAsString((isset($sm->source->folderid) ? $sm->source->folderid : false)),
@@ -163,7 +173,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         foreach(preg_split("/((\r)?\n)/", $sm->mime) as $rfc822line)
             ZLog::Write(LOGLEVEL_WBXML, "RFC822: ". $rfc822line);
 
-        $sourceMessage = false;
+        $sourceMessage = $sourceMail = false;
         // If we have a reference to a source message and we are not replacing mime (since we wouldn't use it)
         if (isset($sm->source->folderid) && isset($sm->source->itemid) && (!isset($sm->replacemime) || $sm->replacemime === false)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We have a source message and we try to fetch it"));
@@ -177,7 +187,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $mobj = new Mail_mimeDecode($sourceMail);
                 $sourceMessage = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
                 unset($mobj);
-                unset($sourceMail);
+                //We will need $sourceMail if the message is forwarded and not inlined
             }
         }
         
@@ -211,12 +221,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
         //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
-        //http://pear.php.net/manual/en/package.mail.mail.send.php
         //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
         //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
         
         // I don't mind if the new message is multipart or not, I always will create a multipart. It's simpler
-        $finalEmail = new Mail_mimePart('', array('content_type' => $message->headers["content-type"]));
+        $finalEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
             
         if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
             $this->addTextParts($finalEmail, $message, $sourceMessage, true);
@@ -228,7 +237,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
             if (!defined('IMAP_INLINE_FORWARD') || IMAP_INLINE_FORWARD === false) {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as attached file - eml");
-                //TODO:
+                $finalEmail->addSubPart($sourceMail, array('content_type' => 'message/rfc822', 'encoding' => 'base64', 'disposition' => 'attachment', 'dfilename' => 'forwarded_message.eml'));
             }
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding inlined message");
@@ -242,19 +251,28 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
-            foreach ($message->parts as $part) {
-                $this->addSubPart($finalEmail, $part);
+            if (strcasecmp($message->ctype_primary, "text") == 0 && strcasecmp($message->ctype_secondary, $subtype) == 0 && isset($message->body)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was not multipart"));
+                $finaEmail->addSubPart($message->body, array('content_type' => 'text/plain', 'encoding' => 'utf-8'));
+            }
+            if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was multipart"));
+                foreach ($message->parts as $part) {
+                    $this->addSubPart($finalEmail, $part);
+                }
             }
         }
+
+        unset($sourceMail);
+        unset($message);
+        unset($sourceMessage);
         
+        // We encode the final message
         $finalEmail = $finaEmail->encode();
         $finalEmail['headers']['Mime-Version'] = '1.0';
         $finalBody = $finalEmail['body'];
         $finalHeaders = $finalEmail['headers'];
         unset($finalEmail);
-        
-        unset($message);
-        unset($sourceMessage);
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Final mail to send:"));
         foreach ($finalHeaders as $k => $v)
@@ -263,6 +281,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_WBXML, sprintf("Body: %s", $bodyline));
         
         //TODO: select send method
+        //http://pear.php.net/manual/en/package.mail.mail.factory.php
+        //TODO: si es mail params = -fdireccionfrom@from.com
         $sendingMethod = 'mail';
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
         $mail =& Mail::factory($sendingMethod);
@@ -305,6 +325,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
     }
     
+    /**
+     * Add text parts to a mimepart object, with reply or forward tags
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param Mail_mimeDecode $message reference to the message
+     * @param Mail_mimeDecode $sourceMessage reference to the original message
+     * @param boolean $isReply true if it's a reply, false if it's a forward
+     *
+     * @access private
+     * @return void
+     */
     private function addTextParts(&$email, &$message, &$sourceMessage, $isReply = true) {
         $htmlBody = $plainBody = '';
         $this->getBodyRecursive($message, "html", $htmlBody);
@@ -381,42 +412,65 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($plainBody);
         unset($plainSource);        
     }
-        
+
+    /**
+     * Add extra parts (not text; inlined or attached parts) to a mimepart object.
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param array $parts array of parts
+     *
+     * @access private
+     * @return void
+     */
     private function addExtraSubParts(&$email, $parts) {
-        foreach ($parts as $part) {
-            if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
-                $this->addSubPart($email, $part);
+        if (isset($parts) {
+            foreach ($parts as $part) {
+                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
+                    $this->addSubPart($email, $part);
+                }
             }
         }
     }
     
+    /**
+     * Add a subpart to a mimepart object.
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param object $part message part
+     *
+     * @access private
+     * @return void
+     */
     private function addSubPart(&$email, $part) {
         //http://tools.ietf.org/html/rfc4021
         $params = new Array();
-        if (isset($part->ctype_primary)) {
-            $params['content_type'] = $part->ctype_primary;
-        }
-        if (isset($part->ctype_secondary)) {
-            $params['content_type'] .= '/' . $part->ctype_secondary;
-        }
-        if (isset($part->ctype_parameters)) { 
-            foreach ($part->ctype_parameters as $k => $v) {
-                $params['content_type'] .= '; ' . $k . '=' . $v;
+        if (isset($part)) {
+            if (isset($part->ctype_primary)) {
+                $params['content_type'] = $part->ctype_primary;
             }
-        }
-        if (isset($part->disposition)) {
-            $params['disposition'] = $part->disposition;
-        }
-        if (isset($part->d_parameters)) {
-            foreach ($part->d_parameters as $k => $v) {
+            if (isset($part->ctype_secondary)) {
+                $params['content_type'] .= '/' . $part->ctype_secondary;
+            }
+            if (isset($part->ctype_parameters)) { 
+                foreach ($part->ctype_parameters as $k => $v) {
+                    $params['content_type'] .= '; ' . $k . '=' . $v;
+                }
+            }
+            if (isset($part->disposition)) {
+                $params['disposition'] = $part->disposition;
+            }
+            //FIXME: dfilename => filename
+            if (isset($part->d_parameters)) {
+                foreach ($part->d_parameters as $k => $v) {
+                    $params[$k] = $v;
+                }
+            }
+            foreach ($part->headers as $k => $v) {
                 $params[$k] = $v;
             }
+            $email->addSubPart($part->body, $params);
+            unset($params);
         }
-        foreach ($part->headers as $k => $v) {
-            $params[$k] = $v;
-        }
-        $email->addSubPart($part->body, $params);
-        unset($params);    
     }
 
     /**

@@ -47,8 +47,10 @@
 require_once("backend/imap/config.php");
 
 include_once('lib/default/diffbackend/diffbackend.php');
+include_once('include/Mail.php');
 include_once('include/mimeDecode.php');
-require_once('include/z_RFC822.php');
+include_once('include/mimePart.php');
+include_once('include/RFC822.php');
 
 
 class BackendIMAP extends BackendDiff implements ISearchProvider {

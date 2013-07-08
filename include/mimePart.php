@@ -53,11 +53,10 @@
  */
 
  
- /**
+/**
  * Z-Push changes
  *
  * removed PEAR dependency by implementing own raiseError()
- * implemented automated decoding of strings from mail charset
  *
  * Reference implementation used:
  * http://download.pear.php.net/package/Mail_Mime-1.8.7.tgz
@@ -1249,11 +1248,12 @@ class Mail_mimePart
     function _isError($data)
     {
         // PEAR::isError() is not PHP 5.4 compatible (see Bug #19473)
-        if (is_object($data) && is_a($data, 'PEAR_Error')) {
-            return true;
-        }
+        //if (is_object($data) && is_a($data, 'PEAR_Error')) {
+        //    return true;
+        //}
 
-        return false;
+        //return false;
+        return $data === false;
     }
 
     /**
@@ -1265,7 +1265,7 @@ class Mail_mimePart
      * @access private
      */
     function raiseError($message) {
-        ZLog::Write(LOGLEVEL_ERROR, "mimeDecode error: ". $message);
+        ZLog::Write(LOGLEVEL_ERROR, "mimePart error: ". $message);
         return false;
     }
 } // End of class

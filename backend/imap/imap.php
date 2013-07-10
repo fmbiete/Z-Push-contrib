@@ -166,6 +166,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @throws StatusException
      */    
     public function SendMail($sm) {
+        global $imap_smtp_params;
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): RFC822: %d bytes  forward-id: '%s' reply-id: '%s' parent-id: '%s' SaveInSent: '%s' ReplaceMIME: '%s'",
                                             strlen($sm->mime), Utils::PrintAsString($sm->forwardflag), Utils::PrintAsString($sm->replyflag),
                                             Utils::PrintAsString((isset($sm->source->folderid) ? $sm->source->folderid : false)),
@@ -200,28 +202,24 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
         $Mail_RFC822 = new Mail_RFC822();
-        $fromaddr = $toaddr "";
+        $fromaddr = $toaddr = "";
         // We get the vanilla from address
         if (isset($message->headers["from"])) {
             $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): From defined: %s", $fromaddr));
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No From address defined, we try for a default one"));
             $fromaddr = $this->getDefaultFromValue();
         }
+        unset($Mail_RFC822);
+        
+        // We set the return-path
         if (!isset($message->headers["return-path"])) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No Return-Path address defined, we use From"));
             $message->headers["return-path"] = $fromaddr;
         }
-        if (isset($message->headers["to"])) {
-            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
-        }
-        else {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): No To address defined, we should try to use CC or BCC as last instance");
-        }
-        unset($Mail_RFC822);
         
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
         //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
         //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
         //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
@@ -230,10 +228,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $finalEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
             
         if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Replying message"));
             $this->addTextParts($finalEmail, $message, $sourceMessage, true);
                 
-            // We add extra parts from the replying message
-            $this->addExtraSubParts($finalEmail, $message->parts);
+            if (isset($message->parts)) {
+                // We add extra parts from the replying message
+                $this->addExtraSubParts($finalEmail, $message->parts);
+            }
             // A replied message doesn't include the original attachments
         }
         else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
@@ -245,17 +246,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding inlined message");
                 $this->addTextParts($finalEmail, $message, $sourceMessage, false);
             
-                // We add extra parts from the forwarding message
-                $this->addExtraSubParts($finalEmail, $message->parts);
-                // We add extra parts from the forwarded message
-                $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+                if (isset($message->parts)) {
+                    // We add extra parts from the forwarding message
+                    $this->addExtraSubParts($finalEmail, $message->parts);
+                }
+                if (isset($sourceMessage->parts)) {
+                    // We add extra parts from the forwarded message
+                    $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
+                }
             }
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
-            if (strcasecmp($message->ctype_primary, "text") == 0 && strcasecmp($message->ctype_secondary, $subtype) == 0 && isset($message->body)) {
+            if (strcasecmp($message->ctype_primary, "text") == 0 && isset($message->body)) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was not multipart"));
-                $finaEmail->addSubPart($message->body, array('content_type' => 'text/plain', 'encoding' => 'utf-8'));
+                $finalEmail->addSubPart($message->body, array('content_type' => $message->ctype_primary.'/'.$message->ctype_secondary.'; charset=utf-8', 'encoding' => 'base64'));
             }
             if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was multipart"));
@@ -264,16 +269,25 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
         }
+        
+        // We encode the final message
+        $finalEmail = $finalEmail->encode();
+        $finalEmail['headers']['Mime-Version'] = '1.0';
+
+        // We copy all the headers, minus content_type
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Copying new headers"));
+        foreach ($message->headers as $k => $v) {
+            if (strcasecmp($k, 'content-type') != 0 && strcasecmp($k, 'content-transfer-encoding') != 0 && strcasecmp($k, 'mime-version') != 0) {
+                $finalEmail['headers'][ucwords($k)] = $v;
+            }
+        }
+        
+        $finalBody = $finalEmail['body'];
+        $finalHeaders = $finalEmail['headers'];
 
         unset($sourceMail);
         unset($message);
-        unset($sourceMessage);
-        
-        // We encode the final message
-        $finalEmail = $finaEmail->encode();
-        $finalEmail['headers']['Mime-Version'] = '1.0';
-        $finalBody = $finalEmail['body'];
-        $finalHeaders = $finalEmail['headers'];
+        unset($sourceMessage);        
         unset($finalEmail);
         
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Final mail to send:"));
@@ -297,32 +311,49 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
         $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
-        $mail->send($fromaddr, $finalHeaders, $finalBody);
+        $send = $mail->send($fromaddr, $finalHeaders, $finalBody);
 
+        if ($send !== true) {
+            throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
+        }
         
-        if ($sm->saveinsent) {
+        if (isset($sm->saveinsent)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sent Items folder"));
+            
+            $headers = "";
+            foreach ($finalHeaders as $k => $v) {
+                if (strlen($headers) > 0) {
+                    $headers .= "\n";
+                }
+                $headers .= "$k: $v";
+            }
+            
             $saved = false;
             if ($this->sentID) {
-                $saved = $this->addSentMessage($this->sentID, $finalHeaders, $finalBody);
+                $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
             }
             else if (IMAP_SENTFOLDER) {
-                $saved = $this->addSentMessage(IMAP_SENTFOLDER, $finalHeaders, $finalBody);
+                $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s': %s", IMAP_SENTFOLDER, Utils::PrintAsString($asf)));
             }
             // No Sent folder set, try defaults
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): No Sent mailbox set");
-                if(($saved = $this->addSentMessage("INBOX.Sent", $finalHeaders, $finalBody))) {
+                if($this->addSentMessage("INBOX.Sent", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'INBOX.Sent'");
+                    $saved = true;
                 }
-                else if (($saved = $this->addSentMessage("Sent", $finalHeaders, $finalBody))) {
+                else if ($this->addSentMessage("Sent", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'Sent'");
+                    $saved = true;
                 }
-                else if (($saved = $this->addSentMessage("Sent Items", $finalHeaders, $finalBody))) {
+                else if ($this->addSentMessage("Sent Items", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail():IMAP-SendMail: Outgoing mail saved in 'Sent Items'");
+                    $saved = true;
                 }
             }
+            
+            unset($headers);
 
             if (!$saved) {
                 ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->SendMail(): The email could not be saved to Sent Items folder. Check your configuration.");
@@ -330,10 +361,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
-        }            
+        }
         
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): "));
+        unset($finalHeaders);
+        unset($finalBody);
         
+        return $send;
     }
     
     /**
@@ -355,43 +388,51 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
         $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
         
-        $dateSource = isset($message->headers["sent"]) ? $this->cleanupDate($message->headers["sent"]) : "";
-        $fromSource = isset($message->headers["from"]) ? $message->headers["from"] : "";
-        $toSource = isset($message->headers["to"]) ? $message->headers["to"] : "";
-        $ccSource = isset($message->headers["cc"]) ? $message->headers["cc"] : "";
-        $subjectSource = isset($message->headers["subject"]) ? $message->headers["subject"] : "";
+        $dateSource = isset($sourceMessage->headers["sent"]) ? $this->cleanupDate($sourceMessage->headers["sent"]) : "";
+        $Mail_RFC822 = new Mail_RFC822();
+        $fromSource = isset($sourceMessage->headers["from"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["from"]) : "";
+        $fromSource = is_array($fromSource) ? $this->addresslistToString($fromSource) : $fromSource;
+        $toSource = isset($sourceMessage->headers["to"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["to"]) : "";
+        $toSource = is_array($toSource) ? $this->addresslistToString($toSource) : $toSource;
+        $ccSource = isset($sourceMessage->headers["cc"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["cc"]) : "";
+        $ccSource = is_array($ccSource) ? $this->addresslistToString($ccSource) : $ccSource;
+        unset($Mail_RFC822);
+        $subjectSource = isset($sourceMessage->headers["subject"]) ? $sourceMessage->headers["subject"] : "";
                 
         $separator = '';
         if ($isReply) {
-            $separator = "On $dateSource, $fromSource, wrote:\r\n>\r\n";
-            $separatorHtml = "<div>On $dateSource, $fromSource, wrote:<br/></div><blockquote>"
+            //$separator = "On $dateSource, $fromSource, wrote:\r\n>\r\n";
+            //$separatorHtml = "<div>On $dateSource, $fromSource, wrote:<br/></div><blockquote>";
+            $separator = "\r\n>\r\n";
+            $separatorHtml = "<blockquote>";
             $separatorHtmlEnd = "</blockquote></body></html>";
         }
         else {
             $separator = "-------- Original Message --------\r\n";
-            $separatorHtml = "<div><br/><br/>-------- Original Message --------<table><tbody>";
+            $separatorHtml = "<div>";
+            //$separatorHtml = "<div><br/><br/>-------- Original Message --------<table><tbody>";
             if (strlen($fromSource) > 0) {
                 $separator .= "From: $fromSource\r\n";
-                $separatorHtml .= "<tr><th>From:</th><td>$fromSource</td></tr>";
+                //$separatorHtml .= "<tr><th>From:</th><td>$fromSource</td></tr>";
             }
             if (strlen($toSource) > 0) {
                 $separator .= "To: $toSource\r\n";
-                $separatorHtml .= "<tr><th>To:</th><td>$toSource</td></tr>";
+                //$separatorHtml .= "<tr><th>To:</th><td>$toSource</td></tr>";
             }
             if (strlen($ccSource) > 0) {
                 $separator .= "Cc: $ccSource\r\n";
-                $separatorHtml .= "<tr><th>Cc:</th><td>$ccSource</td></tr>";
+                //$separatorHtml .= "<tr><th>Cc:</th><td>$ccSource</td></tr>";
             }
             if (strlen($dateSource) > 0) {
                 $separator .= "Sent: $dateSource\r\n";
-                $separatorHtml .= "<tr><th>Sent:</th><td>$dateSource</td></tr>";
+                //$separatorHtml .= "<tr><th>Sent:</th><td>$dateSource</td></tr>";
             }
             if (strlen($subjectSource) > 0) {
                 $separator .= "Subject: $subjectSource\r\n";
-                $separatorHtml .= "<tr><th>Subject:</th><td>$subjectSource</td></tr>";
+                //$separatorHtml .= "<tr><th>Subject:</th><td>$subjectSource</td></tr>";
             }
             $separator .= "\r\n\r\n";
-            $separatorHtml .= "</tbody></table><br/><br/>";
+            //$separatorHtml .= "</tbody></table><br/><br/>";
             $separatorHtmlEnd = "</div>";
         }
 
@@ -399,22 +440,22 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has HTML body"));
             if (strlen($htmlSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body"));
-                $email->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html'));
+                $email->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had not HTML body, we use original PLAIN body to create HTML"));
-                $email->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html'));
+                $email->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
         }
         if (strlen($plainBody) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has PLAIN body"));
             if (strlen($htmlSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body, we cast new PLAIN to HTML"));
-                $email->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html'));
+                $email->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
             if (strlen($plainSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had PLAIN body"));
-                $email->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", $plainSource), array('content_type' => 'text/plain'));
+                $email->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", $plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
             }
         }
         
@@ -422,6 +463,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($htmlSource);
         unset($plainBody);
         unset($plainSource);        
+    }
+    
+    private function addresslistToString($addr) {
+        $value = $addr;
+        if (is_array($addr)) {
+            $value = "";
+            foreach ($addr as $v) {
+                if (strlen($value) > 0) {
+                    $value .= ", ";
+                }
+                $value .= Utils::FixAddressName($v->personal) . "<" . $v->mailbox . "@" . $v->host . ">";
+            }
+        }
+        
+        return $value;
     }
 
     /**
@@ -434,7 +490,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return void
      */
     private function addExtraSubParts(&$email, $parts) {
-        if (isset($parts) {
+        if (isset($parts)) {
             foreach ($parts as $part) {
                 if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
                     $this->addSubPart($email, $part);
@@ -454,7 +510,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function addSubPart(&$email, $part) {
         //http://tools.ietf.org/html/rfc4021
-        $params = new Array();
+        $params = array();
         if (isset($part)) {
             if (isset($part->ctype_primary)) {
                 $params['content_type'] = $part->ctype_primary;
@@ -478,6 +534,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             foreach ($part->headers as $k => $v) {
                 $params[$k] = $v;
+            }
+            if (!isset($params['encoding'])) {
+                $params['encoding'] = 'base64';
             }
             $email->addSubPart($part->body, $params);
             unset($params);

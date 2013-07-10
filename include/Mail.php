@@ -82,16 +82,16 @@ class Mail
      * @return object Mail a instance of the driver class or if fails a PEAR Error
      * @access public
      */
-    function &factory($driver, $params = array())
+    static function &factory($driver, $params = array())
     {
         $driver = strtolower($driver);
-        @include_once 'Mail/' . $driver . '.php';
+        @include_once 'include/Mail/' . $driver . '.php';
         $class = 'Mail_' . $driver;
         if (class_exists($class)) {
             $mailer = new $class($params);
             return $mailer;
         } else {
-            return $this->raiseError('Unable to find class for driver ' . $driver);
+            return Mail::raiseError('Unable to find class for driver ' . $driver);
         }
     }
 
@@ -125,7 +125,7 @@ class Mail
     function send($recipients, $headers, $body)
     {
         if (!is_array($headers)) {
-            return $this->raiseError('$headers must be an array');
+            return Mail::raiseError('$headers must be an array');
         }
 
         $result = $this->_sanitizeHeaders($headers);
@@ -291,7 +291,7 @@ class Mail
      * @return boolean always false as there was an error
      * @access private
      */
-    function raiseError($message) {
+    static function raiseError($message) {
         ZLog::Write(LOGLEVEL_ERROR, "Mail error: ". $message);
         return false;
     }

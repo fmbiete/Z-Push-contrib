@@ -126,7 +126,7 @@ class Mail_mail extends Mail {
     function send($recipients, $headers, $body)
     {
         if (!is_array($headers)) {
-            return $this->raiseError('$headers must be an array');
+            return Mail_mail::raiseError('$headers must be an array');
         }
 
         $result = $this->_sanitizeHeaders($headers);
@@ -172,7 +172,7 @@ class Mail_mail extends Mail {
         // If the mail() function returned failure, we need to create a
         // PEAR_Error object and return it instead of the boolean result.
         if ($result === false) {
-            $result = $this->raiseError('mail() returned failure');
+            $result = Mail_mail::raiseError('mail() returned failure');
         }
 
         return $result;
@@ -186,7 +186,7 @@ class Mail_mail extends Mail {
      * @return boolean always false as there was an error
      * @access private
      */
-    function raiseError($message) {
+    static function raiseError($message) {
         ZLog::Write(LOGLEVEL_ERROR, "Mail<mail> error: ". $message);
         return false;
     }

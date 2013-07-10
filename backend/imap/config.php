@@ -66,9 +66,6 @@ define('IMAP_SENTFOLDER', '');
 // forward messages inline (default true - inlined)
 define('IMAP_INLINE_FORWARD', true);
 
-// use imap_mail() to send emails (default) - if false mail() is used
-define('IMAP_USE_IMAPMAIL', true);
-
 // list of folders we want to exclude from sync. Names, or part of it, separated by |
 // example: dovecot.sieve|archive|spam
 define('IMAP_EXCLUDED_FOLDERS', '');

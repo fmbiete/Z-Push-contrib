@@ -272,18 +272,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
         // We encode the final message
         $finalEmail = $finalEmail->encode();
-        $finalEmail['headers']['Mime-Version'] = '1.0';
 
+        $finalHeaders = array('Mime-Version' => '1.0');
         // We copy all the headers, minus content_type
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Copying new headers"));
         foreach ($message->headers as $k => $v) {
             if (strcasecmp($k, 'content-type') != 0 && strcasecmp($k, 'content-transfer-encoding') != 0 && strcasecmp($k, 'mime-version') != 0) {
-                $finalEmail['headers'][ucwords($k)] = $v;
+                $finalHeaders[ucwords($k)] = $v;
             }
         }
+        foreach ($finalEmail['headers'] as $k => $v) {
+            $finalHeaders[$k] = $v;
+        }
         
-        $finalBody = $finalEmail['body'];
-        $finalHeaders = $finalEmail['headers'];
+        $finalBody = "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
 
         unset($sourceMail);
         unset($message);
@@ -388,96 +390,54 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
         $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
         
-        $dateSource = isset($sourceMessage->headers["sent"]) ? $this->cleanupDate($sourceMessage->headers["sent"]) : "";
-        $Mail_RFC822 = new Mail_RFC822();
-        $fromSource = isset($sourceMessage->headers["from"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["from"]) : "";
-        $fromSource = is_array($fromSource) ? $this->addresslistToString($fromSource) : $fromSource;
-        $toSource = isset($sourceMessage->headers["to"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["to"]) : "";
-        $toSource = is_array($toSource) ? $this->addresslistToString($toSource) : $toSource;
-        $ccSource = isset($sourceMessage->headers["cc"]) ? $Mail_RFC822->parseAddressList($sourceMessage->headers["cc"]) : "";
-        $ccSource = is_array($ccSource) ? $this->addresslistToString($ccSource) : $ccSource;
-        unset($Mail_RFC822);
-        $subjectSource = isset($sourceMessage->headers["subject"]) ? $sourceMessage->headers["subject"] : "";
-                
         $separator = '';
         if ($isReply) {
-            //$separator = "On $dateSource, $fromSource, wrote:\r\n>\r\n";
-            //$separatorHtml = "<div>On $dateSource, $fromSource, wrote:<br/></div><blockquote>";
-            $separator = "\r\n>\r\n";
+            $separator = ">\r\n";
             $separatorHtml = "<blockquote>";
             $separatorHtmlEnd = "</blockquote></body></html>";
         }
         else {
-            $separator = "-------- Original Message --------\r\n";
+            $separator = "";
             $separatorHtml = "<div>";
-            //$separatorHtml = "<div><br/><br/>-------- Original Message --------<table><tbody>";
-            if (strlen($fromSource) > 0) {
-                $separator .= "From: $fromSource\r\n";
-                //$separatorHtml .= "<tr><th>From:</th><td>$fromSource</td></tr>";
-            }
-            if (strlen($toSource) > 0) {
-                $separator .= "To: $toSource\r\n";
-                //$separatorHtml .= "<tr><th>To:</th><td>$toSource</td></tr>";
-            }
-            if (strlen($ccSource) > 0) {
-                $separator .= "Cc: $ccSource\r\n";
-                //$separatorHtml .= "<tr><th>Cc:</th><td>$ccSource</td></tr>";
-            }
-            if (strlen($dateSource) > 0) {
-                $separator .= "Sent: $dateSource\r\n";
-                //$separatorHtml .= "<tr><th>Sent:</th><td>$dateSource</td></tr>";
-            }
-            if (strlen($subjectSource) > 0) {
-                $separator .= "Subject: $subjectSource\r\n";
-                //$separatorHtml .= "<tr><th>Subject:</th><td>$subjectSource</td></tr>";
-            }
-            $separator .= "\r\n\r\n";
-            //$separatorHtml .= "</tbody></table><br/><br/>";
             $separatorHtmlEnd = "</div>";
         }
+        
+        $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
 
         if (strlen($htmlBody) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has HTML body"));
             if (strlen($htmlSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body"));
-                $email->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+                $altEmail->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had not HTML body, we use original PLAIN body to create HTML"));
-                $email->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+                $altEmail->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
         }
         if (strlen($plainBody) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has PLAIN body"));
             if (strlen($htmlSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body, we cast new PLAIN to HTML"));
-                $email->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+                $altEmail->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
             }
             if (strlen($plainSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had PLAIN body"));
-                $email->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", $plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
+                $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> ".$plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
             }
         }
+        
+        $boundary = '=_' . md5(rand() . microtime());
+        $altEmail = $altEmail->encode($boundary);
+        
+        $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));
+        
+        unset($altEmail);
         
         unset($htmlBody);
         unset($htmlSource);
         unset($plainBody);
         unset($plainSource);        
-    }
-    
-    private function addresslistToString($addr) {
-        $value = $addr;
-        if (is_array($addr)) {
-            $value = "";
-            foreach ($addr as $v) {
-                if (strlen($value) > 0) {
-                    $value .= ", ";
-                }
-                $value .= Utils::FixAddressName($v->personal) . "<" . $v->mailbox . "@" . $v->host . ">";
-            }
-        }
-        
-        return $value;
     }
 
     /**
@@ -492,7 +452,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private function addExtraSubParts(&$email, $parts) {
         if (isset($parts)) {
             foreach ($parts as $part) {
-                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) || (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
+                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) 
+                        || (isset($part->ctype_primary) && $part->ctype_primary != "text" &&  $part->ctype_primary != "multipart")) {
                     $this->addSubPart($email, $part);
                 }
             }

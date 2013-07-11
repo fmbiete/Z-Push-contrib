@@ -212,6 +212,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No From address defined, we try for a default one"));
             $fromaddr = $this->getDefaultFromValue();
         }
+        if (isset($message->headers["to"])) {
+            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
+        }
         unset($Mail_RFC822);
         
         // We set the return-path
@@ -313,7 +317,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
         $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
-        $send = $mail->send($fromaddr, $finalHeaders, $finalBody);
+        $send = $mail->send($toaddr, $finalHeaders, $finalBody);
 
         if ($send !== true) {
             throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);

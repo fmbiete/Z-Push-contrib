@@ -305,35 +305,6 @@ class carddav_backend
         }
     }
     
-    
-    /**
-     * Gets all vCards including additional information from the CardDAV server
-     *
-     * @param	boolean	$include_vcards		Include vCards within the response (simplified only)
-     * @param	boolean	$raw				Get response raw or simplified
-     * @return	string						Raw or simplified XML response
-     */
-    public function get_all_vcards($include_vcards = true, $raw = false)
-    {
-        $xml = <<<EOFCONTENTGET
-<?xml version="1.0" encoding="utf-8" ?>
-    <D:sync-collection xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-    <D:sync-token></D:sync-token>
-    <D:prop>
-        <D:getcontenttype/>
-        <D:getetag/>
-        <D:allprop/>
-        <C:address-data>
-            <C:allprop/>
-        </C:address-data>
-    </D:prop>
-    <C:filter/>
-</D:sync-collection>
-EOFCONTENTGET;
-
-        return $this->do_query_report($xml, $include_vcards, $raw);
-    }
-    
     /**
      * Get all vcards matching a full name or mail.
      *

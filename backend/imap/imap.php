@@ -47,8 +47,10 @@
 require_once("backend/imap/config.php");
 
 include_once('lib/default/diffbackend/diffbackend.php');
+include_once('include/Mail.php');
 include_once('include/mimeDecode.php');
-require_once('include/z_RFC822.php');
+include_once('include/mimePart.php');
+include_once('include/RFC822.php');
 
 
 class BackendIMAP extends BackendDiff implements ISearchProvider {
@@ -152,7 +154,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         $this->SaveStorages();
     }
-
+    
     /**
      * Sends an e-mail
      * This messages needs to be saved into the 'sent items' folder
@@ -162,467 +164,348 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access public
      * @return boolean
      * @throws StatusException
-     */
+     */    
     public function SendMail($sm) {
-        $forward = $reply = (isset($sm->source->itemid) && $sm->source->itemid) ? $sm->source->itemid : false;
-        $parent = false;
+        global $imap_smtp_params;
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): RFC822: %d bytes  forward-id: '%s' reply-id: '%s' parent-id: '%s' SaveInSent: '%s' ReplaceMIME: '%s'",
                                             strlen($sm->mime), Utils::PrintAsString($sm->forwardflag), Utils::PrintAsString($sm->replyflag),
                                             Utils::PrintAsString((isset($sm->source->folderid) ? $sm->source->folderid : false)),
-                                            Utils::PrintAsString(($sm->saveinsent)), Utils::PrintAsString(isset($sm->replacemime)) ));
+                                            Utils::PrintAsString(($sm->saveinsent)), Utils::PrintAsString(isset($sm->replacemime))));
 
-        if (isset($sm->source->folderid)) {
-            $parent = $this->getImapIdFromFolderId($sm->source->folderid);
-        }
-        
         // by splitting the message in several lines we can easily grep later
         foreach(preg_split("/((\r)?\n)/", $sm->mime) as $rfc822line)
             ZLog::Write(LOGLEVEL_WBXML, "RFC822: ". $rfc822line);
 
+        $sourceMessage = $sourceMail = false;
+        // If we have a reference to a source message and we are not replacing mime (since we wouldn't use it)
+        if (isset($sm->source->folderid) && isset($sm->source->itemid) && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We have a source message and we try to fetch it"));
+            $parent = $this->getImapIdFromFolderId($sm->source->folderid);
+            if ($parent === false) {
+                throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not get imapid from source folderid '%'", $sm->source->folderid), SYNC_COMMONSTATUS_ITEMNOTFOUND);
+            }
+            else {
+                $this->imap_reopenFolder($parent);
+                $sourceMail = @imap_fetchheader($this->mbox, $sm->source->itemid, FT_UID) . @imap_body($this->mbox, $sm->source->itemid, FT_PEEK | FT_UID);
+                $mobj = new Mail_mimeDecode($sourceMail);
+                $sourceMessage = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+                unset($mobj);
+                //We will need $sourceMail if the message is forwarded and not inlined
+            }
+        }
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the new message"));
         $mobj = new Mail_mimeDecode($sm->mime);
         $message = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+        unset($mobj);        
         
-        $htmlBody = "";
-        $plainBody = "";
-        $this->getBodyRecursive($message, "html", $htmlBody);
-        $this->getBodyRecursive($message, "plain", $plainBody);
-        $hasHtmlBody = strlen($htmlBody) > 0;
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("HTMLBody [%s] PlainBody [%s] IsHTML [%s]", $htmlBody, $plainBody, Utils::PrintAsString($hasHtmlBody)));
-        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
         $Mail_RFC822 = new Mail_RFC822();
-        $fromaddr = $toaddr = $ccaddr = $bccaddr = "";
-        if (isset($message->headers["from"]))
+        $fromaddr = $toaddr = "";
+        // We get the vanilla from address
+        if (isset($message->headers["from"])) {
             $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
-        if (isset($message->headers["to"]))
-            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
-        if (isset($message->headers["cc"]))
-            $ccaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["cc"]));
-        if (isset($message->headers["bcc"]))
-            $bccaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["bcc"]));
-
-        // save some headers when forwarding mails (content type & transfer-encoding)
-        $headers = "";
-        $forward_h_ct = "";
-        $forward_h_cte = "";
-        $envelopefrom = "";
-
-        $is_multipart = false;
-
-        // clean up the transmitted headers
-        // remove default headers because we are using imap_mail
-        $existingFrom = false;
-        $returnPathSet = false;
-        $body_base64 = false;
-        $org_charset = "";
-        $org_boundary = false;
-        $multipartmixed = false;
-        foreach($message->headers as $k => $v) {
-            $addHeader = true;
-            switch ($k) {
-                case "subject":
-                case "to":
-                case "cc":
-                case "bcc":
-                    $addHeader = false;
-                    break;
-                    
-                case "content-type":
-                    // if the message is multipart
-                    if (preg_match("/multipart/i", $v)) {
-                        $is_multipart = true;
-                        $org_boundary = $message->ctype_parameters["boundary"];
-                    }
-                    else {
-                        // if it's a forward we store the content-type for later
-                        if ($sm->forwardflag) {
-                            $forward_h_ct = $v;
-                            $addHeader = false;
-                        }
-                    }
-
-                    // set charset always to utf-8
-                    $org_charset = $v;
-                    $v = preg_replace("/charset=([A-Za-z0-9-\"']+)/", "charset=\"utf-8\"", $v);
-                    break;
-                    
-                case "content-transfer-encoding":
-                    // if the content was base64 encoded, encode the body again when sending
-                    if (trim($v) == "base64") {
-                        $body_base64 = true;
-                    }
-                    // save the original encoding header for the body part when forwarding
-                    if ($sm->forwardflag) {
-                        $forward_h_cte = $v;
-                        $addHeader = false;
-                    }
-                    break;
-
-            // check if "from"-header is set, do nothing if it's set
-            // else set it to IMAP_DEFAULTFROM
-                case "from":
-                    $existingFrom = true;
-                    // Empty From, but default defined
-                    if (!trim($v) && IMAP_DEFAULTFROM) {
-                        $v = $this->getDefaultFromValue();
-                        $envelopefrom = "-f$v";
-                    }
-                    else {
-                        $envelopefrom = "-f$fromaddr";
-                    }
-                    break;
-
-                // check if "Return-Path"-header is set
-                case "return-path":
-                    $returnPathSet = true;
-                    if (!trim($v) && IMAP_DEFAULTFROM) {
-                        $v = $this->getDefaultFromValue();
-                    }
-                    break;
-            }
-            if ($addHeader) {
-                // all other headers stay
-                if ($headers) {
-                    $headers .= "\n";
-                }
-                $headers .= ucfirst($k) . ": ". $v;
-            }
-        }
-
-        // set "From" header if not set on the device
-        if (!$existingFrom && IMAP_DEFAULTFROM) {
-            $v = $this->getDefaultFromValue();
-            if ($headers) {
-                $headers .= "\n";
-            }
-            $headers .= 'From: '.$v;
-            $envelopefrom = "-f$v";
-        }
-
-        // set "Return-Path" header if not set on the device
-        if(IMAP_DEFAULTFROM && !$returnPathSet) {
-            $v = $this->getDefaultFromValue();
-            if ($headers) {
-                $headers .= "\n";
-            }
-            $headers .= 'Return-Path: '.$v;
-        }
-
-        // if it's a new message we use the sent body
-        if (!$sm->replyflag && !$sm->forwardflag) {
-            list(,$body) = $mobj->_splitBodyHeader($sm->mime);
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): New message"));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): From defined: %s", $fromaddr));
         }
         else {
-            if ($is_multipart) {
-                $body = $this->getMultipartBody($org_boundary, $plainBody, $htmlBody);
-            }
-            else {
-                $body = $hasHtmlBody ? $htmlBody : $plainBody;
-            }
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body before reply: %s", $body));
-        }        
-
-        // SmartReply without original message modified
-        if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime == false)) {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Replying message");
-            $replyMail = false;
-            if ($parent) {
-                $this->imap_reopenFolder($parent);
-                $replyMail = @imap_fetchheader($this->mbox, $reply, FT_UID) . @imap_body($this->mbox, $reply, FT_PEEK | FT_UID);
-            }
-
-            if (!$replyMail) {
-                throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not open message id '%s' in folder id '%s' to be replied: %s", $reply, $parent, imap_last_error()), SYNC_COMMONSTATUS_ITEMNOTFOUND);
-            }
-
-            $replyMime = new Mail_mimeDecode($replyMail);
-            $replyMessage = $replyMime->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
-
-            $replyHtmlBody = "";
-            $this->getBodyRecursive($replyMessage, "html", $replyHtmlBody);
-            $htmlBody .= "<br><br>" . $replyHtmlBody;
-
-            $replyPlainBody = "";
-            $this->getBodyRecursive($replyMessage, "plain", $replyPlainBody);
-            $plainBody .= "\r\n\r\n" . $replyPlainBody;
-
-            // If the replied message doesn't have html body, and the reply is html, we use the plain original part
-            if ($hasHtmlBody && strlen($replyHtmlBody) == 0) {
-                $htmlBody .= $replyPlainBody;
-            }
-            
-            // The new message is multipart
-            if ($is_multipart) {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Multipart reply message");
-                
-                // create new mime
-                $body = $this->getMultipartBody($org_boundary, 
-                            $body_base64 ? chunk_split(base64_encode($plainBody)) : $plainBody, 
-                            $body_base64 ? chunk_split(base64_encode($htmlBody)) : $htmlBody);
-
-                //FIXME: the original message was multipart and could have inline parts
-            }
-            else {
-                if ($hasHtmlBody) {
-                    $body = $htmlBody;
-                }
-                else {
-                    $body = $plainBody;
-                }
-
-                // if the message was base64 encoded, reencode it
-                if ($body_base64) {
-                    $body = chunk_split(base64_encode($body));
-                }
-            }
-
-            // The reply could have attachments
-            foreach ($message->parts as $part) {
-                if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
-                    $attname = $this->getAttachmentName($part);
-                        
-                    $body .= $this->enc_attach_file($org_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
-                }
-            }
-
-            unset($replyHtmlBody);
-            unset($replyPlainBody);
-            unset($replyMessage);
-            unset($replyMime);
-            unset($replyMail);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No From address defined, we try for a default one"));
+            $fromaddr = $this->getDefaultFromValue();
         }
-
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Body after reply: %s", $body));
-
-        // SmartForward, with the original message unmodified
-        if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime == false)) {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message");
-
-            $forwardMail = false;
-            if ($parent) {
-                $this->imap_reopenFolder($parent);
-                // original mail
-                $forwardMail = @imap_fetchheader($this->mbox, $forward, FT_UID) . @imap_body($this->mbox, $forward, FT_PEEK | FT_UID);
+        if (isset($message->headers["to"])) {
+            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
+        }
+        unset($Mail_RFC822);
+        
+        // We set the return-path
+        if (!isset($message->headers["return-path"])) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No Return-Path address defined, we use From"));
+            $message->headers["return-path"] = $fromaddr;
+        }
+        
+        //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
+        //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
+        //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
+        
+        // I don't mind if the new message is multipart or not, I always will create a multipart. It's simpler
+        $finalEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
+            
+        if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Replying message"));
+            $this->addTextParts($finalEmail, $message, $sourceMessage, true);
+                
+            if (isset($message->parts)) {
+                // We add extra parts from the replying message
+                $this->addExtraSubParts($finalEmail, $message->parts);
             }
-
-            if (!$forwardMail) {
-                throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not open message id '%s' in folder id '%s' to be forwarded: %s", $forward, $parent, imap_last_error()), SYNC_COMMONSTATUS_ITEMNOTFOUND);
-            }
-
+            // A replied message doesn't include the original attachments
+        }
+        else if ($sm->forwardflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
             if (!defined('IMAP_INLINE_FORWARD') || IMAP_INLINE_FORWARD === false) {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as attached file - eml");
-
-                // contrib - chunk base64 encoded body
-                if ($body_base64) {
-                    $body = chunk_split(base64_encode($body));
-                }
-                //use original boundary if it's set
-                $boundary = ($org_boundary) ? $org_boundary : false;
-                // build a new mime message, forward entire old mail as file
-                list($aheader, $body) = $this->mail_attach("forwarded_message.eml", strlen($forwardMail), $forwardMail, $body, $forward_h_ct, $forward_h_cte, $boundary);
-                // add boundary headers
-                $headers .= "\n" . $aheader;
+                $finalEmail->addSubPart($sourceMail, array('content_type' => 'message/rfc822', 'encoding' => 'base64', 'disposition' => 'attachment', 'dfilename' => 'forwarded_message.eml'));
             }
             else {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding message as inlined text");
-                $forwardMime = new Mail_mimeDecode($forwardMail);
-                $forwardMessage = $forwardMime->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
-
-                $forwardBody = "\r\n\r\n";
-                $forwardBody .= "-----Original Message-----\r\n";
-                if(isset($forwardMessage->headers['from']))
-                    $forwardBody .= "From: " . $forwardMessage->headers['from'] . "\r\n";
-                if(isset($forwardMessage->headers['to']) && strlen($forwardMessage->headers['to']) > 0)
-                    $forwardBody .= "To: " . $forwardMessage->headers['to'] . "\r\n";
-                if(isset($forwardMessage->headers['cc']) && strlen($forwardMessage->headers['cc']) > 0)
-                    $forwardBody .= "Cc: " . $forwardMessage->headers['cc'] . "\r\n";
-                if(isset($forwardMessage->headers['date']))
-                    $forwardBody .= "Sent: " . $forwardMessage->headers['date'] . "\r\n";
-                if(isset($forwardMessage->headers['subject']))
-                    $forwardBody .= "Subject: " . $forwardMessage->headers['subject'] . "\r\n";
-                $forwardBody .= "\r\n";
-                $forwardBody .= $this->getBody($forwardMessage);
-
-
-                // The message sent it's multipart, we create a new multipart body with the forwarded body
-                if ($is_multipart) {
-                    $body = $this->getMultipartBody($org_boundary, 
-                                $body_base64 ? chunk_split(base64_encode($plainBody . $forwardBody)) : $plainBody . $forwardBody, 
-                                $body_base64 ? chunk_split(base64_encode($htmlBody . $forwardBody)) : $htmlBody . $forwardBody);
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding inlined message");
+                $this->addTextParts($finalEmail, $message, $sourceMessage, false);
+            
+                if (isset($message->parts)) {
+                    // We add extra parts from the forwarding message
+                    $this->addExtraSubParts($finalEmail, $message->parts);
                 }
-                else {
-                    $body .= $forwardBody;
-                    if ($body_base64) {
-                        $body = chunk_split(base64_encode($body));
-                    }
+                if (isset($sourceMessage->parts)) {
+                    // We add extra parts from the forwarded message
+                    $this->addExtraSubParts($finalEmail, $sourceMessage->parts);
                 }
-
-                if(isset($forwardMessage->parts)) {
-                    $attached = false;
-
-                    if ($org_boundary) {
-                        $att_boundary = $org_boundary;
-                        // cut end boundary from body
-                        $body = substr($body, 0, strrpos($body, "--$att_boundary--"));
-                    }
-                    else {
-                        $att_boundary = strtoupper(md5(uniqid(time())));
-                        // add boundary headers
-                        $headers .= "\n" . "Content-Type: multipart/mixed; boundary=$att_boundary";
-                        $multipartmixed = true;
-                    }
-
-                    foreach($forwardMessage->parts as $part) {
-                        if(isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) {
-
-                            $attname = $this->getAttachmentName($part);
-
-                            // ignore html content
-                            if ($part->ctype_primary == "text" && $part->ctype_secondary == "html") {
-                                continue;
-                            }
-                            //
-                            if ($attached) {
-                                $body .= $this->enc_attach_file($att_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
-                            }
-                            // first attachment, we create a part with the body text
-                            else {
-                                $encmail = $body;
-                                $attached = true;
-                                $body = $this->enc_multipart($att_boundary, $body, $forward_h_ct, $forward_h_cte);
-                                $body .= $this->enc_attach_file($att_boundary, $attname, strlen($part->body),$part->body, $part->ctype_primary ."/". $part->ctype_secondary);
-                            }
-                        }
-                    }
-                    
-                    if ($multipartmixed && strpos(strtolower($forwardMessage->headers['content-type']), "alternative") !== false) {
-                        //this happens if a multipart/alternative message is forwarded
-                        //then it's a multipart/mixed message which consists of:
-                        //1. text/plain part which was written on the mobile
-                        //2. multipart/alternative part which is the original message
-                        $body = "This is a message with multiple parts in MIME format.\n--".
-                                $att_boundary.
-                                "\nContent-Type: $forward_h_ct\nContent-Transfer-Encoding: $forward_h_cte\n\n".
-                                (($body_base64) ? chunk_split(base64_encode($message->body)) : rtrim($message->body)).
-                                "\n--".$att_boundary.
-                                "\nContent-Type: {$forwardMessage->headers['content-type']}\n\n".
-                                @imap_body($this->mbox, $forward, FT_PEEK | FT_UID)."\n\n";
-                    }
-                    $body .= "--$att_boundary\n\n";
-                }
-
-                unset($forwardMessage);
-                unset($forwardMime);
             }
-
-            // unset origmail - free memory
-            unset($forwardMail);
-
-        }
-
-        // remove carriage-returns from body
-        $body = str_replace("\r\n", "\n", $body);
-
-        if (!$multipartmixed) {
-            if (!empty($forward_h_ct)) {
-                $headers .= "\nContent-Type: $forward_h_ct";
-            }
-            if (!empty($forward_h_cte)) {
-                $headers .= "\nContent-Transfer-Encoding: $forward_h_cte";
-            }
-            //  if body was quoted-printable, convert it again
-            if (isset($message->headers["content-transfer-encoding"]) && strtolower($message->headers["content-transfer-encoding"]) == "quoted-printable") {
-                $body = quoted_printable_encode($body);
-            }
-        }
-
-        // more debugging
-        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): parsed message: ". print_r($message,1));
-        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): headers: $headers");
-        /* BEGIN fmbiete's contribution r1528, ZP-320 */
-        if (isset($message->headers["subject"]) && strlen($message->headers["subject"]) > 0) {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): subject: {$message->headers["subject"]}");
         }
         else {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): subject: no subject set. Set to empty.");
-            $message->headers["subject"] = " "; // added by mku ZP-330
-        }
-        /* END fmbiete's contribution r1528, ZP-320 */
-        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): body: $body");
-
-        if (!defined('IMAP_USE_IMAPMAIL') || IMAP_USE_IMAPMAIL == true) {
-            // changed by mku ZP-330
-            $send =  @imap_mail ( $toaddr, $message->headers["subject"], $body, $headers, $ccaddr, $bccaddr);
-        }
-        else {
-            if (!empty($ccaddr)) {
-                $headers .= "\nCc: $ccaddr";
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
+            if (strcasecmp($message->ctype_primary, "text") == 0 && isset($message->body)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was not multipart"));
+                $finalEmail->addSubPart($message->body, array('content_type' => $message->ctype_primary.'/'.$message->ctype_secondary.'; charset=utf-8', 'encoding' => 'base64'));
             }
-            if (!empty($bccaddr)) {
-                $headers .= "\nBcc: $bccaddr";
+            if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was multipart"));
+                foreach ($message->parts as $part) {
+                    $this->addSubPart($finalEmail, $part);
+                }
             }
-            // changed by mku ZP-330
-            $send =  @mail ( $toaddr, $message->headers["subject"], $body, $headers, $envelopefrom );
         }
+        
+        // We encode the final message
+        $finalEmail = $finalEmail->encode();
 
-        // email sent?
-        if (!$send) {
-            throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent. Last IMAP-error: %s", imap_last_error()), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
+        $finalHeaders = array('Mime-Version' => '1.0');
+        // We copy all the headers, minus content_type
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Copying new headers"));
+        foreach ($message->headers as $k => $v) {
+            if (strcasecmp($k, 'content-type') != 0 && strcasecmp($k, 'content-transfer-encoding') != 0 && strcasecmp($k, 'mime-version') != 0) {
+                $finalHeaders[ucwords($k)] = $v;
+            }
         }
+        foreach ($finalEmail['headers'] as $k => $v) {
+            $finalHeaders[$k] = $v;
+        }
+        
+        $finalBody = "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
 
-        // add message to the sent folder
+        unset($sourceMail);
+        unset($message);
+        unset($sourceMessage);        
+        unset($finalEmail);
+        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Final mail to send:"));
+        foreach ($finalHeaders as $k => $v)
+            ZLog::Write(LOGLEVEL_WBXML, sprintf("%s: %s", $k, $v));
+        foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline)
+            ZLog::Write(LOGLEVEL_WBXML, sprintf("Body: %s", $bodyline));
+        
+        //http://pear.php.net/manual/en/package.mail.mail.factory.php
+        $sendingMethod = 'mail';
+        if (defined('IMAP_SMTP_METHOD')) {
+            $sendingMethod = IMAP_SMTP_METHOD;
+            if ($sendingMethod == 'smtp') {
+                if (isset($imap_smtp_params['username']) && $imap_smtp_params['username'] == 'imap_username') {
+                    $imap_smtp_params['username'] = $this->username;
+                }
+                if (isset($imap_smtp_params['password']) && $imap_smtp_params['password'] == 'imap_password') {
+                    $imap_smtp_params['password'] = $this->password;
+                }
+            }
+        }
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
+        $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
+        $send = $mail->send($toaddr, $finalHeaders, $finalBody);
+
+        if ($send !== true) {
+            throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
+        }
+        
         if (isset($sm->saveinsent)) {
-            // build complete headers
-            $headers .= "\nTo: $toaddr";
-            $headers .= "\nSubject: " . $message->headers["subject"]; // changed by mku ZP-330
-
-            if (!defined('IMAP_USE_IMAPMAIL') || IMAP_USE_IMAPMAIL == true) {
-                if (!empty($ccaddr)) {
-                    $headers .= "\nCc: $ccaddr";
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sent Items folder"));
+            
+            $headers = "";
+            foreach ($finalHeaders as $k => $v) {
+                if (strlen($headers) > 0) {
+                    $headers .= "\n";
                 }
-                if (!empty($bccaddr)) {
-                    $headers .= "\nBcc: $bccaddr";
-                }
+                $headers .= "$k: $v";
             }
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): complete headers: $headers");
-
-            $asf = false;
+            
+            $saved = false;
             if ($this->sentID) {
-                $asf = $this->addSentMessage($this->sentID, $headers, $body);
+                $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
             }
             else if (IMAP_SENTFOLDER) {
-                $asf = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $body);
+                $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s': %s", IMAP_SENTFOLDER, Utils::PrintAsString($asf)));
             }
             // No Sent folder set, try defaults
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): No Sent mailbox set");
-                if($this->addSentMessage("INBOX.Sent", $headers, $body)) {
+                if($this->addSentMessage("INBOX.Sent", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'INBOX.Sent'");
-                    $asf = true;
+                    $saved = true;
                 }
-                else if ($this->addSentMessage("Sent", $headers, $body)) {
+                else if ($this->addSentMessage("Sent", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'Sent'");
-                    $asf = true;
+                    $saved = true;
                 }
-                else if ($this->addSentMessage("Sent Items", $headers, $body)) {
+                else if ($this->addSentMessage("Sent Items", $headers, $finalBody)) {
                     ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail():IMAP-SendMail: Outgoing mail saved in 'Sent Items'");
-                    $asf = true;
+                    $saved = true;
                 }
             }
+            
+            unset($headers);
 
-            if (!$asf) {
+            if (!$saved) {
                 ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->SendMail(): The email could not be saved to Sent Items folder. Check your configuration.");
             }
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
         }
-
-        unset($message);
-
+        
+        unset($finalHeaders);
+        unset($finalBody);
+        
         return $send;
+    }
+    
+    /**
+     * Add text parts to a mimepart object, with reply or forward tags
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param Mail_mimeDecode $message reference to the message
+     * @param Mail_mimeDecode $sourceMessage reference to the original message
+     * @param boolean $isReply true if it's a reply, false if it's a forward
+     *
+     * @access private
+     * @return void
+     */
+    private function addTextParts(&$email, &$message, &$sourceMessage, $isReply = true) {
+        $htmlBody = $plainBody = '';
+        $this->getBodyRecursive($message, "html", $htmlBody);
+        $this->getBodyRecursive($message, "plain", $plainBody);
+        $htmlSource = $plainSource = '';
+        $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
+        $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
+        
+        $separator = '';
+        if ($isReply) {
+            $separator = ">\r\n";
+            $separatorHtml = "<blockquote>";
+            $separatorHtmlEnd = "</blockquote></body></html>";
+        }
+        else {
+            $separator = "";
+            $separatorHtml = "<div>";
+            $separatorHtmlEnd = "</div>";
+        }
+        
+        $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
+
+        if (strlen($htmlBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has HTML body"));
+            if (strlen($htmlSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body"));
+                $altEmail->addSubPart($htmlBody . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had not HTML body, we use original PLAIN body to create HTML"));
+                $altEmail->addSubPart($htmlBody . $separatorHtml . "<p>" . $plainSource . "</p>" . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+            }
+        }
+        if (strlen($plainBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has PLAIN body"));
+            if (strlen($htmlSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body, we cast new PLAIN to HTML"));
+                $altEmail->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+            }
+            if (strlen($plainSource) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had PLAIN body"));
+                $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> ".$plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
+            }
+        }
+        
+        $boundary = '=_' . md5(rand() . microtime());
+        $altEmail = $altEmail->encode($boundary);
+        
+        $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));
+        
+        unset($altEmail);
+        
+        unset($htmlBody);
+        unset($htmlSource);
+        unset($plainBody);
+        unset($plainSource);        
+    }
+
+    /**
+     * Add extra parts (not text; inlined or attached parts) to a mimepart object.
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param array $parts array of parts
+     *
+     * @access private
+     * @return void
+     */
+    private function addExtraSubParts(&$email, $parts) {
+        if (isset($parts)) {
+            foreach ($parts as $part) {
+                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) 
+                        || (isset($part->ctype_primary) && $part->ctype_primary != "text" &&  $part->ctype_primary != "multipart")) {
+                    $this->addSubPart($email, $part);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Add a subpart to a mimepart object.
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param object $part message part
+     *
+     * @access private
+     * @return void
+     */
+    private function addSubPart(&$email, $part) {
+        //http://tools.ietf.org/html/rfc4021
+        $params = array();
+        if (isset($part)) {
+            if (isset($part->ctype_primary)) {
+                $params['content_type'] = $part->ctype_primary;
+            }
+            if (isset($part->ctype_secondary)) {
+                $params['content_type'] .= '/' . $part->ctype_secondary;
+            }
+            if (isset($part->ctype_parameters)) { 
+                foreach ($part->ctype_parameters as $k => $v) {
+                    $params['content_type'] .= '; ' . $k . '=' . $v;
+                }
+            }
+            if (isset($part->disposition)) {
+                $params['disposition'] = $part->disposition;
+            }
+            //FIXME: dfilename => filename
+            if (isset($part->d_parameters)) {
+                foreach ($part->d_parameters as $k => $v) {
+                    $params[$k] = $v;
+                }
+            }
+            foreach ($part->headers as $k => $v) {
+                $params[$k] = $v;
+            }
+            if (!isset($params['encoding'])) {
+                $params['encoding'] = 'base64';
+            }
+            $email->addSubPart($part->body, $params);
+            unset($params);
+        }
     }
 
     /**
@@ -1988,27 +1871,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         return $folderid;
     }
 
-
-    /**
-     * Parses the message and return only the plaintext body
-     *
-     * @param string        $message        html message
-     *
-     * @access protected
-     * @return string       plaintext message
-     */
-    protected function getBody($message) {
-        $body = "";
-
-        $this->getBodyRecursive($message, "plain", $body);
-
-        if($body === "") {
-            $this->getBodyRecursive($message, "html", $body);
-        }
-
-        return $body;
-    }
-
     /**
      * Get all parts in the message with specified type and concatenate them together, unless the
      * Content-Disposition is 'attachment', in which case the text is apparently an attachment
@@ -2077,83 +1939,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             $this->mboxFolder = $folderid;
         }
-    }
-
-
-    /**
-     * Build a multipart RFC822, embedding body and one file (for attachments)
-     *
-     * @param string        $filenm         name of the file to be attached
-     * @param long          $filesize       size of the file to be attached
-     * @param string        $file_cont      content of the file
-     * @param string        $body           current body
-     * @param string        $body_ct        content-type
-     * @param string        $body_cte       content-transfer-encoding
-     * @param string        $boundary       optional existing boundary
-     *
-     * @access protected
-     * @return array        with [0] => $mail_header and [1] => $mail_body
-     */
-    protected function mail_attach($filenm,$filesize,$file_cont,$body, $body_ct, $body_cte, $boundary = false) {
-        if (!$boundary) $boundary = strtoupper(md5(uniqid(time())));
-
-        //remove the ending boundary because we will add it at the end
-        $body = str_replace("--$boundary--", "", $body);
-
-        $mail_header = "Content-Type: multipart/mixed; boundary=$boundary\n";
-
-        // build main body with the sumitted type & encoding from the pda
-        $mail_body  = $this->enc_multipart($boundary, $body, $body_ct, $body_cte);
-        $mail_body .= $this->enc_attach_file($boundary, $filenm, $filesize, $file_cont);
-
-        $mail_body .= "--$boundary--\n\n";
-        return array($mail_header, $mail_body);
-    }
-
-    /**
-     * Helper for mail_attach()
-     *
-     * @param string        $boundary       boundary
-     * @param string        $body           current body
-     * @param string        $body_ct        content-type
-     * @param string        $body_cte       content-transfer-encoding
-     *
-     * @access protected
-     * @return string       message body
-     */
-    protected function enc_multipart($boundary, $body, $body_ct, $body_cte) {
-        $mail_body = "This is a multi-part message in MIME format\n\n";
-        $mail_body .= "--$boundary\n";
-        $mail_body .= "Content-Type: $body_ct\n";
-        $mail_body .= "Content-Transfer-Encoding: $body_cte\n\n";
-        $mail_body .= "$body\n\n";
-
-        return $mail_body;
-    }
-
-    /**
-     * Helper for mail_attach()
-     *
-     * @param string        $boundary       boundary
-     * @param string        $filenm         name of the file to be attached
-     * @param long          $filesize       size of the file to be attached
-     * @param string        $file_cont      content of the file
-     * @param string        $content_type   optional content-type
-     *
-     * @access protected
-     * @return string       message body
-     */
-    protected function enc_attach_file($boundary, $filenm, $filesize, $file_cont, $content_type = "") {
-        if (!$content_type) $content_type = "text/plain";
-        $mail_body = "--$boundary\n";
-        $mail_body .= "Content-Type: $content_type; name=\"$filenm\"\n";
-        $mail_body .= "Content-Transfer-Encoding: base64\n";
-        $mail_body .= "Content-Disposition: attachment; filename=\"$filenm\"\n";
-        $mail_body .= "Content-Description: $filenm\n\n";
-        //contrib - chunk base64 encoded attachments
-        $mail_body .= chunk_split(base64_encode($file_cont)) . "\n\n";
-
-        return $mail_body;
     }
 
     /**
@@ -2241,7 +2026,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     protected function cleanupDate($receiveddate) {
         $receiveddate = strtotime(preg_replace("/\(.*\)/", "", $receiveddate));
         if ($receiveddate == false || $receiveddate == -1) {
-            debugLog("Received date is false. Message might be broken.");
+            ZLog::Write(LOGLEVEL_DEBUG, "cleanupDate() : Received date is false. Message might be broken.");
             return null;
         }
 
@@ -2268,54 +2053,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         
         return $v;
     }
-
-    /**
-     * Returns the name of the attachment
-     *
-     * @access private
-     * @param object    $part   Part object
-     * @return string
-     */
-    private function getAttachmentName($part) {
-        if (isset($part->d_parameters['filename']))
-            return $part->d_parameters['filename'];
-        else if (isset($part->ctype_parameters['name']))
-            return $part->ctype_parameters['name'];
-        else if (isset($part->headers['content-description']))
-            return $part->headers['content-description'];
-        else 
-            return "unknown attachment";
-    }
-
-    /**
-     * Return a basic multipart body
-     *
-     * @access private
-     * @param string    $boundary   Part separator
-     * @param string    $plainBody  Plain text body
-     * @param string    $htmlBody   Html text body
-     * @return string
-     */
-    private function getMultipartBody($boundary, $plainBody, $htmlBody) {
-        $body = "";
-        if (strlen($plainBody) > 0) {
-            $body .= "\n--$boundary".
-            "\nContent-Type: text/plain; charset=utf-8".
-            "\nContent-Transfer-Encoding: base64\n\n".
-            chunk_split(base64_encode($plainBody)).
-            "\n\n";
-        }
-        if (strlen($htmlBody) > 0) {
-            $body .= "\n--$boundary".
-            "\nContent-Type: text/html; charset=utf-8".
-            "\nContent-Transfer-Encoding: base64\n\n".
-            chunk_split(base64_encode($htmlBody)).
-            "\n\n";
-        }
-        
-        return $body;
-    }
-
 
     /* BEGIN fmbiete's contribution r1528, ZP-320 */
     /**

@@ -64,7 +64,7 @@ include_once('backend/zarafa/mapi/class.freebusypublish.php');
 
 // processing of RFC822 messages
 include_once('include/mimeDecode.php');
-require_once('include/z_RFC822.php');
+require_once('include/RFC822.php');
 
 // components of Zarafa backend
 include_once('backend/zarafa/mapiutils.php');

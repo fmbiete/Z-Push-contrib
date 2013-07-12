@@ -95,6 +95,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $this->url = $url;
             $this->username = $username;
             $this->domain = $domain;
+            $this->server->set_folder(CARDDAV_FOLDER);
         }
         else {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $url));
@@ -192,7 +193,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         $vcards = false;
         try {
-            $vcards = $this->server->do_sync(true, false);
+            $vcards = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error doing the initial sync: %s", $ex->getMessage()));
@@ -233,7 +234,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         while($stopat > time() && empty($notifications)) {
             $vcards = false;
             try {
-                $vcards = $this->server->do_sync(false, false);
+                $vcards = $this->server->do_sync(false, false, CARDDAV_SUPPORTS_SYNC);
             }
             catch (Exception $ex) {
                 ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error resyncing vcards: %s", $ex->getMessage()));
@@ -384,7 +385,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         try {
             // We don't need the actual vcards here, we only need a list of all them
             //$vcards = $this->server->get_list_vcards();
-            $vcards = $this->server->do_sync(true, false);
+            $vcards = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->GetMessageList - Error getting the vcards: %s", $ex->getMessage()));

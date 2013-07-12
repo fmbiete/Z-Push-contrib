@@ -128,6 +128,13 @@ class carddav_backend
     private $url_parts = null;
 
     /**
+     * CardDAV server folder
+     *
+     * @var string
+     */
+    private $folder = '';
+    
+    /**
      * Authentication string
      *
      * @var	string
@@ -273,6 +280,38 @@ class carddav_backend
     {
         return $this->synctoken;
     }
+    
+
+    public function set_folder($f)
+    {
+        $this->folder = $f;
+    } 
+
+
+    private function store_state($data, $token)
+    {
+        $id = md5($this->url . ':' . $this->username . ':' . $this->folder);
+        $d = serialize($data);
+        //FIXME: we shouldn't save the file in this level, but in the device folder
+        if (!is_dir(STATE_DIR.'/cachesync'))
+            mkdir(STATE_DIR.'/cachesync');
+            
+        file_put_contents(STATE_DIR.'/cachesync/'.$id.'.data', serialize($data));
+        file_put_contents(STATE_DIR.'/cachesync/'.$id.'.token', $token);
+    }
+
+    private function get_state()
+    {
+        $id = md5($this->url . ':' . $this->username . ':' . $this->folder);
+        //FIXME: we shouldn't save the file in this level, but in the device folder
+        if (!is_file(STATE_DIR.'/cachesync/'.$id.'.data') || !is_file(STATE_DIR.'/cachesync/'.$id.'.token'))
+            return array(null, '');
+
+        $data = unserialize(file_get_contents(STATE_DIR.'/cachesync/'.$id.'.data'));
+        $token = file_get_contents(STATE_DIR.'/cachesync/'.$id.'.token');
+        
+        return array($data, $token);
+    }
 
     /**
      * Gets all vCards including additional information from the CardDAV server
@@ -344,17 +383,19 @@ EOFCONTENTSEARCH;
      *
      * @param boolean $initial              If the sync should be full
      * @param boolean $include_vcards       If the vCards should be included within the response
+     * @param boolean $support_carddav_sync If the cardDAV server supports sync-collection operations (DAViCal supports it)
      * @return string                       Simplified XML response
      */
-    public function do_sync($initial = true, $include_vcards = false)
+    public function do_sync($initial = true, $include_vcards = false, $support_carddav_sync = false)
     {
-        $token = $this->synctoken;
-        if ($initial)
-        {
-            $token = "";
-        }
-        
-        $xml = <<<EOFXMLINITIALSYNC
+        if ($support_carddav_sync) {
+            $token = $this->synctoken;
+            if ($initial)
+            {
+                $token = "";
+            }
+            
+            $xml = <<<EOFXMLINITIALSYNC
 <?xml version="1.0" encoding="utf-8"?>
 <D:sync-collection xmlns:D="DAV:">
     <D:sync-token>$token</D:sync-token>
@@ -366,8 +407,154 @@ EOFCONTENTSEARCH;
 </D:sync-collection>
 EOFXMLINITIALSYNC;
 
-        return $this->do_query_report($xml, $include_vcards, false);
+            return $this->do_query_report($xml, $include_vcards, false);
+        }
+        else
+        {
+            $response = $this->clean_response($this->get(false, true));
+            try
+            {
+                $xml = new SimpleXMLElement($response);
+            }
+            catch(Exception $e)
+            {
+                throw new Exception('The XML response seems to be malformed and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE, $e);
+            }
+         
+            $simplified_xml = new XMLWriter();
+            $simplified_xml->openMemory();
+            $simplified_xml->setIndent(4);
+            $simplified_xml->startDocument('1.0', 'utf-8');
+            $simplified_xml->startElement('response');
+ 
+            if (!empty($xml->response))
+            {
+                foreach ($xml->response as $response)
+                {
+                    if (!(preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
+                            && !(preg_match('/unix-directory/', $response->propstat->prop->getcontenttype)))
+                    {
+                        $save_url = $this->url;
+                        if (isset($response->propstat->prop->href))
+                        {
+                            $href = $response->propstat->prop->href;
+                        }
+                        else if (isset($response->href))
+                        {
+                            $href = $response->href;
+                        }
+                        else
+                        {
+                            $href = null;
+                            continue;
+                        }
+                        $new_url = str_replace($this->url_parts['path'], null, $this->url) . $href;
+                        if (!preg_match('/'.$this->folder.'.?$/', $new_url)) 
+                            continue;
+                        $this->url = $new_url;
+                        if ($save_url !== $this->url)
+                        {
+                            $resp = $this->get(false, true);
+                            $tmp = $this->simplify($resp, $include_vcards, true);
+                            $simplified_xml->writeRaw($tmp->outputMemory());
+                            unset($tmp);
+                        }
+                        $this->url = $save_url;
+                    }
+                }
+            }
+
+            $simplified_xml->endElement();
+            $simplified_xml->endDocument();
+
+            $ret = $simplified_xml->outputMemory();
+            unset($simplified_xml);
+            list ($cache, $token) = $this->get_state();
+
+            $t = md5($ret);
+            $this->synctoken = $t;
+            if ($t !== $token)
+            {
+                $val_return = $this->do_diff($ret, $cache, $include_vcards);
+                $this->store_state($ret, $t);
+            }
+            else
+            {
+                if ($initial)
+                {
+                    $val_return = $ret;
+                }
+                else
+                {
+                    $tmp = new XMLWriter();
+                    $tmp->openMemory();
+                    $tmp->setIndent(4);
+                    $tmp->startDocument('1.0', 'utf-8');
+                    $tmp->startElement('response');
+                    $tmp->endElement();
+                    $tmp->endDocument();
+                    $val_return = $tmp->outputMemory();
+                    unset($tmp);
+                }
+            }
+
+            return $val_return; 
+        }
     }
+    
+    
+    /**
+     * Compare 2 vcards to get differences.
+     *
+     * @param string $x1
+     * @param string $x2
+     * @param boolean $include_vcards
+     * @return string
+     */
+    private function do_diff($x1, $x2, $include_vcards = false)
+    {
+        if ($x2 === null)
+            return $x1;
+        
+        $ret = new XMLWriter();
+        $ret->openMemory();
+        $ret->setIndent(4);
+        $ret->startDocument('1.0', 'utf-8');
+        $ret->startElement('response');
+
+        $xml1 = new SimpleXMLElement($x1);
+        $xml2 = new SimpleXMLElement($x2);
+        foreach ($xml1->element as $vc1)
+        {
+            foreach ($xml2->element as $vc2)
+            {
+                if ($xml1->id === $xml2->id)
+                {
+                    if ($xml1->last_modified !== $xml2->last_modified)
+                    {
+                        $ret->startElement('element');
+                        $ret->writeElement('id', $xml1->id);
+                        $ret->writeElement('etag', $xml1->id);
+                        $ret->writeElement('last_modified', $xml1->last_modified);
+
+                        if ($include_vcards === true)
+                        {
+                            $ret->writeElement('vcard', $xml1->vcard);
+                        }
+                        $ret->endElement();
+                    }
+                }
+            }
+        }
+        unset($xml1);
+        unset($xml2);
+
+        $ret->endElement();
+        $ret->endDocument();
+
+        return $ret->outputMemory();
+    }
+
     
     /**
      * Do a REPORT query against the server
@@ -377,7 +564,8 @@ EOFXMLINITIALSYNC;
      * @param boolean $raw              If the response should be raw or XML simplified
      * @return string
      */
-    private function do_query_report($xml, $include_vcards = true, $raw = false) {
+    private function do_query_report($xml, $include_vcards = true, $raw = false)
+    {
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
 
         switch ($result['http_code'])
@@ -408,8 +596,9 @@ EOFXMLINITIALSYNC;
      */
     public function get_vcard($vcard_id)
     {
-        $vcard_id	= str_replace('.vcf', null, $vcard_id);
-        $result		= $this->query($this->url . $vcard_id . '.vcf', 'GET');
+        $vcard_id = str_replace('.vcf', null, $vcard_id);
+        $result = $this->query($this->url .'/' . $this->folder . '/' . $vcard_id . '.vcf', 'GET');
+  
 
         switch ($result['http_code'])
         {
@@ -434,7 +623,8 @@ EOFXMLINITIALSYNC;
      */
     public function get_xml_vcard($vcard_id)
     {
-        $href = $this->url_parts['path'] . str_replace('.vcf', null, $vcard_id) . '.vcf';
+        $href = $this->url_parts['path'] . '/' . $this->folder . '/' . str_replace('.vcf', null, $vcard_id) . '.vcf';
+ 
         
         $xml = <<<EOFXMLGETXMLVCARD
 <?xml version="1.0" encoding="utf-8" ?>
@@ -500,7 +690,8 @@ EOFXMLGETXMLVCARD;
      */
     public function delete($vcard_id)
     {
-        $result = $this->query($this->url . $vcard_id . '.vcf', 'DELETE');
+        $result = $this->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'DELETE');
+
 
         switch ($result['http_code'])
         {
@@ -527,8 +718,10 @@ EOFXMLGETXMLVCARD;
         {
             $vcard_id	= $this->generate_vcard_id();
         }
-        $vcard		= $this->clean_vcard($vcard);
-        $result		= $this->query($this->url . $vcard_id . '.vcf', 'PUT', $vcard, 'text/vcard');
+
+        $vcard = str_replace("\nEND:VCARD","\nUID:" . $vcard_id . "\r\nEND:VCARD", $vcard);
+        $result = $this->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'PUT', $vcard, 'text/vcard');
+
 
         switch($result['http_code'])
         {
@@ -567,9 +760,10 @@ EOFXMLGETXMLVCARD;
      *
      * @param	string	$response			CardDAV XML response
      * @param	boolean	$include_vcards		Include vCards or not
+     * @param   boolean $recursive          is it a recursive call 
      * @return	string						Simplified CardDAV XML response
      */
-    private function simplify($response, $include_vcards = true)
+    private function simplify($response, $include_vcards = true, $recursive = false)
     {
         $response = $this->clean_response($response);
 
@@ -591,8 +785,11 @@ EOFXMLGETXMLVCARD;
         $simplified_xml->openMemory();
         $simplified_xml->setIndent(4);
 
-        $simplified_xml->startDocument('1.0', 'utf-8');
-        $simplified_xml->startElement('response');
+        if (!$recursive)
+        {
+            $simplified_xml->startDocument('1.0', 'utf-8');
+            $simplified_xml->startElement('response');
+        } 
 
         if (!empty($xml->response))
         {
@@ -642,10 +839,16 @@ EOFXMLGETXMLVCARD;
             }
         }
 
-        $simplified_xml->endElement();
-        $simplified_xml->endDocument();
-
-        return $simplified_xml->outputMemory();
+        if (!$recursive)
+        {
+            $simplified_xml->endElement();
+            $simplified_xml->endDocument();
+            return $simplified_xml->outputMemory();
+        }
+        else
+        {
+            return $simplified_xml;
+        }
     }
 
     /**
@@ -776,7 +979,7 @@ EOFXMLGETXMLVCARD;
             $carddav = new carddav_backend($this->url);
             $carddav->set_auth($this->username, $this->password);
 
-            $result = $carddav->query($this->url . $vcard_id . '.vcf', 'GET');
+            $result = $carddav->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'GET'); 
 
             if ($result['http_code'] !== 404)
             {

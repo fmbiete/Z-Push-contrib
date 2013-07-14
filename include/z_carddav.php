@@ -239,6 +239,7 @@ class carddav_backend
     {
         $this->url = $url;
 
+        // Url always end with trailing /
         if (substr($this->url, -1, 1) !== '/')
         {
             $this->url = $this->url . '/';
@@ -322,7 +323,7 @@ class carddav_backend
      */
     public function get($include_vcards = true, $raw = false)
     {
-        $result = $this->query($this->url, 'PROPFIND');
+        $result = $this->query($this->url . $this->folder . '/', 'PROPFIND');
 
         switch ($result['http_code'])
         {
@@ -566,8 +567,8 @@ EOFXMLINITIALSYNC;
      */
     private function do_query_report($xml, $include_vcards = true, $raw = false)
     {
-        $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
-
+        $result = $this->query($this->url . $this->folder . '/', 'REPORT', $xml, 'text/xml');
+        
         switch ($result['http_code'])
         {
             case 200:
@@ -597,13 +598,24 @@ EOFXMLINITIALSYNC;
     public function get_vcard($vcard_id)
     {
         $vcard_id = str_replace('.vcf', null, $vcard_id);
-        $result = $this->query($this->url .'/' . $this->folder . '/' . $vcard_id . '.vcf', 'GET');
+        $result = $this->query($this->url . $this->folder . '/' . $vcard_id . '.vcf', 'GET');
   
 
         switch ($result['http_code'])
         {
             case 404:
-                $result = $this->query($this->url . $vcard_id, 'GET');
+                $result = $this->query($this->url . $this->folder . '/' . $vcard_id, 'GET');
+                switch ($result['http_code'])
+                {
+                    case 200:
+                    case 207:
+                        return $result['response'];
+                    break;
+                    default:
+                        throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET_VCARD);
+                    break;
+                }
+            break;
             case 200:
             case 207:
                 return $result['response'];
@@ -623,7 +635,7 @@ EOFXMLINITIALSYNC;
      */
     public function get_xml_vcard($vcard_id)
     {
-        $href = $this->url_parts['path'] . '/' . $this->folder . '/' . str_replace('.vcf', null, $vcard_id) . '.vcf';
+        $href = $this->url_parts['path'] . $this->folder . '/' . str_replace('.vcf', null, $vcard_id) . '.vcf';
  
         
         $xml = <<<EOFXMLGETXMLVCARD
@@ -690,7 +702,7 @@ EOFXMLGETXMLVCARD;
      */
     public function delete($vcard_id)
     {
-        $result = $this->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'DELETE');
+        $result = $this->query($this->url . $this->folder . '/' . $vcard_id . '.vcf', 'DELETE');
 
 
         switch ($result['http_code'])
@@ -720,7 +732,7 @@ EOFXMLGETXMLVCARD;
         }
 
         $vcard = str_replace("\nEND:VCARD","\nUID:" . $vcard_id . "\r\nEND:VCARD", $vcard);
-        $result = $this->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'PUT', $vcard, 'text/vcard');
+        $result = $this->query($this->url . $this->folder . '/' . $vcard_id . '.vcf', 'PUT', $vcard, 'text/vcard');
 
 
         switch($result['http_code'])
@@ -979,7 +991,7 @@ EOFXMLGETXMLVCARD;
             $carddav = new carddav_backend($this->url);
             $carddav->set_auth($this->username, $this->password);
 
-            $result = $carddav->query($this->url . '/' . $this->folder . '/' . $vcard_id . '.vcf', 'GET'); 
+            $result = $carddav->query($this->url . $this->folder . '/' . $vcard_id . '.vcf', 'GET'); 
 
             if ($result['http_code'] !== 404)
             {

@@ -275,7 +275,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         
         // We encode the final message
-        $finalEmail = $finalEmail->encode();
+        $boundary = '--=_' . md5(rand() . microtime());
+        $finalEmail = $finalEmail->encode($boundary);
 
         $finalHeaders = array('Mime-Version' => '1.0');
         // We copy all the headers, minus content_type
@@ -431,7 +432,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
         }
         
-        $boundary = '=_' . md5(rand() . microtime());
+        $boundary = '--=_' . md5(rand() . microtime());
         $altEmail = $altEmail->encode($boundary);
         
         $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));

@@ -262,15 +262,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): is a new message or we are replacing mime"));
-            if (strcasecmp($message->ctype_primary, "text") == 0 && isset($message->body)) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was not multipart"));
-                $finalEmail->addSubPart($message->body, array('content_type' => $message->ctype_primary.'/'.$message->ctype_secondary.'; charset=utf-8', 'encoding' => 'base64'));
-            }
-            if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): the message was multipart"));
-                foreach ($message->parts as $part) {
-                    $this->addSubPart($finalEmail, $part);
-                }
+            $this->addTextPartsMessage($finalEmail, $message);
+            if (isset($message->parts)) {
+                // We add extra parts from the new message
+                $this->addExtraSubParts($finalEmail, $message->parts);
             }
         }
         
@@ -407,7 +402,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $separatorHtmlEnd = "</div>";
         }
         
-        $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
+        $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/alternative'));
 
         if (strlen($htmlBody) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has HTML body"));
@@ -443,6 +438,42 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($htmlSource);
         unset($plainBody);
         unset($plainSource);        
+    }
+
+    /**
+     * Add text parts to a mimepart object
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param Mail_mimeDecode $message reference to the message
+     *
+     * @access private
+     * @return void
+     */
+    private function addTextPartsMessage(&$email, &$message) {
+        $htmlBody = $plainBody = '';
+        $this->getBodyRecursive($message, "html", $htmlBody);
+        $this->getBodyRecursive($message, "plain", $plainBody);
+        
+        $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/alternative'));
+
+        if (strlen($htmlBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextPartsMessage(): The message has HTML body"));
+            $altEmail->addSubPart($htmlBody, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
+        }
+        if (strlen($plainBody) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextPartsMessage(): The message has PLAIN body"));
+            $altEmail->addSubPart($plainBody, array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
+        }
+        
+        $boundary = '=_' . md5(rand() . microtime());
+        $altEmail = $altEmail->encode($boundary);
+        
+        $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));
+        
+        unset($altEmail);
+        
+        unset($htmlBody);
+        unset($plainBody);
     }
 
     /**

@@ -336,7 +336,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             else if (IMAP_SENTFOLDER) {
                 $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s': %s", IMAP_SENTFOLDER, Utils::PrintAsString($asf)));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
             }
             // No Sent folder set, try defaults
             else {
@@ -801,7 +801,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "trash") {
+        else if($lid == "trash" || $lid == "deleted messages") {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;

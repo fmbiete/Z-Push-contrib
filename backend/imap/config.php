@@ -46,25 +46,25 @@
 // ************************
 
 // Defines the server to which we want to connect
-define('IMAP_SERVER', 'localhost');
+// define('IMAP_SERVER', 'localhost');
 
 // connecting to default port (143)
-define('IMAP_PORT', 143);
+// define('IMAP_PORT', 143);
 
 // best cross-platform compatibility (see http://php.net/imap_open for options)
-define('IMAP_OPTIONS', '/notls/norsh');
+// define('IMAP_OPTIONS', '/notls/norsh');
 
 // overwrite the "from" header if it isn't set when sending emails
 // options: 'username'    - the username will be set (usefull if your login is equal to your emailaddress)
 //        'domain'    - the value of the "domain" field is used
 //        '@mydomain.com' - the username is used and the given string will be appended
-define('IMAP_DEFAULTFROM', '');
+// define('IMAP_DEFAULTFROM', '');
 
 // copy outgoing mail to this folder. If not set z-push will try the default folders
-define('IMAP_SENTFOLDER', '');
+// define('IMAP_SENTFOLDER', '');
 
 // forward messages inline (default true - inlined)
-define('IMAP_INLINE_FORWARD', true);
+// define('IMAP_INLINE_FORWARD', true);
 
 // list of folders we want to exclude from sync. Names, or part of it, separated by |
 // example: dovecot.sieve|archive|spam

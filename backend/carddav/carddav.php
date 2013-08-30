@@ -55,7 +55,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $server = null;
 
     // Android only supports synchronizing 1 AddressBook per account
-    private $foldername = "contacts";
+    private $foldername = "personal";
     
     private $changessinkinit = false;
     private $contactsetag;
@@ -95,6 +95,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $this->url = $url;
             $this->username = $username;
             $this->domain = $domain;
+            $this->server->set_folder(CARDDAV_CONTACTS_FOLDER_NAME);
         }
         else {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $url));

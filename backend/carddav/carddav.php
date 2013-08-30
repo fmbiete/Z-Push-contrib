@@ -54,11 +54,12 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $url = null;
     private $server = null;
 
-    // Android only supports synchronizing 1 AddressBook per account
+    // Android only supports synchronizing 1 AddressBook per account, this is the foldername for Z-Push
     private $foldername = "contacts";
     
     private $changessinkinit = false;
     private $contactsetag;
+    private $sinkdata;
 
     /**
      * Constructor
@@ -95,7 +96,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $this->url = $url;
             $this->username = $username;
             $this->domain = $domain;
-            $this->server->set_folder(CARDDAV_FOLDER);
         }
         else {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $url));
@@ -185,28 +185,28 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      */
     public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
-        
-        $this->changessinkinit = true;
 
         // We don't need the actual cards, we only need to get the changes since this moment
-        //FIXME: we need to get the changes since the last actual sync
-        
-        $vcards = false;
+        $this->sinkdata = false;
         try {
-            $vcards = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
+            $this->sinkdata = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
+            $this->changessinkinit = true;
         }
         catch (Exception $ex) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error doing the initial sync: %s", $ex->getMessage()));
         }
         
-        if ($vcards === false) {
+        if ($this->sinkdata === false) {
             ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSinkInitialize - Error initializing the sink"));
-            return false;
+            $this->changessinkinit = false;
         }
         
-        unset($vcards);
+        if (CARDDAV_SUPPORTS_SYNC) {
+            // we don't need to store the sinkdata if the carddav server supports native sync
+            unset($this->sinkdata);
+        }
         
-        return true;
+        return $this->changessinkinit;
     }
 
     /**
@@ -246,12 +246,31 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             }
             else {
                 $xml_vcards = new SimpleXMLElement($vcards);
-                unset($vcards);
                 
-                if (count($xml_vcards->element) > 0) {
-                    $changed = true;
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                if (CARDDAV_SUPPORTS_SYNC) {
+                    if (count($xml_vcards->element) > 0) {
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                    }
                 }
+                else {
+                    $xml_sinkdata = new SimpleXMLElement($this->sinkdata);
+                    if (count($xml_vcards->element) != count($xml_sinkdata->element)) {
+                        // If the number of cards is different, we know for sure, there are changes
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                    }
+                    else {
+                        // If it's the same we need to check vcard to vcard, or the original strings
+                        if (strcmp($this->sinkdata, $vcards) != 0) {
+                            $changed = true;
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                        }
+                    }
+                    unset($xml_sinkdata);
+                }
+                
+                unset($vcards);
                 unset($xml_vcards);
             }
             
@@ -384,7 +403,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $vcards = false;
         try {
             // We don't need the actual vcards here, we only need a list of all them
-            //$vcards = $this->server->get_list_vcards();
+            // This petition is always "initial", and we don't "include_vcards"
             $vcards = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
         }
         catch (Exception $ex) {
@@ -421,7 +440,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         
         $message = false;
         
-        //TODO: change folderid
         $xml_vcard = false;
         try {
             $xml_vcard = $this->server->get_xml_vcard($id);
@@ -455,8 +473,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     public function StatMessage($folderid, $id) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->StatMessage('%s', '%s')", $folderid, $id));
 
-        //TODO: change to folderid
-        
         $message = array();
         $message["mod"] = $this->contactsetag[$id];
         $message["id"] = $id;

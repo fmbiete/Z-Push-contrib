@@ -801,7 +801,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "trash") {
+        else if($lid == "trash" || $lid == "deleted messages") {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;

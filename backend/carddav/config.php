@@ -57,9 +57,16 @@ define('CARDDAV_PORT', '443');
 // Server path to the addressbook
 // %u: replaced with the username
 // %d: replaced with the domain
-define('CARDDAV_PATH', '/caldav.php/%u/addresses');
+//   Add the trailing /
+define('CARDDAV_PATH', '/caldav.php/%u/addresses/');
 
-// Contact addressbook name
+// Addressbook display name
 // %u: replaced with the username
 // %d: replaced with the domain
 define('CARDDAV_CONTACTS_FOLDER_NAME', '%u Addressbook');
+
+
+// If the CardDAV server support the sync-collection operation
+// DAViCal supports it, but SabreDav/Owncloud doesn't
+// Setting this to false will work with most servers, but it will be pretty slow: 1 petition for the href of vcards, and 1 petition for each vcard
+define('CARDDAV_SUPPORTS_SYNC', false);

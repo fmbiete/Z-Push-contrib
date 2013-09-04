@@ -111,7 +111,7 @@ class carddav_backend
      *
      * @constant	string
      */
-    const USERAGENT = 'CardDAV PHP/';
+    const USERAGENT = 'SABREDAV/';
 
     /**
      * CardDAV server url
@@ -126,7 +126,7 @@ class carddav_backend
      * @var	array
      */
     private $url_parts = null;
-
+    
     /**
      * Authentication string
      *
@@ -183,6 +183,13 @@ class carddav_backend
      * @var string
      */
     private $synctoken = "";
+    
+    
+    /* VCard File URL Extension
+     * 
+     * @var string
+     */
+    private $url_vcard_extension = '.vcf'; 
 
     /**
      * Exception codes
@@ -232,6 +239,7 @@ class carddav_backend
     {
         $this->url = $url;
 
+        // Url always end with trailing /
         if (substr($this->url, -1, 1) !== '/')
         {
             $this->url = $this->url . '/';
@@ -273,6 +281,26 @@ class carddav_backend
     {
         return $this->synctoken;
     }
+    
+    /**
+    * Sets the CardDAV vcard url extension
+    *
+    * Most providers do requests handling Vcards with .vcf, however
+    * this isn't always the case and some providers (such as Google)
+    * returned a 404 if the .vcf extension is used - or the other
+    * way around, returning 404 unless .vcf is used.
+    *
+    * Both approaches are technically correct, see rfc635
+    * http://tools.ietf.org/html/rfc6352
+    *
+    *
+    * @param  string  $extension  File extension
+    * @return  void
+    */
+    public function set_vcard_extension($extension)
+    {
+        $this->url_vcard_extension = $extension;
+    }
 
     /**
      * Gets all vCards including additional information from the CardDAV server
@@ -283,6 +311,7 @@ class carddav_backend
      */
     public function get($include_vcards = true, $raw = false)
     {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get"));
         $result = $this->query($this->url, 'PROPFIND');
 
         switch ($result['http_code'])
@@ -305,35 +334,6 @@ class carddav_backend
         }
     }
     
-    
-    /**
-     * Gets all vCards including additional information from the CardDAV server
-     *
-     * @param	boolean	$include_vcards		Include vCards within the response (simplified only)
-     * @param	boolean	$raw				Get response raw or simplified
-     * @return	string						Raw or simplified XML response
-     */
-    public function get_all_vcards($include_vcards = true, $raw = false)
-    {
-        $xml = <<<EOFCONTENTGET
-<?xml version="1.0" encoding="utf-8" ?>
-    <D:sync-collection xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
-    <D:sync-token></D:sync-token>
-    <D:prop>
-        <D:getcontenttype/>
-        <D:getetag/>
-        <D:allprop/>
-        <C:address-data>
-            <C:allprop/>
-        </C:address-data>
-    </D:prop>
-    <C:filter/>
-</D:sync-collection>
-EOFCONTENTGET;
-
-        return $this->do_query_report($xml, $include_vcards, $raw);
-    }
-    
     /**
      * Get all vcards matching a full name or mail.
      *
@@ -345,6 +345,7 @@ EOFCONTENTGET;
      */
     public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false)
     {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->search_vcards"));
         $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
@@ -373,17 +374,21 @@ EOFCONTENTSEARCH;
      *
      * @param boolean $initial              If the sync should be full
      * @param boolean $include_vcards       If the vCards should be included within the response
+     * @param boolean $support_carddav_sync If the cardDAV server supports sync-collection operations (DAViCal supports it)
      * @return string                       Simplified XML response
      */
-    public function do_sync($initial = true, $include_vcards = false)
+    public function do_sync($initial = true, $include_vcards = false, $support_carddav_sync = false)
     {
-        $token = $this->synctoken;
-        if ($initial)
-        {
-            $token = "";
-        }
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_sync"));
         
-        $xml = <<<EOFXMLINITIALSYNC
+        if ($support_carddav_sync) {
+            $token = $this->synctoken;
+            if ($initial)
+            {
+                $token = "";
+            }
+            
+            $xml = <<<EOFXMLINITIALSYNC
 <?xml version="1.0" encoding="utf-8"?>
 <D:sync-collection xmlns:D="DAV:">
     <D:sync-token>$token</D:sync-token>
@@ -395,8 +400,14 @@ EOFCONTENTSEARCH;
 </D:sync-collection>
 EOFXMLINITIALSYNC;
 
-        return $this->do_query_report($xml, $include_vcards, false);
+            return $this->do_query_report($xml, $include_vcards, false);
+        }
+        else
+        {
+            return $this->get($include_vcards, false);
+        }
     }
+        
     
     /**
      * Do a REPORT query against the server
@@ -406,9 +417,11 @@ EOFXMLINITIALSYNC;
      * @param boolean $raw              If the response should be raw or XML simplified
      * @return string
      */
-    private function do_query_report($xml, $include_vcards = true, $raw = false) {
+    private function do_query_report($xml, $include_vcards = true, $raw = false)
+    {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
-
+        
         switch ($result['http_code'])
         {
             case 200:
@@ -437,13 +450,26 @@ EOFXMLINITIALSYNC;
      */
     public function get_vcard($vcard_id)
     {
-        $vcard_id	= str_replace('.vcf', null, $vcard_id);
-        $result		= $this->query($this->url . $vcard_id . '.vcf', 'GET');
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_vcard"));
+        $vcard_id = str_replace($this->url_vcard_extension, null, $vcard_id);
+        $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET');
+  
 
         switch ($result['http_code'])
         {
             case 404:
                 $result = $this->query($this->url . $vcard_id, 'GET');
+                switch ($result['http_code'])
+                {
+                    case 200:
+                    case 207:
+                        return $result['response'];
+                    break;
+                    default:
+                        throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET_VCARD);
+                    break;
+                }
+            break;
             case 200:
             case 207:
                 return $result['response'];
@@ -463,7 +489,9 @@ EOFXMLINITIALSYNC;
      */
     public function get_xml_vcard($vcard_id)
     {
-        $href = $this->url_parts['path'] . str_replace('.vcf', null, $vcard_id) . '.vcf';
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_xml_vcard"));
+        $href = $this->url_parts['path'] . str_replace($this->url_vcard_extension, null, $vcard_id) . $this->url_vcard_extension;
+ 
         
         $xml = <<<EOFXMLGETXMLVCARD
 <?xml version="1.0" encoding="utf-8" ?>
@@ -496,16 +524,20 @@ EOFXMLGETXMLVCARD;
      */
     public function check_connection()
     {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->check_connection"));
         $result = $this->query($this->url, 'OPTIONS');
 
-        if ($result['http_code'] === 200)
+        $status = false;
+        switch($result['http_code'])
         {
-            return true;
+            case 200:
+            case 207:
+            case 401:
+                $status = true;
+                break;
         }
-        else
-        {
-            return false;
-        }
+        
+        return $status;
     }
 
     /**
@@ -529,7 +561,9 @@ EOFXMLGETXMLVCARD;
      */
     public function delete($vcard_id)
     {
-        $result = $this->query($this->url . $vcard_id . '.vcf', 'DELETE');
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->delete"));
+        $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'DELETE');
+
 
         switch ($result['http_code'])
         {
@@ -552,12 +586,15 @@ EOFXMLGETXMLVCARD;
      */
     public function add($vcard, $vcard_id = null)
     {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->add"));
         if ($vcard_id === null)
         {
             $vcard_id	= $this->generate_vcard_id();
         }
-        $vcard		= $this->clean_vcard($vcard);
-        $result		= $this->query($this->url . $vcard_id . '.vcf', 'PUT', $vcard, 'text/vcard');
+
+        $vcard = str_replace("\nEND:VCARD","\nUID:" . $vcard_id . "\r\nEND:VCARD", $vcard);
+        $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'PUT', $vcard, 'text/vcard');
+
 
         switch($result['http_code'])
         {
@@ -596,9 +633,10 @@ EOFXMLGETXMLVCARD;
      *
      * @param	string	$response			CardDAV XML response
      * @param	boolean	$include_vcards		Include vCards or not
+     * @param   boolean $recursive          is it a recursive call 
      * @return	string						Simplified CardDAV XML response
      */
-    private function simplify($response, $include_vcards = true)
+    private function simplify($response, $include_vcards = true, $recursive = false)
     {
         $response = $this->clean_response($response);
 
@@ -620,8 +658,11 @@ EOFXMLGETXMLVCARD;
         $simplified_xml->openMemory();
         $simplified_xml->setIndent(4);
 
-        $simplified_xml->startDocument('1.0', 'utf-8');
-        $simplified_xml->startElement('response');
+        if (!$recursive)
+        {
+            $simplified_xml->startDocument('1.0', 'utf-8');
+            $simplified_xml->startElement('response');
+        } 
 
         if (!empty($xml->response))
         {
@@ -630,7 +671,7 @@ EOFXMLGETXMLVCARD;
                 if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
                 {
                     $id = basename($response->href);
-                    $id = str_replace('.vcf', null, $id);
+                    $id = str_replace($this->url_vcard_extension, null, $id);
 
                     if (!empty($id))
                     {
@@ -671,10 +712,16 @@ EOFXMLGETXMLVCARD;
             }
         }
 
-        $simplified_xml->endElement();
-        $simplified_xml->endDocument();
-
-        return $simplified_xml->outputMemory();
+        if (!$recursive)
+        {
+            $simplified_xml->endElement();
+            $simplified_xml->endDocument();
+            return $simplified_xml->outputMemory();
+        }
+        else
+        {
+            return $simplified_xml;
+        }
     }
 
     /**
@@ -729,6 +776,8 @@ EOFXMLGETXMLVCARD;
      */
     private function query($url, $method, $content = null, $content_type = null)
     {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->query - '%s' '%s' '%s' '%s'", $url, $method, $content, $content_type));
+        
         $this->curl_init();
 
         curl_setopt($this->curl, CURLOPT_URL, $url);
@@ -747,11 +796,11 @@ EOFXMLGETXMLVCARD;
 
         if ($content_type !== null)
         {
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type));
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type, 'Depth: infinity'));
         }
         else
         {
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array());
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Depth: infinity'));
         }
 
         $complete_response	= curl_exec($this->curl);
@@ -805,7 +854,7 @@ EOFXMLGETXMLVCARD;
             $carddav = new carddav_backend($this->url);
             $carddav->set_auth($this->username, $this->password);
 
-            $result = $carddav->query($this->url . $vcard_id . '.vcf', 'GET');
+            $result = $carddav->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET'); 
 
             if ($result['http_code'] !== 404)
             {

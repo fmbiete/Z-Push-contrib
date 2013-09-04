@@ -401,25 +401,27 @@ class Search extends RequestProcessor {
                         }
                     }
                     elseif ($searchname == ISearchProvider::SEARCH_MAILBOX) {
-                        foreach ($rows as $u) {
-                            self::$encoder->startTag(SYNC_SEARCH_RESULT);
-                                self::$encoder->startTag(SYNC_FOLDERTYPE);
-                                self::$encoder->content($u['class']);
-                                self::$encoder->endTag();
-                                self::$encoder->startTag(SYNC_SEARCH_LONGID);
-                                self::$encoder->content($u['longid']);
-                                self::$encoder->endTag();
-                                self::$encoder->startTag(SYNC_FOLDERID);
-                                self::$encoder->content($u['folderid']);
-                                self::$encoder->endTag();
+                        if (is_array($rows) && !empty($rows)) {
+                            foreach ($rows as $u) {
+                                self::$encoder->startTag(SYNC_SEARCH_RESULT);
+                                    self::$encoder->startTag(SYNC_FOLDERTYPE);
+                                    self::$encoder->content($u['class']);
+                                    self::$encoder->endTag();
+                                    self::$encoder->startTag(SYNC_SEARCH_LONGID);
+                                    self::$encoder->content($u['longid']);
+                                    self::$encoder->endTag();
+                                    self::$encoder->startTag(SYNC_FOLDERID);
+                                    self::$encoder->content($u['folderid']);
+                                    self::$encoder->endTag();
 
-                                self::$encoder->startTag(SYNC_SEARCH_PROPERTIES);
-                                    $tmp = explode(":", $u['longid']);
-                                    $message = self::$backend->Fetch($u['folderid'], $tmp[1], $cpo);
-                                    $message->Encode(self::$encoder);
+                                    self::$encoder->startTag(SYNC_SEARCH_PROPERTIES);
+                                        $tmp = explode(":", $u['longid']);
+                                        $message = self::$backend->Fetch($u['folderid'], $tmp[1], $cpo);
+                                        $message->Encode(self::$encoder);
 
-                                self::$encoder->endTag();//result
-                            self::$encoder->endTag();//properties
+                                    self::$encoder->endTag();//result
+                                self::$encoder->endTag();//properties
+                            }
                         }
                     }
                     // it seems that android 4 requires range and searchtotal

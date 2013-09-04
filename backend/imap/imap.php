@@ -63,8 +63,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $password;
     protected $domain;
     protected $serverdelimiter;
-    protected $sinkfolders;
-    protected $sinkstates;
+    protected $sinkfolders = array();
+    protected $sinkstates = array();
     protected $excludedFolders; /* fmbiete's contribution r1527, ZP-319 */
 
     public function BackendIMAP() {
@@ -336,7 +336,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             else if (IMAP_SENTFOLDER) {
                 $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s': %s", IMAP_SENTFOLDER, Utils::PrintAsString($asf)));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
             }
             // No Sent folder set, try defaults
             else {
@@ -635,8 +635,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function HasChangesSink() {
-        $this->sinkfolders = array();
-        $this->sinkstates = array();
         return true;
     }
 
@@ -655,7 +653,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $imapid = $this->getImapIdFromFolderId($folderid);
 
-        if ($imapid) {
+        if ($imapid !== false) {
             $this->sinkfolders[] = $imapid;
             return true;
         }
@@ -675,11 +673,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return array
      */
     public function ChangesSink($timeout = 30) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("ChangesSink(): timeout '%d'", $timeout));
         $notifications = array();
         $stopat = time() + $timeout - 1;
 
         while($stopat > time() && empty($notifications)) {
-            foreach ($this->sinkfolders as $imapid) {
+            foreach ($this->sinkfolders as $i => $imapid) {
                 $this->imap_reopenFolder($imapid);
 
                 // courier-imap only cleares the status cache after checking
@@ -692,8 +691,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 else {
                     $newstate = "M:". $status->messages ."-R:". $status->recent ."-U:". $status->unseen;
 
-                    if (! isset($this->sinkstates[$imapid]) )
+                    if (! isset($this->sinkstates[$imapid]) ) {
                         $this->sinkstates[$imapid] = $newstate;
+                    }
 
                     if ($this->sinkstates[$imapid] != $newstate) {
                         $notifications[] = $this->getFolderIdFromImapId($imapid);
@@ -801,7 +801,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "trash") {
+        else if($lid == "trash" || $lid == "deleted messages") {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;

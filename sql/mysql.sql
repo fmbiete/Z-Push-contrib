@@ -6,3 +6,7 @@ create table states (id_state integer auto_increment, device_id varchar(50) not 
             created_at datetime not null, updated_at datetime not null, primary key (id_state));
 
 create unique index idx_states_unique on states (device_id, uuid, state_type, counter);
+
+-- This is optional, and will require extra configuration in your mysql
+-- http://www.mysqlperformanceblog.com/2012/05/30/data-compression-in-innodb-for-text-and-blob-fields/
+alter table states engine=InnoDB row_format=compressed key_block_size=16;

@@ -126,7 +126,7 @@ class carddav_backend
      * @var	array
      */
     private $url_parts = null;
-    
+
     /**
      * Authentication string
      *
@@ -175,21 +175,21 @@ class carddav_backend
      * @var	array
      */
     private $debug_information = array();
-    
-    
+
+
     /**
      * Sync-token for sync-collection operations.
      *
      * @var string
      */
     private $synctoken = "";
-    
-    
+
+
     /* VCard File URL Extension
-     * 
+     *
      * @var string
      */
-    private $url_vcard_extension = '.vcf'; 
+    private $url_vcard_extension = '.vcf';
 
     /**
      * Exception codes
@@ -271,7 +271,7 @@ class carddav_backend
     {
         return $this->debug_information;
     }
-    
+
     /**
      * Get the sync-token
      *
@@ -281,7 +281,7 @@ class carddav_backend
     {
         return $this->synctoken;
     }
-    
+
     /**
     * Sets the CardDAV vcard url extension
     *
@@ -311,7 +311,7 @@ class carddav_backend
      */
     public function get($include_vcards = true, $raw = false)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get"));
         $result = $this->query($this->url, 'PROPFIND');
 
         switch ($result['http_code'])
@@ -333,7 +333,7 @@ class carddav_backend
             break;
         }
     }
-    
+
     /**
      * Get all vcards matching a full name or mail.
      *
@@ -345,7 +345,7 @@ class carddav_backend
      */
     public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->search_vcards"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->search_vcards"));
         $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
@@ -368,7 +368,7 @@ EOFCONTENTSEARCH;
 
         return $this->do_query_report($xml, $include_vcards, $raw);
     }
-    
+
     /**
      * Get all vcards or changes since the last sync.
      *
@@ -379,15 +379,15 @@ EOFCONTENTSEARCH;
      */
     public function do_sync($initial = true, $include_vcards = false, $support_carddav_sync = false)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_sync"));
-        
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_sync"));
+
         if ($support_carddav_sync) {
             $token = $this->synctoken;
             if ($initial)
             {
                 $token = "";
             }
-            
+
             $xml = <<<EOFXMLINITIALSYNC
 <?xml version="1.0" encoding="utf-8"?>
 <D:sync-collection xmlns:D="DAV:">
@@ -407,8 +407,8 @@ EOFXMLINITIALSYNC;
             return $this->get($include_vcards, false);
         }
     }
-        
-    
+
+
     /**
      * Do a REPORT query against the server
      *
@@ -419,9 +419,9 @@ EOFXMLINITIALSYNC;
      */
     private function do_query_report($xml, $include_vcards = true, $raw = false)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
-        
+
         switch ($result['http_code'])
         {
             case 200:
@@ -450,10 +450,10 @@ EOFXMLINITIALSYNC;
      */
     public function get_vcard($vcard_id)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_vcard"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_vcard"));
         $vcard_id = str_replace($this->url_vcard_extension, null, $vcard_id);
         $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET');
-  
+
 
         switch ($result['http_code'])
         {
@@ -489,10 +489,10 @@ EOFXMLINITIALSYNC;
      */
     public function get_xml_vcard($vcard_id)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_xml_vcard"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_xml_vcard"));
         $href = $this->url_parts['path'] . str_replace($this->url_vcard_extension, null, $vcard_id) . $this->url_vcard_extension;
- 
-        
+
+
         $xml = <<<EOFXMLGETXMLVCARD
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
@@ -524,7 +524,7 @@ EOFXMLGETXMLVCARD;
      */
     public function check_connection()
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->check_connection"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->check_connection"));
         $result = $this->query($this->url, 'OPTIONS');
 
         $status = false;
@@ -536,7 +536,7 @@ EOFXMLGETXMLVCARD;
                 $status = true;
                 break;
         }
-        
+
         return $status;
     }
 
@@ -561,7 +561,7 @@ EOFXMLGETXMLVCARD;
      */
     public function delete($vcard_id)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->delete"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->delete"));
         $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'DELETE');
 
 
@@ -586,7 +586,7 @@ EOFXMLGETXMLVCARD;
      */
     public function add($vcard, $vcard_id = null)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->add"));
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->add"));
         if ($vcard_id === null)
         {
             $vcard_id	= $this->generate_vcard_id();
@@ -633,7 +633,7 @@ EOFXMLGETXMLVCARD;
      *
      * @param	string	$response			CardDAV XML response
      * @param	boolean	$include_vcards		Include vCards or not
-     * @param   boolean $recursive          is it a recursive call 
+     * @param   boolean $recursive          is it a recursive call
      * @return	string						Simplified CardDAV XML response
      */
     private function simplify($response, $include_vcards = true, $recursive = false)
@@ -648,8 +648,8 @@ EOFXMLGETXMLVCARD;
         {
             throw new Exception('The XML response seems to be malformed and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE, $e);
         }
-        
-        if (!empty($xml->{'sync-token'})) 
+
+        if (!empty($xml->{'sync-token'}))
         {
             $this->synctoken = $xml->{'sync-token'};
         }
@@ -662,7 +662,7 @@ EOFXMLGETXMLVCARD;
         {
             $simplified_xml->startDocument('1.0', 'utf-8');
             $simplified_xml->startElement('response');
-        } 
+        }
 
         if (!empty($xml->response))
         {
@@ -776,8 +776,8 @@ EOFXMLGETXMLVCARD;
      */
     private function query($url, $method, $content = null, $content_type = null)
     {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->query - '%s' '%s' '%s' '%s'", $url, $method, $content, $content_type));
-        
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->query - '%s' '%s' '%s' '%s'", $url, $method, $content, $content_type));
+
         $this->curl_init();
 
         curl_setopt($this->curl, CURLOPT_URL, $url);
@@ -854,7 +854,7 @@ EOFXMLGETXMLVCARD;
             $carddav = new carddav_backend($this->url);
             $carddav->set_auth($this->username, $this->password);
 
-            $result = $carddav->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET'); 
+            $result = $carddav->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET');
 
             if ($result['http_code'] !== 404)
             {

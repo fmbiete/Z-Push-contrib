@@ -54,18 +54,20 @@ include_once('include/RFC822.php');
 
 
 class BackendIMAP extends BackendDiff implements ISearchProvider {
-    protected $wasteID;
-    protected $sentID;
-    protected $server;
-    protected $mbox;
-    protected $mboxFolder;
-    protected $username;
+    private $wasteID;
+    private $sentID;
+    private $server;
+    private $mbox;
+    private $mboxFolder;
+    private $username;
     private $password;
-    protected $domain;
-    protected $serverdelimiter;
-    protected $sinkfolders = array();
-    protected $sinkstates = array();
-    protected $excludedFolders; /* fmbiete's contribution r1527, ZP-319 */
+    private $domain;
+    private $serverdelimiter;
+    private $sinkfolders = array();
+    private $sinkstates = array();
+    private $changessinkinit = false;
+    private $excludedFolders;
+
 
     public function BackendIMAP() {
         $this->wasteID = false;
@@ -154,7 +156,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         $this->SaveStorages();
     }
-    
+
     /**
      * Sends an e-mail
      * This messages needs to be saved into the 'sent items' folder
@@ -164,7 +166,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access public
      * @return boolean
      * @throws StatusException
-     */    
+     */
     public function SendMail($sm) {
         global $imap_smtp_params;
 
@@ -194,12 +196,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 //We will need $sourceMail if the message is forwarded and not inlined
             }
         }
-        
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the new message"));
         $mobj = new Mail_mimeDecode($sm->mime);
         $message = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
-        unset($mobj);        
-        
+        unset($mobj);
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
         $Mail_RFC822 = new Mail_RFC822();
         $fromaddr = $toaddr = "";
@@ -217,24 +219,24 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
         }
         unset($Mail_RFC822);
-        
+
         // We set the return-path
         if (!isset($message->headers["return-path"])) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No Return-Path address defined, we use From"));
             $message->headers["return-path"] = $fromaddr;
         }
-        
+
         //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
         //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
         //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
-        
+
         // I don't mind if the new message is multipart or not, I always will create a multipart. It's simpler
         $finalEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
-            
+
         if ($sm->replyflag && (!isset($sm->replacemime) || $sm->replacemime === false)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Replying message"));
             $this->addTextParts($finalEmail, $message, $sourceMessage, true);
-                
+
             if (isset($message->parts)) {
                 // We add extra parts from the replying message
                 $this->addExtraSubParts($finalEmail, $message->parts);
@@ -249,7 +251,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             else {
                 ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Forwarding inlined message");
                 $this->addTextParts($finalEmail, $message, $sourceMessage, false);
-            
+
                 if (isset($message->parts)) {
                     // We add extra parts from the forwarding message
                     $this->addExtraSubParts($finalEmail, $message->parts);
@@ -268,7 +270,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $this->addExtraSubParts($finalEmail, $message->parts);
             }
         }
-        
+
         // We encode the final message
         $boundary = '=_' . md5(rand() . microtime());
         $finalEmail = $finalEmail->encode($boundary);
@@ -284,20 +286,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         foreach ($finalEmail['headers'] as $k => $v) {
             $finalHeaders[$k] = $v;
         }
-        
+
         $finalBody = "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
 
         unset($sourceMail);
         unset($message);
-        unset($sourceMessage);        
+        unset($sourceMessage);
         unset($finalEmail);
-        
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Final mail to send:"));
         foreach ($finalHeaders as $k => $v)
             ZLog::Write(LOGLEVEL_WBXML, sprintf("%s: %s", $k, $v));
         foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline)
             ZLog::Write(LOGLEVEL_WBXML, sprintf("Body: %s", $bodyline));
-        
+
         //http://pear.php.net/manual/en/package.mail.mail.factory.php
         $sendingMethod = 'mail';
         if (defined('IMAP_SMTP_METHOD')) {
@@ -318,10 +320,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if ($send !== true) {
             throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
         }
-        
+
         if (isset($sm->saveinsent)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sent Items folder"));
-            
+
             $headers = "";
             foreach ($finalHeaders as $k => $v) {
                 if (strlen($headers) > 0) {
@@ -329,7 +331,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 $headers .= "$k: $v";
             }
-            
+
             $saved = false;
             if ($this->sentID) {
                 $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
@@ -354,7 +356,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $saved = true;
                 }
             }
-            
+
             unset($headers);
 
             if (!$saved) {
@@ -364,13 +366,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
         }
-        
+
         unset($finalHeaders);
         unset($finalBody);
-        
+
         return $send;
     }
-    
+
     /**
      * Add text parts to a mimepart object, with reply or forward tags
      *
@@ -389,7 +391,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $htmlSource = $plainSource = '';
         $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
         $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
-        
+
         $separator = '';
         if ($isReply) {
             $separator = ">\r\n";
@@ -401,7 +403,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $separatorHtml = "<div>";
             $separatorHtmlEnd = "</div>";
         }
-        
+
         $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/alternative'));
 
         if (strlen($htmlBody) > 0) {
@@ -426,18 +428,18 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> ".$plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
             }
         }
-        
+
         $boundary = '=_' . md5(rand() . microtime());
         $altEmail = $altEmail->encode($boundary);
-        
+
         $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));
-        
+
         unset($altEmail);
-        
+
         unset($htmlBody);
         unset($htmlSource);
         unset($plainBody);
-        unset($plainSource);        
+        unset($plainSource);
     }
 
     /**
@@ -453,7 +455,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $htmlBody = $plainBody = '';
         $this->getBodyRecursive($message, "html", $htmlBody);
         $this->getBodyRecursive($message, "plain", $plainBody);
-        
+
         $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/alternative'));
 
         if (strlen($htmlBody) > 0) {
@@ -464,14 +466,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextPartsMessage(): The message has PLAIN body"));
             $altEmail->addSubPart($plainBody, array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
         }
-        
+
         $boundary = '=_' . md5(rand() . microtime());
         $altEmail = $altEmail->encode($boundary);
-        
+
         $email->addSubPart($altEmail['body'], array('content_type' => 'multipart/alternative;'."\n".' boundary="'.$boundary.'"'));
-        
+
         unset($altEmail);
-        
+
         unset($htmlBody);
         unset($plainBody);
     }
@@ -488,14 +490,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private function addExtraSubParts(&$email, $parts) {
         if (isset($parts)) {
             foreach ($parts as $part) {
-                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) 
+                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline"))
                         || (isset($part->ctype_primary) && $part->ctype_primary != "text" &&  $part->ctype_primary != "multipart")) {
                     $this->addSubPart($email, $part);
                 }
             }
         }
     }
-    
+
     /**
      * Add a subpart to a mimepart object.
      *
@@ -515,7 +517,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             if (isset($part->ctype_secondary)) {
                 $params['content_type'] .= '/' . $part->ctype_secondary;
             }
-            if (isset($part->ctype_parameters)) { 
+            if (isset($part->ctype_parameters)) {
                 foreach ($part->ctype_parameters as $k => $v) {
                     $params['content_type'] .= '; ' . $k . '=' . $v;
                 }
@@ -655,10 +657,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if ($imapid !== false) {
             $this->sinkfolders[] = $imapid;
-            return true;
+            $this->changessinkinit = true;
         }
 
-        return false;
+        return $this->changessinkinit;
     }
 
     /**
@@ -673,9 +675,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return array
      */
     public function ChangesSink($timeout = 30) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("ChangesSink(): timeout '%d'", $timeout));
         $notifications = array();
         $stopat = time() + $timeout - 1;
+
+        //We can get here and the ChangesSink not be initialized yet
+        if (!$this->changessinkinit) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP>ChangesSink - Not initialized ChangesSink, sleep and exit"));
+            // We sleep and do nothing else
+            sleep($timeout);
+            return $notifications;
+        }
 
         while($stopat > time() && empty($notifications)) {
             foreach ($this->sinkfolders as $i => $imapid) {
@@ -698,6 +707,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     if ($this->sinkstates[$imapid] != $newstate) {
                         $notifications[] = $this->getFolderIdFromImapId($imapid);
                         $this->sinkstates[$imapid] = $newstate;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangesSink(): ChangesSink detected!!"));
                     }
                 }
             }
@@ -983,7 +993,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $message = array();
                 $message["mod"] = $date;
                 $message["id"] = $overview->uid;
-                
+
                 // 'seen' aka 'read'
                 if(array_key_exists("seen", $vars) && $overview->seen) {
                     $message["flags"] = 1;
@@ -991,14 +1001,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 else {
                     $message["flags"] = 0;
                 }
-                
+
                 // 'flagged' aka 'FollowUp' aka 'starred'
                 if (array_key_exists("flagged", $vars) && $overview->flagged) {
                     $message["star"] = 1;
                 }
                 else {
                     $message["star"] = 0;
-                }                
+                }
 
                 array_push($messages, $message);
             }
@@ -1156,7 +1166,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     //flagstatus 0: clear, 1: complete, 2: active
                     $output->flag->flagstatus = SYNC_FLAGSTATUS_ACTIVE;
                     //flagtype: for follow up
-                    $output->flag->flagtype = "FollowUp";                    
+                    $output->flag->flagtype = "FollowUp";
                 }
                 else {
                     $output->flag->flagstatus = SYNC_FLAGSTATUS_CLEAR;
@@ -1328,7 +1338,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $entry = array();
         $entry["mod"] = (array_key_exists( "date", $vars)) ? $overview[0]->date : "";
         $entry["id"] = $overview[0]->uid;
-        
+
         // 'seen' aka 'read'
         if (array_key_exists("seen", $vars) && $overview[0]->seen) {
             $entry["flags"] = 1;
@@ -1462,7 +1472,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         return $status;
-    }  
+    }
 
     /**
      * Called when the user has requested to delete (really delete) a message
@@ -1517,7 +1527,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // before moving the message, it should be checked if the message is in the SyncInterval
         // to determine the cutoffdate use Utils::GetCutOffDate($contentparameters->GetFilterType());
         // if the message is not in the interval an StatusException with code SYNC_MOVEITEMSSTATUS_INVALIDSOURCEID should be thrown
-        
+
         if ($folderImapid == $newfolderImapid) {
             throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, destination folder is source folder. Canceling the move.", $folderid, $id, $newfolderid), SYNC_MOVEITEMSSTATUS_SAMESOURCEANDDEST);
         }
@@ -1677,7 +1687,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
         }
-            
+
 
         if ($numMessages > 0) {
             // range for the search results
@@ -1688,13 +1698,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $rangestart = $searchRange[0];
                 $rangeend = $searchRange[1];
             }
-                    
+
             $querycnt = $numMessages;
             $items = array();
             $querylimit = (($rangeend + 1) < $querycnt) ? ($rangeend + 1) : $querycnt + 1;
             $items['range'] = $rangestart.'-'.($querylimit - 1);
             $items['searchtotal'] = $querycnt;
-                        
+
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults: %s entries found, returning %s", $items['searchtotal'], $items['range']));
 
             $p = 0;
@@ -1799,7 +1809,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $filter .= ' BODY "' . $searchText . '"';
-        
+
         return $filter;
     }
 
@@ -2064,7 +2074,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return $receiveddate;
     }
-    
+
     /**
      * Returns the default value for "From"
      *
@@ -2082,7 +2092,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             $v = $this->username . IMAP_DEFAULTFROM;
         }
-        
+
         return $v;
     }
 

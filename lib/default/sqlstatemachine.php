@@ -45,12 +45,12 @@
 * Consult LICENSE file for details
 ************************************************/
 
-class FileStateMachine implements IStateMachine {
+class SqlStateMachine implements IStateMachine {
     const SUPPORTED_STATE_VERSION = IStateMachine::STATEVERSION_02;
     const VERSION = "version";
-    
 
-    
+
+
     private $dbh;
     private $options;
 
@@ -62,27 +62,26 @@ class FileStateMachine implements IStateMachine {
      * @access public
      * @throws FatalMisconfigurationException
      */
-    public function FileStateMachine() {
+    public function SqlStateMachine() {
+        ZLog::Write(LOGLEVEL_DEBUG, "SqlStateMachine(): init");
+
         if (!defined('STATE_SQL_DSN') || !defined('STATE_SQL_USER') || !defined('STATE_SQL_PASSWORD')) {
-            throw new FatalMisconfigurationException("No configuration for the state sqll database available.");
+            throw new FatalMisconfigurationException("No configuration for the state sql database available.");
         }
-        
+
         $this->options = array();
         if (defined('STATE_SQL_OPTIONS')) {
             $this->options = unserialize(STATE_SQL_OPTIONS);
         }
-        
+
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
         }
         catch(PDOException $ex) {
             throw new FatalMisconfigurationException(sprintf("Not possible to connect to the state database: %s", $ex->getMessage()));
         }
-        
-        $this->clearConnection($this->dbh, null, null);
-        
-        /// https://github.com/synnack/sogosync/commit/048a8aa6a521c339efc443b2be986bf947bae688
-        /// http://www.php.net/manual/en/pdo.lobs.php
+
+        $this->clearConnection($this->dbh);
     }
 
     /**
@@ -101,36 +100,41 @@ class FileStateMachine implements IStateMachine {
      * @throws StateNotFoundException, StateInvalidException
      */
     public function GetStateHash($devid, $type, $key = false, $counter = false) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetStateHash(): '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter));
+
         $sql = "select updated_at from states where devid = :devid";
         $params = array(":devid" => $devid);
         $this->getStateWhereConditions($sql, $params, $type, $key, $counter);
-        
+
         $hash = null;
         $sth = null;
         $record = null;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if (!$record) {
                 $this->clearConnection($this->dbh, $sth, $record);
-                throw new StateNotFoundException(sprintf("FileStateMachine->GetStateHash(): Could not locate state '%s'", $sql));
+                throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state '%s'", $sql));
             }
             else {
                 // datetime->format("U") returns EPOCH
-                $hash = $record["updated_at"]->format("U");
+                $datetime = new DateTime($record["updated_at"]);
+                $hash = $datetime->format("U");
             }
         }
         catch(PDOException $ex) {
             $this->clearConnection($this->dbh, $sth, $record);
-            throw new StateNotFoundException(sprintf("FileStateMachine->GetStateHash(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
+            throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetStateHash(): return '%s'", $hash));
+
         return $hash;
     }
 
@@ -150,39 +154,40 @@ class FileStateMachine implements IStateMachine {
      * @throws StateNotFoundException, StateInvalidException
      */
     public function GetState($devid, $type, $key = false, $counter = false, $cleanstates = true) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetState(): '%s', '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter, $cleanstates));
         if ($counter && $cleanstates)
             $this->CleanStates($devid, $type, $key, $counter);
-        
+
         $sql = "select data from states where devid = :devid";
         $params = array(":devid" => $devid);
         $this->getStateWhereConditions($sql, $params, $type, $key, $counter);
-        
+
         $data = null;
         $sth = null;
         $record = null;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if (!$record) {
                 $this->clearConnection($this->dbh, $sth, $record);
-                throw new StateNotFoundException(sprintf("FileStateMachine->GetState(): Could not locate state '%s'", $sql));
+                throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state '%s'", $sql));
             }
             // throw an exception on all other states, but not FAILSAVE as it's most of the times not there by default
             else if ($type !== IStateMachine::FAILSAVE) {
-                $data = unserialize($record["updated_at"]);
+                $data = unserialize($record["data"]);
             }
         }
         catch(PDOException $ex) {
             $this->clearConnection($this->dbh, $sth, $record);
-            throw new StateNotFoundException(sprintf("FileStateMachine->GetState(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
+            throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $data;
     }
 
@@ -200,51 +205,67 @@ class FileStateMachine implements IStateMachine {
      * @throws StateInvalidException
      */
     public function SetState($state, $devid, $type, $key = false, $counter = false) {
-        $sql = "insert into states (devid, type, key, counter, data, created_at, updated_at) values (:devid, :type, :key, :counter, :data, :created_at, :updated_at)";
-        $params[":devid"] = $devid;
-        $params[":data"] = serialize($state);
-        $params[":created_at"] = new DateTime("NOW");
-        $params[":updated_at"] = new DateTime("NOW");
-        if ($type !== "") {
-            $params[":type"] = $type;
-        }
-        else {
-            $params[":type"] = null;
-        }
-        if ($key !== false) {
-            $params[":key"] = $key;
-        }
-        else {
-            $params[":key"] = null;
-        }
-        if ($counter !== false) {
-            $params[":counter"] = $counter;
-        }
-        else {
-            $params[":counter"] = null;
-        }
-        
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->SetState(): '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter));
+
+        $sql = "select data from states where devid = :devid";
+        $params = array(":devid" => $devid);
+        $this->getStateWhereConditions($sql, $params, $type, $key, $counter);
+
         $sth = null;
+        $record = null;
         $bytes = 0;
+
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sth = $this->dbh->prepare($sql);
+            $sth->execute($params);
+
+            $params[":data"] = serialize($state);
+            $now = new DateTime("NOW");
+            $now = $now->format("Y-m-d H:i:s");
+            $params[":updated_at"] = $now;
+
+            $record = $sth->fetch(PDO::FETCH_ASSOC);
+            if (!$record) {
+                // New record
+                $sql = "insert into states (devid, type, key_value, counter, data, created_at, updated_at) values (:devid, :type, :key_value, :counter, :data, :created_at, :updated_at)";
+                $params[":created_at"] = $now;
+                if (!isset($params[":type"])) {
+                    $params[":type"] = null;
+                }
+                if (!isset($params[":key_value"])) {
+                    $params[":key_value"] = null;
+                }
+                if (!isset($params[":counter"])) {
+                    $params[":counter"] = null;
+                }
+
+                $sth = $this->dbh->prepare($sql);
+            }
+            else {
+                // Existing record, we update it
+                $sql = "update states set data = :data, updated_at = :updated_at where devid = :devid";
+                $this->getStateWhereConditions($sql, $params, $type, $key, $counter);
+
+                $sth = $this->dbh->prepare($sql);
+            }
+
             if (!$sth->execute($params) ) {
-                $this->clearConnection($this->dbh, $sth, null);
-                throw new StateNotFoundException(sprintf("FileStateMachine->SetState(): Could not write state '%s'", $sql));
+                $this->clearConnection($this->dbh, $sth);
+                throw new StateNotFoundException(sprintf("SqlStateMachine->SetState(): Could not write state '%s'", $sql));
             }
             else {
                 $bytes = strlen($params[":data"]);
             }
         }
         catch(PDOException $ex) {
-            $this->clearConnection($this->dbh, $sth, null);
-            throw new StateNotFoundException(sprintf("FileStateMachine->SetState(): Could not write state '%s': %s", $sql, $ex->getMessage()));
+            $this->clearConnection($this->dbh, $sth);
+            throw new StateNotFoundException(sprintf("SqlStateMachine->SetState(): Could not write state '%s': %s", $sql, $ex->getMessage()));
         }
-        
-        $this->clearConnection($this->dbh, $sth, null);
-        
+
+        $this->clearConnection($this->dbh, $sth, $record);
+
         return $bytes;
     }
 
@@ -263,6 +284,8 @@ class FileStateMachine implements IStateMachine {
      * @throws StateInvalidException
      */
     public function CleanStates($devid, $type, $key, $counter = false) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->CleanStates(): '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter));
+
         $sql = "delete from states where devid = :devid";
         $params = array(":devid" => $devid);
         $this->getStateWhereConditions($sql, $params, $type, $key, false);
@@ -270,20 +293,20 @@ class FileStateMachine implements IStateMachine {
             $sql .= " and counter < :counter";
             $params[":counter"] = $counter;
         }
-        
+
         $sth = null;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->CleanStates(): Deleting states: '%s'", $sql));
+
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->CleanStates(): Deleting states: '%s'", $sql));
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->CleanStates(): Error deleting states: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->CleanStates(): Error deleting states: '%s' %s", $sql, $ex->getMessage()));
         }
-        
-        $this->clearConnection($this->dbh, $sth, $record)
+
+        $this->clearConnection($this->dbh, $sth, $record);
     }
 
     /**
@@ -296,42 +319,46 @@ class FileStateMachine implements IStateMachine {
      * @return boolean     indicating if the user was added or not (existed already)
      */
     public function LinkUserDevice($username, $devid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->LinkUserDevice(): '%s', '%s'", $username, $devid));
+
         $sth = null;
         $record = null;
         $changed = false;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sql = "select username from users where username = :username and devid = :devid";
             $params = array(":username" => $username, ":devid" => $devid);
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if ($record) {
-                ZLog::Write(LOGLEVEL_DEBUG, "FileStateMachine->LinkUserDevice(): nothing changed");
+                ZLog::Write(LOGLEVEL_DEBUG, "SqlStateMachine->LinkUserDevice(): nothing changed");
             }
             else {
                 $sth = null;
                 $sql = "insert into users (username, devid, created_at, updated_at) values (:username, :devid, :created_at, :updated_at)";
-                $params[":created_at"] = new DateTime("NOW");
-                $params[":updated_at"] = new DateTime("NOW");
+                $now = new DateTime("NOW");
+                $now = $now->format("Y-m-d H:i:s");
+                $params[":created_at"] = $now;
+                $params[":updated_at"] = $now;
                 $sth = $this->dbh->prepare($sql);
                 if ($sth->execute($params)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->LinkUserDevice(): Linked user-device: '%s' '%s'", $username, $devid));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->LinkUserDevice(): Linked user-device: '%s' '%s'", $username, $devid));
                     $changed = true;
                 }
                 else {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->LinkUserDevice(): Unable to link user-device: '%s'", $sql));
+                    ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Unable to link user-device: '%s'", $sql));
                 }
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->LinkUserDevice(): Error linking user-device: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Error linking user-device: '%s' %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $changed;
     }
 
@@ -345,28 +372,30 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function UnLinkUserDevice($username, $devid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->UnLinkUserDevice(): '%s', '%s'", $username, $devid));
+
         $sth = null;
         $changed = false;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sql = "delete from users where username = :username and devid = :devid";
             $params = array(":username" => $username, ":devid" => $devid);
             $sth = $this->dbh->prepare($sql);
             if ($sth->execute($params)) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->UnLinkUserDevice(): Unlinked user-device: '%s' '%s'", $username, $devid));
-                changed = true;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->UnLinkUserDevice(): Unlinked user-device: '%s' '%s'", $username, $devid));
+                $changed = true;
             }
             else {
-                ZLog::Write(LOGLEVEL_DEBUG, "FileStateMachine->UnLinkUserDevice(): nothing changed");
+                ZLog::Write(LOGLEVEL_DEBUG, "SqlStateMachine->UnLinkUserDevice(): nothing changed");
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->UnLinkUserDevice(): Error unlinking user-device: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->UnLinkUserDevice(): Error unlinking user-device: '%s' %s", $sql, $ex->getMessage()));
         }
-        
-        $this->clearConnection($this->dbh, $sth, null);
-        
+
+        $this->clearConnection($this->dbh, $sth);
+
         return $changed;
     }
 
@@ -380,12 +409,14 @@ class FileStateMachine implements IStateMachine {
      * @return array
      */
     public function GetAllDevices($username = false) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetAllDevices(): '%s'", $username));
+
         $sth = null;
         $record = null;
         $out = array();
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             if  ($username === false) {
                 $sql = "select distinct(devid) from users order by devid";
                 $params = array();
@@ -396,17 +427,17 @@ class FileStateMachine implements IStateMachine {
             }
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             while ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
                 $out[] = $record["devid"];
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->GetAllDevices(): Error listing devices: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllDevices(): Error listing devices: '%s' %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $out;
     }
 
@@ -417,18 +448,20 @@ class FileStateMachine implements IStateMachine {
      * @return int
      */
     public function GetStateVersion() {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetStateVersion()"));
+
         $sth = null;
         $record = null;
         $version = IStateMachine::STATEVERSION_01;
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
-            $sql = "select value from settings where key = :key";
-            $params = array(":key" => self::VERSION);
-            
+
+            $sql = "select value from settings where key_name = :key_name";
+            $params = array(":key_name" => self::VERSION);
+
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if ($record) {
                 $version = $record["value"];
@@ -439,11 +472,11 @@ class FileStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->GetStateVersion(): Error getting state version: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetStateVersion(): Error getting state version: '%s' %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $version;
     }
 
@@ -456,25 +489,30 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function SetStateVersion($version) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->SetStateVersion(): '%s'", $version));
+
         $sth = null;
         $record = null;
         $status = false;
         try {
+            $now = new DateTime("NOW");
+            $now = $now->format("Y-m-d H:i:s");
+
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
-            $sql = "select value from settings where key = :key";
-            $params = array(":key" => self::VERSION);
-            
+
+            $sql = "select value from settings where key_name = :key_name";
+            $params = array(":key_name" => self::VERSION);
+
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if ($record) {
                 $sth = null;
-                $sql = "update settings set value = :value, updated_at = :updated_at where key = :key";
+                $sql = "update settings set value = :value, updated_at = :updated_at where key_name = :key_name";
                 $params[":value"] = $version;
-                $params[":updated_at"] = new DateTime("NOW");
-                
+                $params[":updated_at"] = $now;
+
                 $sth = $this->dbh->prepare($sql);
                 if ($sth->execute($params)) {
                     $status = true;
@@ -482,11 +520,11 @@ class FileStateMachine implements IStateMachine {
             }
             else {
                 $sth = null;
-                $sql = "insert into settings (key, value, created_at, updated_at) values (:key, :value, :created_at, :updated_at)";
+                $sql = "insert into settings (key_name, value, created_at, updated_at) values (:key_name, :value, :created_at, :updated_at)";
                 $params[":value"] = $version;
-                $params[":updated_at"] = new DateTime("NOW");
-                $params[":created_at"] = new DateTime("NOW");
-                
+                $params[":updated_at"] = $now;
+                $params[":created_at"] = $now;
+
                 $sth = $this->dbh->prepare($sql);
                 if ($sth->execute($params)) {
                     $status = true;
@@ -494,11 +532,11 @@ class FileStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->SetStateVersion(): Error saving state version: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->SetStateVersion(): Error saving state version: '%s' %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $status;
     }
 
@@ -511,18 +549,20 @@ class FileStateMachine implements IStateMachine {
      * @return array(mixed)
      */
     public function GetAllStatesForDevice($devid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetAllStatesForDevice(): '%s'", $devid));
+
         $sth = null;
         $record = null;
         $out = array();
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
-            
+
             $sql = "select * from states where devid = :devid";
             $params = array(":devid" => $devid);
 
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
-            
+
             while ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
                 $state = array('type' => false, 'counter' => false, 'uuid' => false);
                 if ($record["type"] !== null && strlen($record["type"]) > 0) {
@@ -536,18 +576,18 @@ class FileStateMachine implements IStateMachine {
                 if ($record["counter"] !== null && strlen($record["counter"]) > 0) {
                     $state["counter"] = $record["counter"];
                 }
-                if ($record["key"] !== null && strlen($record["key"]) > 0) {
-                    $state["uuid"] = $record["key"];
+                if ($record["key_value"] !== null && strlen($record["key_value"]) > 0) {
+                    $state["uuid"] = $record["key_value"];
                 }
                 $out[] = $state;
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("FileStateMachine->GetAllStatesForDevice(): Error listing states: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllStatesForDevice(): Error listing states: '%s' %s", $sql, $ex->getMessage()));
         }
-        
+
         $this->clearConnection($this->dbh, $sth, $record);
-        
+
         return $out;
     }
 
@@ -562,16 +602,16 @@ class FileStateMachine implements IStateMachine {
             $params[":type"] = $type;
         }
         if ($key !== false) {
-            $sql .= " and key = :key";
-            $params[":key"] = $key;
+            $sql .= " and key_value = :key_value";
+            $params[":key_value"] = $key;
         }
         if ($counter !== false) {
             $sql .= " and counter = :counter";
             $params[":counter"] = $counter;
         }
     }
-    
-    private function clearConnection(&$dbh, &$sth, &$record) {
+
+    private function clearConnection(&$dbh, &$sth = null, &$record = null) {
         if ($record != null) {
             $record = null;
         }

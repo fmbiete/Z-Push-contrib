@@ -91,7 +91,7 @@
     define('STATE_SQL_DSN', '');
     define('STATE_SQL_USER', '');
     define('STATE_SQL_PASSWORD', '');
-    define('STATE_SQL_OPTIONS', serialize(array()));
+    define('STATE_SQL_OPTIONS', serialize(array(PDO::ATTR_PERSISTENT => true)));
 
 
 /**********************************************************************************

@@ -24,3 +24,76 @@ URL: http://z-push.sourceforge.net/soswp/
 Z-Push is an implementation of the ActiveSync protocol, which is used 'over-the-air' for multi platform ActiveSync devices, including Windows Mobile, Ericsson and Nokia phones. With Z-Push any groupware can be connected and synced with these devices.
 
 License: GNU Affero Genaral Public License v3.0 (AGPLv3)
+
+
+Documentation
+=============
+
+Requisites
+==========
+PHP 5.4 (5.3 should also work, but 5.4 is better)
+NGINX or APACHE
+PHP-FPM or MOD_PHP
+
+Configuration
+=============
+
+NGINX, 1.4 at least or you will need to enable chunkin mode (Use google for Apache configuration)
+
+server {
+    listen 443;
+    server_name zpush.domain.com;
+
+    ssl on;
+    ssl_certificate         /etc/ssl/certs/zpush.pem;
+    ssl_certificate_key     /etc/ssl/private/zpush.key;
+
+    root    /usr/share/www/z-push-contrib;
+    index   index.php;
+
+    error_log /var/log/nginx/zpush-error.log;
+    access_log /var/log/nginx/zpush-access.log;
+
+    location / {
+            try_files $uri $uri/ index.php;
+    }
+
+    location /Microsoft-Server-ActiveSync {
+            rewrite ^(.*)$  /index.php last;
+    }
+
+    location ~ .php$ {
+            include /etc/nginx/fastcgi_params;
+            fastcgi_index index.php;
+            fastcgi_param HTTPS on;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass unix:/var/run/php5-fpm.sock;
+            # Z-Push Ping command will be alive for 470s, but be safe
+            fastcgi_read_timeout 630;
+    }
+}
+
+PHP-FPM
+max_execution_time=600
+short_open_tag=On
+
+And configure enough php-fpm process to have 1.5 x number users
+
+
+Backends
+========
+Each backend has a README file, or comments in their config.php file. Look at them to configure correctly.
+
+
+StateMachine
+============
+You have 2 StateMachine methods.
+
+- FileStateMachine : will store state info into files. You will use it in Active-Pasive setups
+- SqlStateMachine: will store state info into a database. It uses PHP-PDO, so you will need to install the required packages for your database flavour and create the database. You will use it in Active-Active setups.
+
+
+Links
+=====
+Microsoft ActiveSync Specification
+http://msdn.microsoft.com/en-us/library/cc425499%28v=exchg.80%29.aspx

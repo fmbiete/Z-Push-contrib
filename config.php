@@ -68,7 +68,7 @@
  * Device pre-authorization. Useful when using Z-Push as a standalone product.
  *
  * It will use the STATE_MACHINE specified below, to store the users/devices
- * FILE => STATE_DIR/AuthorizedUsersAndDevices
+ * FILE => STATE_DIR/PreAuthUserDevices
  * SQL => auth_users
  *
  * FALSE => default

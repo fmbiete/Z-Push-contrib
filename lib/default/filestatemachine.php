@@ -431,7 +431,7 @@ class FileStateMachine implements IStateMachine {
 
         $status = SYNC_COMMONSTATUS_SUCCESS;
 
-        $userFile = STATE_DIR . 'AuthorizedUsersAndDevices';
+        $userFile = STATE_DIR . 'PreAuthUserDevices';
 
         if ($mutex->Block()) {
             if (@file_exists($userFile)) {

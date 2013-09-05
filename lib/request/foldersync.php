@@ -174,15 +174,6 @@ class FolderSync extends RequestProcessor {
 
         self::$encoder->startTag(SYNC_FOLDERHIERARCHY_FOLDERSYNC);
         {
-            /* START - liverpoolfcfan - Simple file based User/Device Access Control (http://z-push.sourceforge.net/phpbb/viewtopic.php?f=5&t=2253) */
-            $statusAuth = ZPushAdmin::GetUserDeviceStatus();
-            if ($statusAuth!= SYNC_COMMONSTATUS_SUCCESS) {
-                $status = $statusAuth;
-                ZLog::Write(LOGLEVEL_ERROR, sprintf("HandleFolderSync(): Invalid UserDeviceStatus '%s' - Sync not allowed", $status));
-                self::$topCollector->AnnounceInformation(sprintf("User/Device %s not authorized", Request::GetDeviceID()), true);
-            }
-            /* END - liverpoolfcfan - Simple file based User/Device Access Control (http://z-push.sourceforge.net/phpbb/viewtopic.php?f=5&t=2253) */
-            
             if ($status == SYNC_FSSTATUS_SUCCESS) {
                 try {
                     // do nothing if this is an invalid device id (like the 'validate' Androids internal client sends)

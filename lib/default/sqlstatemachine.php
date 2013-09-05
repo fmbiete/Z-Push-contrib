@@ -102,7 +102,7 @@ class SqlStateMachine implements IStateMachine {
     public function GetStateHash($devid, $type, $key = false, $counter = false) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetStateHash(): '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter));
 
-        $sql = "select updated_at from states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
+        $sql = "select updated_at from zpush_states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
         $params = $this->getParams($devid, $type, $key, $counter);
 
         $hash = null;
@@ -157,7 +157,7 @@ class SqlStateMachine implements IStateMachine {
         if ($counter && $cleanstates)
             $this->CleanStates($devid, $type, $key, $counter);
 
-        $sql = "select state_data from states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
+        $sql = "select state_data from zpush_states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
         $params = $this->getParams($devid, $type, $key, $counter);
 
         $data = null;
@@ -207,7 +207,7 @@ class SqlStateMachine implements IStateMachine {
     public function SetState($state, $devid, $type, $key = false, $counter = false) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->SetState(): '%s', '%s', '%s', '%s'", $devid, $type, $key, $counter));
 
-        $sql = "select device_id from states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
+        $sql = "select device_id from zpush_states where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
         $params = $this->getParams($devid, $type, $key, $counter);
 
         $sth = null;
@@ -226,14 +226,14 @@ class SqlStateMachine implements IStateMachine {
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if (!$record) {
                 // New record
-                $sql = "insert into states (device_id, state_type, uuid, counter, state_data, created_at, updated_at) values (:devid, :type, :key, :counter, :data, :created_at, :updated_at)";
+                $sql = "insert into zpush_states (device_id, state_type, uuid, counter, state_data, created_at, updated_at) values (:devid, :type, :key, :counter, :data, :created_at, :updated_at)";
                 $params[":created_at"] = $params[":updated_at"];
 
                 $sth = $this->dbh->prepare($sql);
             }
             else {
                 // Existing record, we update it
-                $sql = "update states set state_data = :data, updated_at = :updated_at where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
+                $sql = "update zpush_states set state_data = :data, updated_at = :updated_at where device_id = :devid and state_type = :type and uuid = :key and counter = :counter";
 
                 $sth = $this->dbh->prepare($sql);
             }
@@ -276,10 +276,10 @@ class SqlStateMachine implements IStateMachine {
 
         if ($counter === false) {
             // Remove all the states. Counter are -1 or > 0, then deleting >= -1 deletes all
-            $sql = "delete from states where device_id = :devid and state_type = :type and uuid = :key and counter >= :counter";
+            $sql = "delete from zpush_states where device_id = :devid and state_type = :type and uuid = :key and counter >= :counter";
         }
         else {
-            $sql = "delete from states where device_id = :devid and state_type = :type and uuid = :key and counter < :counter";
+            $sql = "delete from zpush_states where device_id = :devid and state_type = :type and uuid = :key and counter < :counter";
         }
         $params = $this->getParams($devid, $type, $key, $counter);
 
@@ -315,7 +315,7 @@ class SqlStateMachine implements IStateMachine {
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-            $sql = "select username from users where username = :username and device_id = :devid";
+            $sql = "select username from zpush_users where username = :username and device_id = :devid";
             $params = array(":username" => $username, ":devid" => $devid);
 
             $sth = $this->dbh->prepare($sql);
@@ -327,7 +327,7 @@ class SqlStateMachine implements IStateMachine {
             }
             else {
                 $sth = null;
-                $sql = "insert into users (username, device_id, created_at, updated_at) values (:username, :devid, :created_at, :updated_at)";
+                $sql = "insert into zpush_users (username, device_id, created_at, updated_at) values (:username, :devid, :created_at, :updated_at)";
                 $params[":created_at"] = $params[":updated_at"] = $this->getNow();
                 $sth = $this->dbh->prepare($sql);
                 if ($sth->execute($params)) {
@@ -365,7 +365,7 @@ class SqlStateMachine implements IStateMachine {
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-            $sql = "delete from users where username = :username and device_id = :devid";
+            $sql = "delete from zpush_users where username = :username and device_id = :devid";
             $params = array(":username" => $username, ":devid" => $devid);
 
             $sth = $this->dbh->prepare($sql);
@@ -405,11 +405,11 @@ class SqlStateMachine implements IStateMachine {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
             if  ($username === false) {
-                $sql = "select distinct(device_id) from users order by device_id";
+                $sql = "select distinct(device_id) from zpush_users order by device_id";
                 $params = array();
             }
             else {
-                $sql = "select device_id from users where username = :username order by device_id";
+                $sql = "select device_id from zpush_users where username = :username order by device_id";
                 $params = array(":username" => $username);
             }
             $sth = $this->dbh->prepare($sql);
@@ -443,7 +443,7 @@ class SqlStateMachine implements IStateMachine {
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-            $sql = "select key_value from settings where key_name = :key_name";
+            $sql = "select key_value from zpush_settings where key_name = :key_name";
             $params = array(":key_name" => self::VERSION);
 
             $sth = $this->dbh->prepare($sql);
@@ -484,7 +484,7 @@ class SqlStateMachine implements IStateMachine {
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-            $sql = "select key_value from settings where key_name = :key_name";
+            $sql = "select key_value from zpush_settings where key_name = :key_name";
             $params = array(":key_name" => self::VERSION);
 
             $sth = $this->dbh->prepare($sql);
@@ -493,7 +493,7 @@ class SqlStateMachine implements IStateMachine {
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if ($record) {
                 $sth = null;
-                $sql = "update settings set key_value = :value, updated_at = :updated_at where key_name = :key_name";
+                $sql = "update zpush_settings set key_value = :value, updated_at = :updated_at where key_name = :key_name";
                 $params[":value"] = $version;
                 $params[":updated_at"] = $this->getNow();
 
@@ -504,7 +504,7 @@ class SqlStateMachine implements IStateMachine {
             }
             else {
                 $sth = null;
-                $sql = "insert into settings (key_name, key_value, created_at, updated_at) values (:key_name, :value, :created_at, :updated_at)";
+                $sql = "insert into zpush_settings (key_name, key_value, created_at, updated_at) values (:key_name, :value, :created_at, :updated_at)";
                 $params[":value"] = $version;
                 $params[":updated_at"] = $params[":created_at"] = $this->getNow();
 
@@ -540,7 +540,7 @@ class SqlStateMachine implements IStateMachine {
         try {
             $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-            $sql = "select state_type, uuid, counter from states where device_id = :devid order by id_state";
+            $sql = "select state_type, uuid, counter from zpush_states where device_id = :devid order by id_state";
             $params = array(":devid" => $devid);
 
             $sth = $this->dbh->prepare($sql);
@@ -572,6 +572,159 @@ class SqlStateMachine implements IStateMachine {
         $this->clearConnection($this->dbh, $sth, $record);
 
         return $out;
+    }
+
+    /**
+     * Return if the User-Device has permission to sync against this Z-Push.
+     *
+     * @param string $user          Username
+     * @param string $devid         DeviceId
+     *
+     * @access public
+     * @return integer
+     */
+    public function GetUserDevicePermission($user, $devid) {
+        $status = SYNC_COMMONSTATUS_SUCCESS;
+
+        $userExist = false;
+        $userBlocked = false;
+        $deviceExist = false;
+        $deviceBlocked = false;
+
+        // Android PROVISIONING initial step
+        if ($devid != "validate") {
+
+            $sth = null;
+            $record = null;
+            try {
+                $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
+
+                $sql = "select authorized from zpush_preauth_users where username = :user and device_id = :devid";
+                $params = array(":user" => $user, ":devid" => "authorized");
+                $paramsNewDevid = array();
+                $paramsNewUser = array();
+
+                $sth = $this->dbh->prepare($sql);
+                $sth->execute($params);
+                if ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
+                    $userExist = true;
+                    $userBlocked = !$record["authorized"];
+                }
+                $record = null;
+                $sth = null;
+
+                if ($userExist) {
+                    // User already pre-authorized
+
+                    // User could be blocked if a "authorized" device exist and it's false
+                    if ($userBlocked) {
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                        ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Blocked user '%s', tried '%s'", $user, $devid));
+                    }
+                    else {
+                        $params[":devid"] = $devid;
+
+                        $sth = $this->dbh->prepare($sql);
+                        $sth->execute($params);
+                        if ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
+                            $deviceExist = true;
+                            $deviceBlocked = !$record["authorized"];
+                        }
+                        $record = null;
+                        $sth = null;
+
+                        if ($deviceExist) {
+                            // Device pre-authorized found
+
+                            if ($deviceBlocked) {
+                                $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Blocked device '%s' for user '%s'", $devid, $user));
+                            }
+                            else {
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Pre-authorized device '%s' for user '%s'", $devid, $user));
+                            }
+                        }
+                        else {
+                            // Device not pre-authorized
+
+                            if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
+                                if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                                    $paramsNewDevid[":auth"] = true;
+                                    ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for user '%s'", $devid, $user));
+                                }
+                                else {
+                                    $status = SYNC_COMMONSTATUS_MAXDEVICESREACHED;
+                                    ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Max number of devices reached for user '%s', tried '%s'", $user, $devid));
+                                }
+                            }
+                            else {
+                                $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                                $paramsNewDevid[":auth"] = false;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Blocked new device '%s' for user '%s'", $devid, $user));
+                            }
+                        }
+                    }
+                }
+                else {
+                    // User not pre-authorized
+
+                    if (defined('PRE_AUTHORIZE_NEW_USERS') && PRE_AUTHORIZE_NEW_USERS === true) {
+                        $paramsNewUser[":auth"] = true;
+                        if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
+                            if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                                $paramsNewDevid[":auth"] = true;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for new user '%s'", $devid, $user));
+                            }
+                        }
+                        else {
+                            $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                            $paramsNewDevid[":auth"] = false;
+                            ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Blocked new device '%s' for new user '%s'", $devid, $user));
+                        }
+                    }
+                    else {
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                        $paramsNewUser[":auth"] = false;
+                        $paramsNewDevid[":auth"] = false;
+                        ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Blocked new user '%s' and device '%s'", $user, $devid));
+                    }
+                }
+
+                if (count($paramsNewUser) > 0) {
+                    $sql = "insert into zpush_preauth_users (username, device_id, authorized, created_at, updated_at) values (:user, :devid, :auth, :created_at, :updated_at)";
+                    $paramsNewUser[":user"] = $user;
+                    $paramsNewUser[":devid"] = "authorized";
+                    $paramsNewUser[":created_at"] = $paramsNewUser[":updated_at"] = $this->getNow();
+
+                    $sth = $this->dbh->prepare($sql);
+                    if (!$sth->execute($paramsNewUser)) {
+                        ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetUserDevicePermission(): Error creating new user"));
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                    }
+                }
+
+                if (count($paramsNewDevid) > 0) {
+                    $sql = "insert into zpush_preauth_users (username, device_id, authorized, created_at, updated_at) values (:user, :devid, :auth, :created_at, :updated_at)";
+                    $paramsNewDevid[":user"] = $user;
+                    $paramsNewDevid[":devid"] = $devid;
+                    $paramsNewDevid[":created_at"] = $paramsNewDevid[":updated_at"] = $this->getNow();
+
+                    $sth = $this->dbh->prepare($sql);
+                    if (!$sth->execute($paramsNewDevid)) {
+                        ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetUserDevicePermission(): Error creating user new device"));
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                    }
+                }
+            }
+            catch(PDOException $ex) {
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetUserDevicePermission(): Error checking permission for username '%s' device '%s': %s", $user, $devid, $ex->getMessage()));
+                $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+            }
+
+            $this->clearConnection($this->dbh, $sth, $record);
+        }
+
+        return $status;
     }
 
 

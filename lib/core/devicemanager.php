@@ -709,6 +709,24 @@ class DeviceManager {
         return ($announced != $latest);
     }
 
+
+    /**----------------------------------------------------------------------------------------------------------
+     * DeviceManager User-Device pre-authorization
+     */
+
+    /**
+     * Return if the User-Device has permission to sync against this Z-Push.
+     *
+     * @param string $user          Username
+     * @param string $devid         DeviceId
+     *
+     * @access public
+     * @return integer
+     */
+    public function GetUserDevicePermission($user, $devid) {
+        return $this->statemachine->GetUserDevicePermission($user, $devid);
+    }
+
     /**----------------------------------------------------------------------------------------------------------
      * private DeviceManager methods
      */

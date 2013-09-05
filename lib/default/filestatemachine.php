@@ -416,6 +416,117 @@ class FileStateMachine implements IStateMachine {
     }
 
 
+    /**
+     * Return if the User-Device has permission to sync against this Z-Push.
+     *
+     * @param string $user          Username
+     * @param string $devid         DeviceId
+     *
+     * @access public
+     * @return integer
+     */
+    public function GetUserDevicePermission($user, $devid) {
+        include_once("simplemutex.php");
+        $mutex = new SimpleMutex();
+
+        $status = SYNC_COMMONSTATUS_SUCCESS;
+
+        $userFile = STATE_DIR . 'AuthorizedUsersAndDevices';
+
+        if ($mutex->Block()) {
+            if (@file_exists($userFile)) {
+                $userList = json_decode(@file_get_contents($userFile), true);
+            }
+            else {
+                $userList = Array();
+            }
+
+            // Android PROVISIONING initial step
+            if ($devid != "validate") {
+                $changed = false;
+
+                if (array_key_exists($user, $userList)) {
+                    // User already pre-authorized
+
+                    // User could be blocked if a "authorized" device exist and it's false
+                    if (!$userList[$user]["authorized"]) {
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                        ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Blocked user '%s', tried '%s'", $user, $devid));
+                    }
+                    else {
+                        if (array_key_exists($devid, $userList[$user])) {
+                            // Device pre-authorized found
+
+                            if ($userList[$user][$devid] === false) {
+                                $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Blocked device '%s' for user '%s'", $devid, $user));
+                            }
+                            else {
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Pre-authorized device '%s' for user '%s'", $devid, $user));
+                            }
+                        }
+                        else {
+                            // Device not pre-authorized
+
+                            if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
+                                if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                                    $userList[$user][$devid] = true;
+                                    $changed = true;
+                                    ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for user '%s'", $devid, $user));
+                                }
+                                else {
+                                    $status = SYNC_COMMONSTATUS_MAXDEVICESREACHED;
+                                    ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Max number of devices reached for user '%s', tried '%s'", $user, $devid));
+                                }
+                            }
+                            else {
+                                $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                                $userList[$user][$devid] = false;
+                                $changed = true;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Blocked new device '%s' for user '%s'", $devid, $user));
+                            }
+                        }
+                    }
+                }
+                else {
+                    // User not pre-authorized
+
+                    if (defined('PRE_AUTHORIZE_NEW_USERS') && PRE_AUTHORIZE_NEW_USERS === true) {
+                        $userList[$user] = array("authorized" => true);
+                        if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
+                            if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                                $userList[$user][$devid] = true;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for new user '%s'", $devid, $user));
+                            }
+                        }
+                        else {
+                            $status = SYNC_COMMONSTATUS_DEVICEBLOCKEDFORUSER;
+                            $userList[$user][$devid] = false;
+                            ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Blocked new device '%s' for new user '%s'", $devid, $user));
+                        }
+
+                        $changed = true;
+                    }
+                    else {
+                        $status = SYNC_COMMONSTATUS_USERDISABLEDFORSYNC;
+                        $userList[$user] = array("authorized" => false, $devid => false);
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->GetUserDevicePermission(): Blocked new user '%s' and device '%s'", $user, $devid));
+                    }
+                }
+
+                if ($changed) {
+                    file_put_contents($userFile, json_encode($userList));
+                }
+            }
+
+            $mutex->Release();
+        }
+
+        return $status;
+    }
+
+
     /**----------------------------------------------------------------------------------------------------------
      * Private FileStateMachine stuff
      */

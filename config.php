@@ -65,6 +65,28 @@
 
 
 /**********************************************************************************
+ * Device pre-authorization. Useful when using Z-Push as a standalone product.
+ *
+ * It will use the STATE_MACHINE specified below, to store the users/devices
+ * FILE => STATE_DIR/AuthorizedUsersAndDevices
+ * SQL => auth_users
+ *
+ * FALSE => default
+ * TRUE
+ */
+    define('PRE_AUTHORIZE_USERS', false);
+
+    // New users are pre-authorized automatically
+    define('PRE_AUTHORIZE_NEW_USERS', false);
+
+    // New devices are pre-authorized automatically for pre-authorized users
+    define('PRE_AUTHORIZE_NEW_DEVICES', false);
+
+    // Max number of devices pre-authorized for user, you can pre-authorize more manually
+    define('PRE_AUTHORIZE_MAX_DEVICES', 5);
+
+
+/**********************************************************************************
  * Select StateMachine mechanism
  *
  * FILE => FileStateMachine, default

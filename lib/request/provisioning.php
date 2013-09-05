@@ -63,15 +63,6 @@ class Provisioning extends RequestProcessor {
             ZLog::Write(LOGLEVEL_DEBUG, "RequestProcessor::HandleProvision(): Forcing delayed Authentication");
             self::Authenticate();
         }
-        
-        /* START - liverpoolfcfan - Simple file based User/Device Access Control (http://z-push.sourceforge.net/phpbb/viewtopic.php?f=5&t=2253) */
-        $statusAuth = ZPushAdmin::GetUserDeviceStatus();
-        if ( $statusAuth != SYNC_COMMONSTATUS_SUCCESS) {
-           $status = $statusAuth;
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("HandleFolderSync(): Invalid UserDeviceStatus '%s' - Sync not allowed", $status));
-            self::$topCollector->AnnounceInformation(sprintf("User/Device %s not authorized", Request::GetDeviceID()), true);
-        }
-        /* END - liverpoolfcfan - Simple file based User/Device Access Control (http://z-push.sourceforge.net/phpbb/viewtopic.php?f=5&t=2253) */
 
         $phase2 = true;
 

@@ -193,7 +193,7 @@ class SyncParameters extends StateObject {
             unset($this->uuidNewCounter);
         }
 
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SyncParameters->GetLastestSyncKey(): '%s'", $this->GetSyncKey()));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SyncParameters->GetLatestSyncKey(): '%s'", $this->GetSyncKey()));
         return $this->GetSyncKey();
     }
 
@@ -260,6 +260,7 @@ class SyncParameters extends StateObject {
     public function UseCPO($options = self::DEFAULTOPTIONS) {
         $options = strtoupper($options);
         $this->isValidType($options);
+        $options = $this->normalizeType($options);
 
         // remove potential old default CPO if available
         if (isset($this->contentParameters[self::DEFAULTOPTIONS]) && $options != self::DEFAULTOPTIONS && $options !== self::SMSOPTIONS) {

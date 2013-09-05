@@ -89,8 +89,20 @@ StateMachine
 ============
 You have 2 StateMachine methods.
 
-- FileStateMachine : will store state info into files. You will use it in Active-Pasive setups
-- SqlStateMachine: will store state info into a database. It uses PHP-PDO, so you will need to install the required packages for your database flavour and create the database. You will use it in Active-Active setups.
+- FILE - FileStateMachine : will store state info into files. You will use it in Active-Pasive setups
+- SQL - SqlStateMachine: will store state info into a database. It uses PHP-PDO, so you will need to install the required packages for your database flavour and create the database. You will use it in Active-Active setups.
+
+
+User-Device Permissions
+=======================
+Disabled by default, when enabled will limit what users and device can sync against your Z-Push installation.
+It can auto-accept users, users and device until a maximum number of devices is reached.
+
+If using with FileStateMachine, edit the file STATE_DIR/AuthorizedUsersAndDevices to modificate the behaivour. That file is JSON formatted and it's filled each time a new user connect.
+
+If using with SqlStateMachine, look at the zpush_preauth_users table.
+
+
 
 
 Links

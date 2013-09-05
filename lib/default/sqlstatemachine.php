@@ -117,7 +117,7 @@ class SqlStateMachine implements IStateMachine {
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if (!$record) {
                 $this->clearConnection($this->dbh, $sth, $record);
-                throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state '%s'", $sql));
+                throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state"));
             }
             else {
                 // datetime->format("U") returns EPOCH
@@ -127,7 +127,7 @@ class SqlStateMachine implements IStateMachine {
         }
         catch(PDOException $ex) {
             $this->clearConnection($this->dbh, $sth, $record);
-            throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
+            throw new StateNotFoundException(sprintf("SqlStateMachine->GetStateHash(): Could not locate state: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -174,7 +174,7 @@ class SqlStateMachine implements IStateMachine {
                 $this->clearConnection($this->dbh, $sth, $record);
                 // throw an exception on all other states, but not FAILSAVE as it's most of the times not there by default
                 if ($type !== IStateMachine::FAILSAVE) {
-                    throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state '%s'", $sql));
+                    throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state"));
                 }
             }
             else {
@@ -183,7 +183,7 @@ class SqlStateMachine implements IStateMachine {
         }
         catch(PDOException $ex) {
             $this->clearConnection($this->dbh, $sth, $record);
-            throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state '%s': %s", $sql, $ex->getMessage()));
+            throw new StateNotFoundException(sprintf("SqlStateMachine->GetState(): Could not locate state: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -240,7 +240,7 @@ class SqlStateMachine implements IStateMachine {
 
             if (!$sth->execute($params) ) {
                 $this->clearConnection($this->dbh, $sth);
-                throw new StateNotFoundException(sprintf("SqlStateMachine->SetState(): Could not write state '%s'", $sql));
+                throw new FatalMisconfigurationException(sprintf("SqlStateMachine->SetState(): Could not write state"));
             }
             else {
                 $bytes = strlen($params[":data"]);
@@ -248,7 +248,7 @@ class SqlStateMachine implements IStateMachine {
         }
         catch(PDOException $ex) {
             $this->clearConnection($this->dbh, $sth);
-            throw new StateNotFoundException(sprintf("SqlStateMachine->SetState(): Could not write state '%s': %s", $sql, $ex->getMessage()));
+            throw new FatalMisconfigurationException(sprintf("SqlStateMachine->SetState(): Could not write state: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -291,7 +291,7 @@ class SqlStateMachine implements IStateMachine {
             $sth->execute($params);
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->CleanStates(): Error deleting states: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->CleanStates(): Error deleting states: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -335,12 +335,12 @@ class SqlStateMachine implements IStateMachine {
                     $changed = true;
                 }
                 else {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Unable to link user-device: '%s'", $sql));
+                    ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Unable to link user-device"));
                 }
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Error linking user-device: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->LinkUserDevice(): Error linking user-device: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -378,7 +378,7 @@ class SqlStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->UnLinkUserDevice(): Error unlinking user-device: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->UnLinkUserDevice(): Error unlinking user-device: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth);
@@ -420,7 +420,7 @@ class SqlStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllDevices(): Error listing devices: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllDevices(): Error listing devices: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -459,7 +459,7 @@ class SqlStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetStateVersion(): Error getting state version: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetStateVersion(): Error getting state version: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -515,7 +515,7 @@ class SqlStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->SetStateVersion(): Error saving state version: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->SetStateVersion(): Error saving state version: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);
@@ -566,7 +566,7 @@ class SqlStateMachine implements IStateMachine {
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllStatesForDevice(): Error listing states: '%s' %s", $sql, $ex->getMessage()));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllStatesForDevice(): Error listing states: %s", $ex->getMessage()));
         }
 
         $this->clearConnection($this->dbh, $sth, $record);

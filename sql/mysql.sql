@@ -9,7 +9,7 @@ create unique index idx_zpush_states_unique on zpush_states (device_id, uuid, st
 
 -- This is optional, and will require extra configuration in your mysql
 -- http://www.mysqlperformanceblog.com/2012/05/30/data-compression-in-innodb-for-text-and-blob-fields/
-alter table states engine=InnoDB row_format=compressed key_block_size=16;
+alter table zpush_states engine=InnoDB row_format=compressed key_block_size=16;
 
 
 -- This table has a primary key id integer, because I will be linking a Rails model against it (admin wui)

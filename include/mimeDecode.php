@@ -711,8 +711,10 @@ class Mail_mimeDecode
         // Remove white space between encoded-words
         $input = preg_replace('/(=\?[^?]+\?(q|b)\?[^?]*\?=)(\s)+=\?/i', '\1=?', $input);
 
+        $encodedwords = false;
         // For each encoded-word...
         while (preg_match('/(=\?([^?]+)\?(q|b)\?([^?]*)\?=)/i', $input, $matches)) {
+            $encodedwords = true;
 
             $encoded  = $matches[1];
             $charset  = $matches[2];
@@ -737,6 +739,13 @@ class Mail_mimeDecode
             }
 
             $input = str_replace($encoded, $this->_fromCharset($charset, $text), $input);
+        }
+
+        if (!$encodedwords) {
+            if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+                // We will try to force converting the headers, we will ignore the iso-8859-1 encoding here, that can be anything except utf-8
+                $input = $this->_fromCharset("iso-8859-1", $input);
+            }
         }
 
         return $input;
@@ -1046,7 +1055,12 @@ class Mail_mimeDecode
         if (strtolower($charset) == 'iso-8859-1')
             $charset = 'Windows-1252';
 
-        return @iconv($charset, $this->_charset. "//TRANSLIT", $input);
+        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+            return mb_convert_encoding($input, "UTF-8", IMAP_MBCONVERT);
+        }
+        else {
+            return @iconv($charset, $this->_charset. "//TRANSLIT", $input);
+        }
     }
 
     /**

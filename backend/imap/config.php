@@ -96,4 +96,10 @@ $imap_smtp_params = array();
 //          "pipelining"    - Indicates whether or not the SMTP commands pipelining should be used.
 //$imap_smtp_params = array('host' => 'localhost', 'port' => 25, 'auth' => false);
 
+
+// convert messages content with mb_string functions
+// options: false -> Don't convert at all
+//          string -> Encoding preferences, example: "UTF-16, UTF-8, ISO-8859-15, ISO-8859-1, Windows-1252"
+define('IMAP_MBCONVERT', false);
+
 ?>

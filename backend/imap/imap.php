@@ -76,6 +76,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
+
+        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+            if (!function_exists("mb_convert_encoding"))
+                throw new FatalException("BackendIMAP(): php-mbstring module is not installed", 0, null, LOGLEVEL_FATAL);
+        }
     }
 
     /**----------------------------------------------------------------------------------------------------------
@@ -100,6 +105,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
+
+        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+            if (!function_exists("mb_convert_encoding"))
+                throw new FatalException("BackendIMAP(): php-mbstring module is not installed", 0, null, LOGLEVEL_FATAL);
+        }
 
         /* BEGIN fmbiete's contribution r1527, ZP-319 */
         $this->excludedFolders = array();

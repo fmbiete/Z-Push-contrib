@@ -21,3 +21,9 @@ You can choice between 3 methods for send mails: mail (php mail), sendmail (nati
 For "smtp" you will need to install Pear::Net_SMTP in your system (and it must be accesible in php path).
 
 "mail" is a sendmail wrapper in Linux.
+
+
+MBCONVERT
+=========
+A lot of messages come with wrong encoding, to them to look better with any device you can pre-convert them to UTF-8.
+You will need to install the php-mbstring module

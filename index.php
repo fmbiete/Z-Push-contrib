@@ -119,7 +119,6 @@ include_once('lib/default/searchprovider.php');
 include_once('lib/request/request.php');
 include_once('lib/request/requestprocessor.php');
 
-
 include_once('config.php');
 include_once('version.php');
 
@@ -150,7 +149,7 @@ include_once('version.php');
         Request::ProcessHeaders();
 
         // Check required GET parameters
-        if(Request::IsMethodPOST() && (Request::GetCommandCode() === false || !Request::GetGETUser() || !Request::GetDeviceID() || !Request::GetDeviceType()))
+        if(Request::IsMethodPOST() && (Request::GetCommandCode() === false || !Request::GetDeviceID() || !Request::GetDeviceType()))
             throw new FatalException("Requested the Z-Push URL without the required GET parameters");
 
 
@@ -166,7 +165,7 @@ include_once('version.php');
         $backend = ZPush::GetBackend();
 
         // always request the authorization header
-        if (! Request::AuthenticationInfo())
+        if (! Request::AuthenticationInfo() || !Request::GetGETUser())
             throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
 
         // check the provisioning information
@@ -196,7 +195,6 @@ include_once('version.php');
         }
 
         RequestProcessor::Initialize();
-
         if(!RequestProcessor::HandleRequest())
             throw new WBXMLException(ZLog::GetWBXMLDebugInfo());
 

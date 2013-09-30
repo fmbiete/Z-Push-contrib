@@ -780,7 +780,8 @@ class Mail_mimeDecode
                 break;
 
             default:
-                return $input;
+                // We will try to force converting the body, we will ignore the iso-8859-1 encoding here, that can be anything except utf-8
+                return $this->_fromCharset("iso-8859-1", $input);
         }
     }
 
@@ -1056,7 +1057,7 @@ class Mail_mimeDecode
             $charset = 'Windows-1252';
 
         if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-            return mb_convert_encoding($input, "UTF-8", IMAP_MBCONVERT);
+            return mb_convert_encoding($input, "UTF-8", $charset . "," . IMAP_MBCONVERT);
         }
         else {
             return @iconv($charset, $this->_charset. "//TRANSLIT", $input);

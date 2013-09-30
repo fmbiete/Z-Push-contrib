@@ -1057,7 +1057,7 @@ class Mail_mimeDecode
             $charset = 'Windows-1252';
 
         if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-            return mb_convert_encoding($input, "UTF-8", $charset . "," . IMAP_MBCONVERT);
+            return mb_convert_encoding($input, $this->_charset, $charset . "," . IMAP_MBCONVERT);
         }
         else {
             return @iconv($charset, $this->_charset. "//TRANSLIT", $input);

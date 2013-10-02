@@ -743,8 +743,8 @@ class Mail_mimeDecode
 
         if (!$encodedwords) {
             if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-                // We will try to force converting the headers, we will ignore the iso-8859-1 encoding here, that can be anything except utf-8
-                $input = $this->_fromCharset("iso-8859-1", $input);
+                // We try to convert the encoding always. ASCII is a dummy encoding and could be anything except UTF-8
+                $input = $this->_fromCharset($charset == '' ? "ASCII" : $charset, $input);
             }
         }
 
@@ -780,8 +780,8 @@ class Mail_mimeDecode
                 break;
 
             default:
-                // We will try to force converting the body, we will ignore the iso-8859-1 encoding here, that can be anything except utf-8
-                return $this->_fromCharset("iso-8859-1", $input);
+                // We try to convert the encoding always. ASCII is a dummy encoding and could be anything except UTF-8
+                return $this->_fromCharset($charset == '' ? "ASCII" : $charset, $input);
         }
     }
 

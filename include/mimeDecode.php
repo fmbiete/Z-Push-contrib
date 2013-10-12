@@ -356,7 +356,7 @@ class Mail_mimeDecode
                     if ($this->_rfc822_bodies) {
                         $encoding = isset($content_transfer_encoding) ? $content_transfer_encoding['value'] : '7bit';
                         $charset = isset($return->ctype_parameters['charset']) ? $return->ctype_parameters['charset'] : $this->_charset;
-                        $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset) : $body);
+                        $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset, false) : $body);
                     }
 
                     $obj = new Mail_mimeDecode($body);
@@ -371,7 +371,7 @@ class Mail_mimeDecode
                         $content_transfer_encoding['value'] = '7bit';
                     // if there is no explicit charset, then don't try to convert to default charset, and make sure that only text mimetypes are converted
                     $charset = (isset($return->ctype_parameters['charset']) && ((isset($return->ctype_primary) && $return->ctype_primary == 'text') || !isset($return->ctype_primary)) )? $return->ctype_parameters['charset']: '';
-                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset) : $body) : null;
+                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset, false) : $body) : null;
                     break;
             }
 
@@ -712,6 +712,7 @@ class Mail_mimeDecode
         $input = preg_replace('/(=\?[^?]+\?(q|b)\?[^?]*\?=)(\s)+=\?/i', '\1=?', $input);
 
         $encodedwords = false;
+        $charset = '';
         // For each encoded-word...
         while (preg_match('/(=\?([^?]+)\?(q|b)\?([^?]*)\?=)/i', $input, $matches)) {
             $encodedwords = true;
@@ -743,8 +744,7 @@ class Mail_mimeDecode
 
         if (!$encodedwords) {
             if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-                // We try to convert the encoding always. ASCII is a dummy encoding and could be anything except UTF-8
-                $input = $this->_fromCharset($charset == '' ? "ASCII" : $charset, $input);
+                $input = $this->_fromCharset($charset, $input);
             }
         }
 
@@ -757,31 +757,32 @@ class Mail_mimeDecode
      *
      * @param  string Input body to decode
      * @param  string Encoding type to use.
+     * @param  string Charset
+     * @param  boolean Must try to autodetect the real charset used
      * @return string Decoded body
      * @access private
      */
-    function _decodeBody($input, $encoding = '7bit', $charset = '')
+    function _decodeBody($input, $encoding = '7bit', $charset = '', $detectCharset =  true)
     {
         switch (strtolower($encoding)) {
             case '7bit':
-                return $this->_fromCharset($charset, $input);;
+                return $this->_fromCharset($charset, $input, $detectCharset);;
                 break;
 
             case '8bit':
-                return $this->_fromCharset($charset, $input);
+                return $this->_fromCharset($charset, $input, $detectCharset);
                 break;
 
             case 'quoted-printable':
-                return $this->_fromCharset($charset, $this->_quotedPrintableDecode($input));
+                return $this->_fromCharset($charset, $this->_quotedPrintableDecode($input), $detectCharset);
                 break;
 
             case 'base64':
-                return $this->_fromCharset($charset, base64_decode($input));
+                return $this->_fromCharset($charset, base64_decode($input), $detectCharset);
                 break;
 
             default:
-                // We try to convert the encoding always. ASCII is a dummy encoding and could be anything except UTF-8
-                return $this->_fromCharset($charset == '' ? "ASCII" : $charset, $input);
+                return $this->_fromCharset($charset, $input, $detectCharset);
         }
     }
 
@@ -1045,11 +1046,12 @@ class Mail_mimeDecode
      *
      * @param  string  current charset of input
      * @param  string  input
-     * @return string  XML version of input
+     * @param  boolean We must to autodetect the real encoding used
+     * @return string  Encoded copy of input
      * @access private
      */
-    function _fromCharset($charset, $input) {
-        if($charset == '' || (strtolower($charset) == $this->_charset))
+    function _fromCharset($charset, $input, $detectCharset = true) {
+        if (($detectCharset == false || (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT == false)) && ($charset == '' || (strtolower($charset) == $this->_charset)))
             return $input;
 
         // all ISO-8859-1 are converted as if they were Windows-1252 - see Mantis #456

@@ -155,12 +155,14 @@ include_once('version.php');
 
         // This won't be useful with Zarafa, but it will be with standalone Z-Push
         if (defined('PRE_AUTHORIZE_USERS') && PRE_AUTHORIZE_USERS === true) {
-            // Check if User/Device are authorized
-            if (ZPush::GetDeviceManager()->GetUserDevicePermission(Request::GetGETUser(), Request::GetDeviceID()) != SYNC_COMMONSTATUS_SUCCESS) {
-                throw new AuthenticationRequiredException("Access denied. Username and Device not authorized");
+            if (!Request::IsMethodGET()) {
+                // Check if User/Device are authorized
+                if (ZPush::GetDeviceManager()->GetUserDevicePermission(Request::GetGETUser(), Request::GetDeviceID()) != SYNC_COMMONSTATUS_SUCCESS) {
+                    throw new AuthenticationRequiredException("Access denied. Username and Device not authorized");
+                }
             }
         }
-        
+
         // Load the backend
         $backend = ZPush::GetBackend();
 

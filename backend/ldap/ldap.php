@@ -14,10 +14,10 @@
 include_once('lib/default/diffbackend/diffbackend.php');
 
 class BackendLDAP extends BackendDiff {
-	
+
 	private $ldap_link;
 	private $user;
-	
+
 	public function Logon($username, $domain, $password)
 	{
 		$this->user = $username;
@@ -35,7 +35,7 @@ class BackendLDAP extends BackendDiff {
 			return false;
 		}
 	}
-	
+
 	public function Logoff()
 	{
 		if (ldap_unbind($this->ldap_link))
@@ -48,22 +48,22 @@ class BackendLDAP extends BackendDiff {
 		}
 		return true;
 	}
-	
+
 	public function SendMail($sm)
 	{
 		return false;
 	}
-	
+
 	public function GetAttachmentData($attname)
 	{
 		return false;
 	}
-	
+
 	public function GetWasteBasket()
 	{
 		return false;
 	}
-	
+
 	public function GetFolderList()
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->GetFolderList(): Getting all folders."));
@@ -77,7 +77,7 @@ class BackendLDAP extends BackendDiff {
 		}
 		return $contacts;
 	}
-	
+
 	public function GetFolder($id)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->GetFolder('%s')", $id));
@@ -88,7 +88,7 @@ class BackendLDAP extends BackendDiff {
 		$folder->type = SYNC_FOLDER_TYPE_CONTACT;
 		return $folder;
 	}
-	
+
 	public function StatFolder($id)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->StatFolder('%s')", $id));
@@ -99,23 +99,23 @@ class BackendLDAP extends BackendDiff {
 		$stat["mod"] = $folder->displayname;
 		return $stat;
 	}
-	
+
 	public function ChangeFolder($folderid, $oldid, $displayname, $type)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->ChangeFolder('%s','%s','%s','%s')", $folderid, $oldid, $displayname, $type));
 		return false;
 	}
-	
+
 	public function DeleteFolder($id, $parentid)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->DeleteFolder('%s','%s')", $id, $parentid));
 		return false;
 	}
-	
+
 	public function GetMessageList($folderid, $cutoffdate)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->GetMessageList('%s','%s')", $folderid, $cutoffdate));
-		
+
 		$cutoff = date("YmdHis\Z", $cutoffdate);
 		$filter = sprintf('(modifyTimestamp>=%s)', $cutoff);
 		$attributes = array("entryUUID", "modifyTimestamp");
@@ -143,7 +143,7 @@ class BackendLDAP extends BackendDiff {
 		}
 		return $messages;
 	}
-	
+
 	public function GetMessage($folderid, $id, $contentparameters)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->GetMessage('%s','%s')", $folderid, $id));
@@ -166,17 +166,17 @@ class BackendLDAP extends BackendDiff {
 			}
 		}
 	}
-	
+
 	private function _ParseLDAPMessage($result_id, $entry_id)
 	{
 		$contact = new SyncContact();
-		
+
 		$values = ldap_get_attributes($this->ldap_link, $entry_id);
 		for ($i = 0; $i < $values["count"]; $i++)
 		{
 			$name = $values[$i];
 			$value = $values[$name][0];
-			
+
 			switch ($name)
 			{
 				//person
@@ -225,7 +225,7 @@ class BackendLDAP extends BackendDiff {
 				case "secretary":
 					$contact->assistantname = $value;
 					break;
-				//organizationalPerson					
+				//organizationalPerson
 				case "l":
 					$contact->businesscity = $value;
 					break;
@@ -239,7 +239,7 @@ class BackendLDAP extends BackendDiff {
 					$contact->businesspostalcode = $value;
 					break;
 				case "st":
-					$contact->businessstate = $value;	
+					$contact->businessstate = $value;
 					break;
 				case "street":
 					$contact->businessstreet = $value;
@@ -263,7 +263,7 @@ class BackendLDAP extends BackendDiff {
 		}
 		return $contact;
 	}
-	
+
 	public function StatMessage($folderid, $id)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->StatMessage('%s','%s')", $folderid, $id));
@@ -291,8 +291,8 @@ class BackendLDAP extends BackendDiff {
 			}
 		}
 	}
-	
-	public function ChangeMessage($folderid, $id, $message)
+
+	public function ChangeMessage($folderid, $id, $message, $contentParameters)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->ChangeMessage('%s','%s')", $folderid, $id));
 		$base_dns = explode("|", LDAP_BASE_DNS);
@@ -442,13 +442,18 @@ class BackendLDAP extends BackendDiff {
 		}
 		return $ldap;
 	}
-	
-	public function SetReadFlag($folderid, $id, $flags)
+
+	public function SetReadFlag($folderid, $id, $flags, $contentParameters)
 	{
 		return false;
 	}
-	
-	public function DeleteMessage($folderid, $id)
+
+	public function SetStarFlag($folderid, $id, $flags, $contentParameters)
+	{
+        return false;
+    }
+
+	public function DeleteMessage($folderid, $id, $contentParameters)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->DeleteMessage('%s','%s')", $folderid, $id));
 		$base_dns = explode("|", LDAP_BASE_DNS);
@@ -472,8 +477,8 @@ class BackendLDAP extends BackendDiff {
 		}
 		return false;
 	}
-	
-	public function MoveMessage($folderid, $id, $newfolderid)
+
+	public function MoveMessage($folderid, $id, $newfolderid, $contentParameters)
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->MoveMessage('%s','%s', '%s')", $folderid, $id, $newfolderid));
 		$base_dns = explode("|", LDAP_BASE_DNS);

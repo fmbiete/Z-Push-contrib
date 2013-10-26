@@ -104,14 +104,14 @@ class carddav_backend
      *
      * @constant	string
      */
-    const VERSION = '0.6';
+    const VERSION = '0.6+';
 
     /**
      * User agent displayed in http requests
      *
      * @constant	string
      */
-    const USERAGENT = 'SABREDAV/';
+    const USERAGENT = 'CardDAV PHP/';
 
     /**
      * CardDAV server url
@@ -180,9 +180,9 @@ class carddav_backend
     /**
      * Sync-token for sync-collection operations.
      *
-     * @var string
+     * @var array[string]
      */
-    private $synctoken = "";
+    private $synctoken = array();
 
 
     /* VCard File URL Extension
@@ -273,16 +273,6 @@ class carddav_backend
     }
 
     /**
-     * Get the sync-token
-     *
-     * @return string sync-token
-     */
-    public function get_synctoken()
-    {
-        return $this->synctoken;
-    }
-
-    /**
     * Sets the CardDAV vcard url extension
     *
     * Most providers do requests handling Vcards with .vcf, however
@@ -334,6 +324,7 @@ class carddav_backend
         }
     }
 
+
     /**
      * Get all vcards matching a full name or mail.
      *
@@ -341,12 +332,15 @@ class carddav_backend
      * @param   integer $limit              Return only N vcards
      * @param   boolean $include_vcards     Include vCards within the response (simplified only)
      * @param   boolean $raw                Get response raw or simplified
+     * @param   boolean $support_fn_search  If the server supports searchs by fn
      * @return  string                      Raw or simplified XML response
      */
-    public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false)
+    public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false, $support_fn_search = false)
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->search_vcards"));
-        $xml = <<<EOFCONTENTSEARCH
+        if ($support_fn_search)
+        {
+            $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
     <D:prop>
@@ -365,8 +359,37 @@ class carddav_backend
     </C:limit>
 </C:addressbook-query>
 EOFCONTENTSEARCH;
+        }
+        else
+        {
+            $xml = <<<EOFCONTENTSEARCH
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+    <D:prop>
+        <D:getetag/>
+        <C:address-data>
+            <C:allprop/>
+        </C:address-data>
+    </D:prop>
+    <C:filter test="anyof">
+        <C:prop-filter name="sn">
+            <C:text-match collation="i;unicode-casemap" negate-condition="no" match-type="contains">$pattern</C:text-match>
+        </C:prop-filter>
+        <C:prop-filter name="givenname">
+            <C:text-match collation="i;unicode-casemap" negate-condition="no" match-type="contains">$pattern</C:text-match>
+        </C:prop-filter>
+        <C:prop-filter name="email">
+            <C:text-match collation="i;unicode-casemap" negate-condition="no" match-type="contains">$pattern</C:text-match>
+        </C:prop-filter>
+    </C:filter>
+    <C:limit>
+        <C:nresults>$limit</C:nresults>
+    </C:limit>
+</C:addressbook-query>
+EOFCONTENTSEARCH;
+        }
 
-        return $this->do_query_report($xml, $include_vcards, $raw);
+        return $this->do_query_report($xml, $include_vcards, $raw, true);
     }
 
     /**
@@ -381,11 +404,15 @@ EOFCONTENTSEARCH;
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_sync"));
 
-        if ($support_carddav_sync) {
-            $token = $this->synctoken;
+        if ($support_carddav_sync)
+        {
             if ($initial)
             {
                 $token = "";
+            }
+            else
+            {
+                $token = $this->synctoken[$this->url];
             }
 
             $xml = <<<EOFXMLINITIALSYNC
@@ -415,9 +442,10 @@ EOFXMLINITIALSYNC;
      * @param string $xml               XML body request
      * @param boolean $include_vcards   If the vCards should be included within the response
      * @param boolean $raw              If the response should be raw or XML simplified
+     * @param boolean $remove_duplicates If we will apply uniqness to the response vcards
      * @return string
      */
-    private function do_query_report($xml, $include_vcards = true, $raw = false)
+    private function do_query_report($xml, $include_vcards = true, $raw = false, $remove_duplicates = false)
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
@@ -432,7 +460,7 @@ EOFXMLINITIALSYNC;
                 }
                 else
                 {
-                    return $this->simplify($result['response'], $include_vcards);
+                    return $this->simplify($result['response'], $include_vcards, $remove_duplicates);
                 }
             break;
 
@@ -633,10 +661,10 @@ EOFXMLGETXMLVCARD;
      *
      * @param	string	$response			CardDAV XML response
      * @param	boolean	$include_vcards		Include vCards or not
-     * @param   boolean $recursive          is it a recursive call
+     * @param   boolean $remove_duplicates  If we will apply uniqness to the response vcards
      * @return	string						Simplified CardDAV XML response
      */
-    private function simplify($response, $include_vcards = true, $recursive = false)
+    private function simplify($response, $include_vcards = true, $remove_duplicates = false)
     {
         $response = $this->clean_response($response);
 
@@ -651,21 +679,20 @@ EOFXMLGETXMLVCARD;
 
         if (!empty($xml->{'sync-token'}))
         {
-            $this->synctoken = $xml->{'sync-token'};
+            $this->synctoken[$this->url] = $xml->{'sync-token'};
         }
 
         $simplified_xml = new XMLWriter();
         $simplified_xml->openMemory();
         $simplified_xml->setIndent(4);
 
-        if (!$recursive)
-        {
-            $simplified_xml->startDocument('1.0', 'utf-8');
-            $simplified_xml->startElement('response');
-        }
+        $simplified_xml->startDocument('1.0', 'utf-8');
+        $simplified_xml->startElement('response');
 
         if (!empty($xml->response))
         {
+            $unique_etags = array();
+
             foreach ($xml->response as $response)
             {
                 if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
@@ -687,7 +714,7 @@ EOFXMLGETXMLVCARD;
                         $simplified_xml->endElement();
                     }
                 }
-                else if (preg_match('/unix-directory/', $response->propstat->prop->getcontenttype))
+                else if (preg_match('/unix-directory/', $response->propstat->prop->getcontenttype) && isset($response->propstat->prop->resourcetype->addressbook))
                 {
                     if (isset($response->propstat->prop->href))
                     {
@@ -709,19 +736,48 @@ EOFXMLGETXMLVCARD;
                     $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
                     $simplified_xml->endElement();
                 }
+                else if (isset($response->propstat->prop->{'address-data'}) || isset($response->propstat->prop->{'addressbook-data'}))
+                {
+                    $id = basename($response->href);
+                    $id = str_replace($this->url_vcard_extension, null, $id);
+                    $etag = str_replace('"', null, $response->propstat->prop->getetag);
+
+                    if ($remove_duplicates === false)
+                    {
+                        unset($unique_etags[$etag]);
+                    }
+
+                    if (!empty($id) && !isset($unique_etags[$etag]))
+                    {
+                        $unique_etags[$etag] = true;
+                        $simplified_xml->startElement('element');
+                        $simplified_xml->writeElement('id', $id);
+                        $simplified_xml->writeElement('etag', $etag);
+                        $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
+
+                        if ($include_vcards === true)
+                        {
+                            if (isset($response->propstat->prop->{'address-data'}))
+                            {
+                                $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
+                            }
+                            else
+                            {
+                                $simplified_xml->writeElement('vcard', $response->propstat->prop->{'addressbook-data'});
+                            }
+                        }
+                        $simplified_xml->endElement();
+                    }
+                }
             }
+
+            unset($unique_etags);
         }
 
-        if (!$recursive)
-        {
-            $simplified_xml->endElement();
-            $simplified_xml->endDocument();
-            return $simplified_xml->outputMemory();
-        }
-        else
-        {
-            return $simplified_xml;
-        }
+        $simplified_xml->endElement();
+        $simplified_xml->endDocument();
+
+        return $simplified_xml->outputMemory();
     }
 
     /**
@@ -733,10 +789,14 @@ EOFXMLGETXMLVCARD;
     private function clean_response($response)
     {
         $response = utf8_encode($response);
-        $response = str_replace('D:', null, $response);
-        $response = str_replace('d:', null, $response);
-        $response = str_replace('C:', null, $response);
-        $response = str_replace('c:', null, $response);
+        $response = str_replace('<D:', '<', $response);
+        $response = str_replace('<d:', '<', $response);
+        $response = str_replace('<C:', '<', $response);
+        $response = str_replace('<c:', '<', $response);
+        $response = str_replace('</D:', '</', $response);
+        $response = str_replace('</d:', '</', $response);
+        $response = str_replace('</C:', '</', $response);
+        $response = str_replace('</c:', '</', $response);
 
         return $response;
     }

@@ -17,8 +17,7 @@ It supports ChangesSink method that will detect and send faster changes to your 
 SMTP
 ====
 You can choice between 3 methods for send mails: mail (php mail), sendmail (native binary), smtp (php smtp direct connection).
-
-For "smtp" you will need to install Pear::Net_SMTP in your system (and it must be accesible in php path).
+Remember to configure it in the config.php
 
 "mail" is a sendmail wrapper in Linux.
 

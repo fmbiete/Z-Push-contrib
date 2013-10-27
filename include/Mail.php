@@ -43,7 +43,7 @@
  * @link        http://pear.php.net/package/Mail/
  */
 
- 
+
  /**
  * Z-Push changes
  *
@@ -169,7 +169,7 @@ class Mail
                 preg_replace('=((<CR>|<LF>|0x0A/%0A|0x0D/%0D|\\n|\\r)\S).*=i',
                              null, $value);
         }
-        
+
         return true;
     }
 
@@ -196,7 +196,7 @@ class Mail
 
         foreach ($headers as $key => $value) {
             if (strcasecmp($key, 'From') === 0) {
-                include_once 'RFC822.php';
+                include_once 'include/RFC822.php';
                 $parser = new Mail_RFC822();
                 $addresses = $parser->parseAddressList($value, 'localhost', false);
                 //if (is_a($addresses, 'PEAR_Error')) {
@@ -254,7 +254,7 @@ class Mail
      */
     function parseRecipients($recipients)
     {
-        include_once 'RFC822.php';
+        include_once 'include/RFC822.php';
 
         // if we're passed an array, assume addresses are valid and
         // implode them before parsing.
@@ -265,7 +265,8 @@ class Mail
         // Parse recipients, leaving out all personal info. This is
         // for smtp recipients, etc. All relevant personal information
         // should already be in the headers.
-        $addresses = Mail_RFC822::parseAddressList($recipients, 'localhost', false);
+        $parser = new Mail_RFC822();
+        $addresses = $parser->parseAddressList($recipients, 'localhost', false);
 
         // If parseAddressList() returned a PEAR_Error object, just return it.
         //if (is_a($addresses, 'PEAR_Error')) {

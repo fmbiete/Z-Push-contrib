@@ -74,7 +74,7 @@ define('IMAP_EXCLUDED_FOLDERS', '');
 // Method used for sending mail
 // mail => mail() php function
 // sendmail => sendmail executable
-// smtp => direct connection against SMTP. REQUIRES Net_SMTP
+// smtp => direct connection against SMTP
 define('IMAP_SMTP_METHOD', 'mail');
 
 // SMTP Parameters

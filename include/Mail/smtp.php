@@ -36,7 +36,7 @@
  *
  * @category    HTTP
  * @package     HTTP_Request
- * @author      Jon Parise <jon@php.net> 
+ * @author      Jon Parise <jon@php.net>
  * @author      Chuck Hagenbuch <chuck@horde.org>
  * @copyright   2010 Chuck Hagenbuch
  * @license     http://opensource.org/licenses/bsd-license.php New BSD License
@@ -54,7 +54,7 @@
  *
  *
  */
- 
+
 /** Error: Failed to create a Net_SMTP object */
 define('PEAR_MAIL_SMTP_ERROR_CREATE', 10000);
 
@@ -295,7 +295,8 @@ class Mail_smtp extends Mail {
                 $params .= ' ' . $key . (is_null($val) ? '' : '=' . $val);
             }
         }
-        if (PEAR::isError($res = $this->_smtp->mailFrom($from, ltrim($params)))) {
+        //if (PEAR::isError($res = $this->_smtp->mailFrom($from, ltrim($params)))) {
+        if (($res = $this->_smtp->mailFrom($from, ltrim($params))) === false) {
             $error = $this->_error("Failed to set sender: $from", $res);
             $this->_smtp->rset();
             return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_SENDER);
@@ -310,7 +311,8 @@ class Mail_smtp extends Mail {
 
         foreach ($recipients as $recipient) {
             $res = $this->_smtp->rcptTo($recipient);
-            if (is_a($res, 'PEAR_Error')) {
+            //if (is_a($res, 'PEAR_Error')) {
+            if ($res === false) {
                 $error = $this->_error("Failed to add recipient: $recipient", $res);
                 $this->_smtp->rset();
                 return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_RECIPIENT);
@@ -329,7 +331,8 @@ class Mail_smtp extends Mail {
 		 * ideal if we're connecting to a round-robin of relay servers and need to track which exact one took the email */
 		$this->greeting = $this->_smtp->getGreeting();
 
-        if (is_a($res, 'PEAR_Error')) {
+        //if (is_a($res, 'PEAR_Error')) {
+        if ($res === false) {
             $error = $this->_error('Failed to send data', $res);
             $this->_smtp->rset();
             return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_DATA);
@@ -359,7 +362,7 @@ class Mail_smtp extends Mail {
             return $this->_smtp;
         }
 
-        include_once 'Net/SMTP.php';
+        include_once 'include/Net/SMTP.php';
         $this->_smtp = &new Net_SMTP($this->host,
                                      $this->port,
                                      $this->localhost);
@@ -376,7 +379,8 @@ class Mail_smtp extends Mail {
         }
 
         /* Attempt to connect to the configured SMTP server. */
-        if (PEAR::isError($res = $this->_smtp->connect($this->timeout))) {
+        //if (PEAR::isError($res = $this->_smtp->connect($this->timeout))) {
+        if (($res = $this->_smtp->connect($this->timeout)) === false) {
             $error = $this->_error('Failed to connect to ' .
                                    $this->host . ':' . $this->port,
                                    $res);
@@ -387,9 +391,8 @@ class Mail_smtp extends Mail {
         if ($this->auth) {
             $method = is_string($this->auth) ? $this->auth : '';
 
-            if (PEAR::isError($res = $this->_smtp->auth($this->username,
-                                                        $this->password,
-                                                        $method))) {
+            //if (PEAR::isError($res = $this->_smtp->auth($this->username, $this->password, $method))) {
+            if (($res = $this->_smtp->auth($this->username, $this->password, $method)) === false) {
                 $error = $this->_error("$method authentication failure",
                                        $res);
                 $this->_smtp->rset();

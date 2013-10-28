@@ -93,7 +93,7 @@ class Auth_SASL_SCRAM extends Auth_SASL_Common
             $this->hmac = array($this, '_HMAC_SHA1');
         }
         else
-            return PEAR::raiseError('Invalid SASL mechanism type');
+            return $this->raiseError('Invalid SASL mechanism type');
     }
 
     /**
@@ -300,7 +300,6 @@ class Auth_SASL_SCRAM extends Auth_SASL_Common
             return base64_encode($str);
         }
     }
-
 }
 
 ?>

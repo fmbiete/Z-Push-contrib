@@ -77,6 +77,7 @@ define('IMAP_EXCLUDED_FOLDERS', '');
 // smtp => direct connection against SMTP
 define('IMAP_SMTP_METHOD', 'mail');
 
+global $imap_smtp_params;
 // SMTP Parameters
 //      mail : no params
 $imap_smtp_params = array();

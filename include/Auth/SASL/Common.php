@@ -43,6 +43,17 @@
 * @package Auth_SASL
 */
 
+/**
+ * Z-Push changes
+ *
+ * removed PEAR dependency by implementing own raiseError()
+ *
+ * Reference implementation used:
+ * http://download.pear.php.net/package/Auth_SASL-1.0.6.tgz
+ *
+ *
+ */
+
 class Auth_SASL_Common
 {
     /**
@@ -101,5 +112,18 @@ class Auth_SASL_Common
 
          return $digest;
      }
+
+/**
+     * Z-Push helper for error logging
+     * removing PEAR dependency
+     *
+     * @param  string  debug message
+     * @return boolean always false as there was an error
+     * @access private
+     */
+    function raiseError($message) {
+        ZLog::Write(LOGLEVEL_ERROR, "SCRAM error: ". $message);
+        return false;
+    }
 }
 ?>

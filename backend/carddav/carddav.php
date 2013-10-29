@@ -1270,7 +1270,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private function discoverAddressbooks() {
         unset($this->addressbooks);
         $this->addressbooks = array();
-        $raw = $this->server->get(false, false);
+        $raw = $this->server->get(false, false, true);
         if ($raw !== false) {
             $xml = new SimpleXMLElement($raw);
             foreach($xml->addressbook_element as $response) {

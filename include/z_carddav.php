@@ -297,12 +297,20 @@ class carddav_backend
      *
      * @param	boolean	$include_vcards		Include vCards within the response (simplified only)
      * @param	boolean	$raw				Get response raw or simplified
+     * @params  boolean $discover           Only discover addressbooks
      * @return	string						Raw or simplified XML response
      */
-    public function get($include_vcards = true, $raw = false)
+    public function get($include_vcards = true, $raw = false, $discover = false)
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get"));
-        $result = $this->query($this->url, 'PROPFIND');
+        if ($discover)
+        {
+            $result = $this->query($this->url, 'PROPFIND', null, null, '1');
+        }
+        else
+        {
+            $result = $this->query($this->url, 'PROPFIND');
+        }
 
         switch ($result['http_code'])
         {
@@ -832,9 +840,10 @@ EOFXMLGETXMLVCARD;
      * @param	string	$method				HTTP method like (OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, COPY, MOVE)
      * @param	string	$content			Content for CardDAV queries
      * @param	string	$content_type		Set content type
+     * @param   string  $depth              Set Depth
      * @return	array						Raw CardDAV Response and http status code
      */
-    private function query($url, $method, $content = null, $content_type = null)
+    private function query($url, $method, $content = null, $content_type = null, $depth = "infinity")
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->query - '%s' '%s' '%s' '%s'", $url, $method, $content, $content_type));
 
@@ -856,11 +865,11 @@ EOFXMLGETXMLVCARD;
 
         if ($content_type !== null)
         {
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type, 'Depth: infinity'));
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type, 'Depth: '.$depth));
         }
         else
         {
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Depth: infinity'));
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Depth: '.$depth));
         }
 
         $complete_response	= curl_exec($this->curl);

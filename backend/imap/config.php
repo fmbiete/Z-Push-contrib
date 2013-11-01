@@ -97,6 +97,7 @@ $imap_smtp_params = array();
 //          "pipelining"    - Indicates whether or not the SMTP commands pipelining should be used.
 //$imap_smtp_params = array('host' => 'localhost', 'port' => 25, 'auth' => false);
 // If you want to use SSL with port 25 or port 465 you must preppend "ssl://" before the hostname or IP of your SMTP server
+// IMPORTANT: To use SSL you must use PHP 5.1 or later, install openssl libs and use ssl:// within the host variable
 //$imap_smtp_params = array('host' => 'ssl://localhost', 'port' => 465, 'auth' => true, 'username' => 'imap_username', 'password' => 'imap_password');
 
 

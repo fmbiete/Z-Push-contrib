@@ -96,6 +96,8 @@ $imap_smtp_params = array();
 //          "persist"       - Indicates whether or not the SMTP connection should persist over multiple calls to the send() method.
 //          "pipelining"    - Indicates whether or not the SMTP commands pipelining should be used.
 //$imap_smtp_params = array('host' => 'localhost', 'port' => 25, 'auth' => false);
+// If you want to use SSL with port 25 or port 465 you must preppend "ssl://" before the hostname or IP of your SMTP server
+//$imap_smtp_params = array('host' => 'ssl://localhost', 'port' => 465, 'auth' => true, 'username' => 'imap_username', 'password' => 'imap_password');
 
 
 // convert messages content with mb_string functions

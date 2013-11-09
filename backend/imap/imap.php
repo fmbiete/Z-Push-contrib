@@ -1090,8 +1090,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        //We don't need to create a new MIME mail, we already have one!!
-                        $output->asbody->data = $mail;
+                        //We don't need to create a new MIME mail, we already have one!! But we should yet try to fix the encodings
+                        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+                            $output->asbody->data = mb_convert_encoding($mail, 'utf-8', IMAP_MBCONVERT);
+                        }
+                        else {
+                            $output->asbody->data = $mail;
+                        }
                         break;
                     case SYNC_BODYPREFERENCE_RTF:
                         ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->GetMessage RTF Format NOT CHECKED");

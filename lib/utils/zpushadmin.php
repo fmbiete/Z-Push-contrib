@@ -616,6 +616,7 @@ class ZPushAdmin {
         }
         return array($processed, $deleted);
     }
+
 }
 
 ?>

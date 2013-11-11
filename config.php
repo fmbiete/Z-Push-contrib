@@ -53,9 +53,6 @@
     // Try to set unlimited timeout
     define('SCRIPT_TIMEOUT', 0);
 
-    // Max size of attachments to display inline. Default is 2 MB
-    define('MAX_EMBEDDED_SIZE', 2097152);
-
     // When accessing through a proxy, the "X-Forwarded-For" header contains the original remote IP
     define('USE_X_FORWARDED_FOR_HEADER', false);
 
@@ -227,6 +224,13 @@
     // false - do not unset properties which are not sent during Sync (default)
     // true  - unset properties which are not sent during Sync
     define('UNSET_UNDEFINED_PROPERTIES', false);
+
+    // ActiveSync specifies that a contact photo may not exceed 48 KB. This value is checked
+    // in the semantic sanity checks and contacts with larger photos are not synchronized.
+    // This limitation is not being followed by the ActiveSync clients which set much bigger
+    // contact photos. You can override the default value of the max photo size.
+    // default: 49152 - 48 KB default max photo size in bytes
+    define('SYNC_CONTACTS_MAXPICTURESIZE', 49152);
 
 /**********************************************************************************
  *  Backend settings

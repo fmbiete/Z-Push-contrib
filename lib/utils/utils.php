@@ -510,6 +510,9 @@ class Utils {
         if (function_exists("iconv")){
             return @iconv("UTF-7", "UTF-8", $string);
         }
+        else
+            ZLog::Write(LOGLEVEL_WARN, "Utils::Utf7_to_utf8() 'iconv' is not available. Charset conversion skipped.");
+
         return $string;
     }
 
@@ -525,6 +528,9 @@ class Utils {
         if (function_exists("iconv")){
             return @iconv("UTF-8", "UTF-7", $string);
         }
+        else
+            ZLog::Write(LOGLEVEL_WARN, "Utils::Utf8_to_utf7() 'iconv' is not available. Charset conversion skipped.");
+
         return $string;
     }
 
@@ -798,9 +804,37 @@ class Utils {
     public static function ConvertCodepageStringToUtf8($codepage, $string) {
         if (function_exists("iconv")) {
             $charset = self::GetCodepageCharset($codepage);
-
             return iconv($charset, "utf-8", $string);
         }
+        else
+            ZLog::Write(LOGLEVEL_WARN, "Utils::ConvertCodepageStringToUtf8() 'iconv' is not available. Charset conversion skipped.");
+
+        return $string;
+    }
+
+    /**
+     * Converts a string to another charset.
+     *
+     * @param int $in
+     * @param int $out
+     * @param string $string
+     *
+     * @access public
+     * @return string
+     */
+    public static function ConvertCodepage($in, $out, $string) {
+        // do nothing if both charsets are the same
+        if ($in == $out)
+            return $string;
+
+        if (function_exists("iconv")) {
+            $inCharset = self::GetCodepageCharset($in);
+            $outCharset = self::GetCodepageCharset($out);
+            return iconv($inCharset, $outCharset, $string);
+        }
+        else
+            ZLog::Write(LOGLEVEL_WARN, "Utils::ConvertCodepage() 'iconv' is not available. Charset conversion skipped.");
+
         return $string;
     }
 

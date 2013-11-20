@@ -11,6 +11,9 @@
 * Copyright 2012 Jean-Louis Dupond
 ************************************************/
 
+// config file
+require_once("backend/ldap/config.php");
+
 include_once('lib/default/diffbackend/diffbackend.php');
 
 class BackendLDAP extends BackendDiff {

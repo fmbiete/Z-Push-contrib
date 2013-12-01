@@ -204,6 +204,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $sourceMessage = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
                 unset($mobj);
                 //We will need $sourceMail if the message is forwarded and not inlined
+
+                // If it's a reply, we mark the original messages as answered
+                if ($sm->replyflag) {
+                    if (!@imap_setflag_full($this->mbox, $sm->source->itemid, "\\Answered", ST_UID)) {
+                        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): Unable to mark the message as Answered"));
+                    }
+                }
             }
         }
 
@@ -1454,7 +1461,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $status = @imap_clearflag_full ( $this->mbox, $id, "\\Seen", ST_UID);
         } else {
             // set as "Seen" (read)
-            $status = @imap_setflag_full($this->mbox, $id, "\\Seen",ST_UID);
+            $status = @imap_setflag_full($this->mbox, $id, "\\Seen", ST_UID);
         }
 
         return $status;

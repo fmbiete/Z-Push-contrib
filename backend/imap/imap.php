@@ -205,10 +205,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 unset($mobj);
                 //We will need $sourceMail if the message is forwarded and not inlined
 
-                // If it's a reply, we mark the original messages as answered
+                // If it's a reply, we mark the original message as answered
                 if ($sm->replyflag) {
                     if (!@imap_setflag_full($this->mbox, $sm->source->itemid, "\\Answered", ST_UID)) {
                         ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): Unable to mark the message as Answered"));
+                    }
+                }
+                
+                // If it's a forward, we mark the original message as forwarded
+                if ($sm->forwardflag) {
+                    if (!@imap_setflag_full($this->mbox, $sm->source->itemid, "\\Forwarded", ST_UID)) {
+                        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): Unable to mark the message as Forwarded"));
                     }
                 }
             }

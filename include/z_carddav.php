@@ -722,7 +722,7 @@ EOFXMLGETXMLVCARD;
                         $simplified_xml->endElement();
                     }
                 }
-                else if (preg_match('/unix-directory/', $response->propstat->prop->getcontenttype) && isset($response->propstat->prop->resourcetype->addressbook))
+                else if (isset($response->propstat->prop->resourcetype->addressbook))
                 {
                     if (isset($response->propstat->prop->href))
                     {

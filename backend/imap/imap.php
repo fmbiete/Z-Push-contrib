@@ -569,6 +569,31 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
     }
 
+
+    /**
+     * Add a subpart to a mimepart object.
+     *
+     * @param Mail_mimePart $email reference to the object
+     * @param object $part message part
+     *
+     * @access private
+     * @return void
+     */
+    private function fixCharsetAndAddSubParts(&$email, $part) {
+        if (isset($part)) {
+            if (isset($part->ctype_parameters['charset'])) {
+                $part->ctype_parameters['charset'] = 'UTF-8';
+                $this->addSubPart($email, $part);
+
+                if (isset($part->parts)) {
+                    foreach ($part->parts as $subpart) {
+                        $this->fixCharsetAndAddSubParts($email, $subpart);
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Returns the waste basket
      *
@@ -1107,11 +1132,48 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        //We don't need to create a new MIME mail, we already have one!! But we should yet try to fix the encodings
                         if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-                            $output->asbody->data = mb_convert_encoding($mail, 'utf-8', IMAP_MBCONVERT);
+                            $finalEmail = new Mail_mimePart($message->body, array('headers' => $message->headers));
+                            if (isset($message->parts)) {
+                                foreach ($message->parts as $part) {
+                                    $this->fixCharsetAndAddSubParts($finalEmail, $part);
+                                }
+                            }
+
+                            $mimeHeaders = "";
+                            foreach ($message->headers as $key => $value) {
+                                if (strcasecmp($key, 'content-type') == 0) {
+                                    $mimeHeaders .= $key . ": " . $message->ctype_primary . "/" . $message->ctype_secondary;
+
+                                    foreach ($message->ctype_parameters as $ckey => $cvalue) {
+                                        if (strcasecmp($ckey, 'charset') == 0) {
+                                            $mimeHeaders .= '; charset="UTF-8"';
+                                        }
+                                        else if(strcasecmp($ckey, 'boundary') != 0) {
+                                            $mimeHeaders .= '; ' . $ckey . '="' . $cvalue . '"';
+                                        }
+                                    }
+
+                                    $mimeHeaders .= "\n";
+                                }
+                                else if (strcasecmp($key, 'content-transfer-encoding') == 0) {
+                                    $mimeHeaders .= $key . ": 8bit\n";
+                                }
+                                else if ((strcasecmp($key, 'from') == 0) || (strcasecmp($key, 'cc') == 0) || (strcasecmp($key, 'to') == 0)) {
+                                    $mimeHeaders .= $key . ": =?utf-8?B?" . base64_encode(Utils::FixAddressName($value)) . "\n";
+                                }
+                                else {
+                                    $mimeHeaders .= $key . ": " . $value . "\n";
+                                }
+                            }
+
+                            $boundary = '=_' . md5(rand() . microtime());
+                            $finalEmail = $finalEmail->encode($boundary);
+                            $output->asbody->data = $mimeHeaders . "\n\n" . "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
+                            unset($finalEmail);
                         }
                         else {
+                            // WARNING: Message text could be showed as broken, if it's not UTF-8.
                             $output->asbody->data = $mail;
                         }
                         break;

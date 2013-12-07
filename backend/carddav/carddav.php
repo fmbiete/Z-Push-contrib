@@ -210,7 +210,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
         // We don't need the actual cards, we only need to get the changes since this moment
         $init_ok = true;
-        foreach($this->addressbooks as $addressbook) {
+        foreach ($this->addressbooks as $addressbook) {
             try {
                 $this->server->set_url($addressbook);
                 $this->sinkdata[$addressbook] = $this->server->do_sync(true, false, CARDDAV_SUPPORTS_SYNC);
@@ -261,7 +261,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         }
 
         while($stopat > time() && empty($notifications)) {
-            foreach($this->addressbooks as $addressbook) {
+            foreach ($this->addressbooks as $addressbook) {
                 $vcards = false;
                 try {
                     $this->server->set_url($addressbook);
@@ -398,7 +398,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
      *
      */
-    public function ChangeFolder($folderid, $oldid, $displayname, $type){
+    public function ChangeFolder($folderid, $oldid, $displayname, $type) {
         return false;
     }
 
@@ -414,7 +414,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @throws StatusException              could throw specific SYNC_FSSTATUS_* exceptions
      *
      */
-    public function DeleteFolder($id, $parentid){
+    public function DeleteFolder($id, $parentid) {
         return false;
     }
 
@@ -432,7 +432,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
         $messages = array();
 
-        foreach($this->addressbooks as $addressbook) {
+        foreach ($this->addressbooks as $addressbook) {
             $addressbookId = $this->convertAddressbookUrl($addressbook);
 
             $vcards = false;
@@ -931,7 +931,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @access private
      * @return string
      */
-    private function escape($data){
+    private function escape($data) {
         if (is_array($data)) {
             foreach ($data as $key => $val) {
                 $data[$key] = $this->escape($val);
@@ -952,7 +952,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @access private
      * @return string
      */
-    private function unescape($data){
+    private function unescape($data) {
         $data = str_replace(array('\\\\', '\\;', '\\,', '\\n','\\N'),array('\\', ';', ',', "\n", "\n"),$data);
         return $data;
     }
@@ -992,7 +992,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $lines = explode("\n", $data);
 
         $vcard = array();
-        foreach($lines as $line) {
+        foreach ($lines as $line) {
             if (trim($line) == '')
                 continue;
             $pos = strpos($line, ':');
@@ -1009,16 +1009,18 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $fieldvalue = array();
 
             foreach ($fieldparts as $fieldpart) {
-                if(preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)){
-                    if(!in_array(strtolower($matches[1]),array('value','type','encoding','language')))
+                if (preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)) {
+                    if (!in_array(strtolower($matches[1]),array('value','type','encoding','language')))
                         continue;
-                    if(isset($fieldvalue[strtolower($matches[1])]) && is_array($fieldvalue[strtolower($matches[1])])){
+                    if (isset($fieldvalue[strtolower($matches[1])]) && is_array($fieldvalue[strtolower($matches[1])])) {
                         $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
-                    }else{
+                    }
+                    else {
                         $fieldvalue[strtolower($matches[1])] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
                     }
-                }else{
-                    if(!isset($types[strtolower($fieldpart)]))
+                }
+                else {
+                    if (!isset($types[strtolower($fieldpart)]))
                         continue;
                     $fieldvalue[$types[strtolower($fieldpart)]][] = $fieldpart;
                 }
@@ -1033,23 +1035,23 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                     $val = preg_split('/(?<!\\\\)(\;)/i', $value);
                     break;
             }
-            if(isset($fieldvalue['encoding'][0])){
-                switch(strtolower($fieldvalue['encoding'][0])){
+            if (isset($fieldvalue['encoding'][0])) {
+                switch (strtolower($fieldvalue['encoding'][0])) {
                     case 'q':
                     case 'quoted-printable':
-                        foreach($val as $i => $v){
+                        foreach ($val as $i => $v) {
                             $val[$i] = quoted_printable_decode($v);
                         }
                         break;
                     case 'b':
                     case 'base64':
-                        foreach($val as $i => $v){
+                        foreach ($val as $i => $v) {
                             $val[$i] = base64_decode($v);
                         }
                         break;
                 }
-            }else{
-                foreach($val as $i => $v){
+            }else {
+                foreach ($val as $i => $v) {
                     $val[$i] = $this->unescape($v);
                 }
             }
@@ -1057,107 +1059,121 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $vcard[$type][] = $fieldvalue;
         }
 
-        if(isset($vcard['email'][0]['val'][0]))
+        if (isset($vcard['email'][0]['val'][0]))
             $message->email1address = $vcard['email'][0]['val'][0];
-        if(isset($vcard['email'][1]['val'][0]))
+        if (isset($vcard['email'][1]['val'][0]))
             $message->email2address = $vcard['email'][1]['val'][0];
-        if(isset($vcard['email'][2]['val'][0]))
+        if (isset($vcard['email'][2]['val'][0]))
             $message->email3address = $vcard['email'][2]['val'][0];
 
-        if(isset($vcard['tel'])){
-            foreach($vcard['tel'] as $tel) {
-                if(!isset($tel['type'])){
+        if (isset($vcard['tel'])) {
+            foreach ($vcard['tel'] as $tel) {
+                if (!isset($tel['type'])) {
                     $tel['type'] = array();
                 }
-                if(in_array('car', $tel['type'])){
+                if (in_array('car', $tel['type'])) {
                     $message->carphonenumber = $tel['val'][0];
-                }elseif(in_array('pager', $tel['type'])){
+                }
+                elseif (in_array('pager', $tel['type'])) {
                     $message->pagernumber = $tel['val'][0];
-                }elseif(in_array('cell', $tel['type'])){
+                }
+                elseif (in_array('cell', $tel['type'])) {
                     $message->mobilephonenumber = $tel['val'][0];
-                }elseif(in_array('home', $tel['type'])){
-                    if(in_array('fax', $tel['type'])){
+                }
+                elseif (in_array('home', $tel['type'])) {
+                    if (in_array('fax', $tel['type'])) {
                         $message->homefaxnumber = $tel['val'][0];
-                    }elseif(empty($message->homephonenumber)){
+                    }
+                    elseif (empty($message->homephonenumber)) {
                         $message->homephonenumber = $tel['val'][0];
-                    }else{
+                    }
+                    else {
                         $message->home2phonenumber = $tel['val'][0];
                     }
-                }elseif(in_array('work', $tel['type'])){
-                    if(in_array('fax', $tel['type'])){
+                }
+                elseif (in_array('work', $tel['type'])) {
+                    if (in_array('fax', $tel['type'])) {
                         $message->businessfaxnumber = $tel['val'][0];
-                    }elseif(empty($message->businessphonenumber)){
+                    }
+                    elseif (empty($message->businessphonenumber)) {
                         $message->businessphonenumber = $tel['val'][0];
-                    }else{
+                    }
+                    else {
                         $message->business2phonenumber = $tel['val'][0];
                     }
-                }elseif(empty($message->homephonenumber)){
+                }
+                elseif (empty($message->homephonenumber)) {
                     $message->homephonenumber = $tel['val'][0];
-                }elseif(empty($message->home2phonenumber)){
+                }
+                elseif (empty($message->home2phonenumber)) {
                     $message->home2phonenumber = $tel['val'][0];
-                }else{
+                }
+                else {
                     $message->radiophonenumber = $tel['val'][0];
                 }
             }
         }
         //;;street;city;state;postalcode;country
-        if(isset($vcard['adr'])){
-            foreach($vcard['adr'] as $adr) {
-                if(empty($adr['type'])){
-                    $a = 'other';
-                }elseif(in_array('home', $adr['type'])){
-                    $a = 'home';
-                }elseif(in_array('work', $adr['type'])){
-                    $a = 'business';
-                }else{
+        if (isset($vcard['adr'])) {
+            foreach ($vcard['adr'] as $adr) {
+                if (empty($adr['type'])) {
                     $a = 'other';
                 }
-                if(!empty($adr['val'][2])){
+                elseif (in_array('home', $adr['type'])) {
+                    $a = 'home';
+                }
+                elseif (in_array('work', $adr['type'])) {
+                    $a = 'business';
+                }
+                else {
+                    $a = 'other';
+                }
+                if (!empty($adr['val'][2])) {
                     $b=$a.'street';
                     $message->$b = $adr['val'][2];
                 }
-                if(!empty($adr['val'][3])){
+                if (!empty($adr['val'][3])) {
                     $b=$a.'city';
                     $message->$b = $adr['val'][3];
                 }
-                if(!empty($adr['val'][4])){
+                if (!empty($adr['val'][4])) {
                     $b=$a.'state';
                     $message->$b = $adr['val'][4];
                 }
-                if(!empty($adr['val'][5])){
+                if (!empty($adr['val'][5])) {
                     $b=$a.'postalcode';
                     $message->$b = $adr['val'][5];
                 }
-                if(!empty($adr['val'][6])){
+                if (!empty($adr['val'][6])) {
                     $b=$a.'country';
                     $message->$b = $adr['val'][6];
                 }
             }
         }
 
-        if(!empty($vcard['fn'][0]['val'][0]))
+        if (!empty($vcard['fn'][0]['val'][0]))
             $message->fileas = $vcard['fn'][0]['val'][0];
-        if(!empty($vcard['n'][0]['val'][0]))
+        if (!empty($vcard['n'][0]['val'][0]))
             $message->lastname = $vcard['n'][0]['val'][0];
-        if(!empty($vcard['n'][0]['val'][1]))
+        if (!empty($vcard['n'][0]['val'][1]))
             $message->firstname = $vcard['n'][0]['val'][1];
-        if(!empty($vcard['n'][0]['val'][2]))
+        if (!empty($vcard['n'][0]['val'][2]))
             $message->middlename = $vcard['n'][0]['val'][2];
-        if(!empty($vcard['n'][0]['val'][3]))
+        if (!empty($vcard['n'][0]['val'][3]))
             $message->title = $vcard['n'][0]['val'][3];
-        if(!empty($vcard['n'][0]['val'][4]))
+        if (!empty($vcard['n'][0]['val'][4]))
             $message->suffix = $vcard['n'][0]['val'][4];
-        if(!empty($vcard['nickname'][0]['val'][0]))
+        if (!empty($vcard['nickname'][0]['val'][0]))
             $message->nickname = $vcard['nickname'][0]['val'][0];
-        if(!empty($vcard['bday'][0]['val'][0])){
+        if (!empty($vcard['bday'][0]['val'][0])) {
             $tz = date_default_timezone_get();
             date_default_timezone_set('UTC');
             $message->birthday = strtotime($vcard['bday'][0]['val'][0]);
             date_default_timezone_set($tz);
         }
-        if(!empty($vcard['org'][0]['val'][0]))
+        if (!empty($vcard['org'][0]['val'][0]))
             $message->companyname = $vcard['org'][0]['val'][0];
-        if(!empty($vcard['note'][0]['val'][0])){
+        if (!empty($vcard['note'][0]['val'][0])) {
             if (Request::GetProtocolVersion() >= 12.0) {
                 $message->asbody = new SyncBaseBody();
                 $message->asbody->type = SYNC_BODYPREFERENCE_PLAIN;
@@ -1184,14 +1200,14 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 $message->bodysize = strlen($message->body);
             }
         }
-        if(!empty($vcard['role'][0]['val'][0]))
+        if (!empty($vcard['role'][0]['val'][0]))
             $message->jobtitle = $vcard['role'][0]['val'][0];//$vcard['title'][0]['val'][0]
-        if(!empty($vcard['url'][0]['val'][0]))
+        if (!empty($vcard['url'][0]['val'][0]))
             $message->webpage = $vcard['url'][0]['val'][0];
-        if(!empty($vcard['categories'][0]['val']))
+        if (!empty($vcard['categories'][0]['val']))
             $message->categories = $vcard['categories'][0]['val'];
 
-        if(!empty($vcard['photo'][0]['val'][0]))
+        if (!empty($vcard['photo'][0]['val'][0]))
             $message->picture = base64_encode($vcard['photo'][0]['val'][0]);
 
         return $message;
@@ -1230,31 +1246,32 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         );
 
         $data = "BEGIN:VCARD\nVERSION:3.0\nPRODID:Z-Push\n";
-        foreach($mapping as $k => $v){
+        foreach ($mapping as $k => $v) {
             $val = '';
             $ks = explode(';', $k);
-            foreach($ks as $i){
-                if(!empty($message->$i))
+            foreach ($ks as $i) {
+                if (!empty($message->$i))
                     $val .= $this->escape($message->$i);
                 $val.=';';
             }
-            if($k == 'body' && isset($message->asbody)) {
+            if ($k == 'body' && isset($message->asbody)) {
                 $val = $message->asbody->data;
             }
-            if(empty($val))
+            if (empty($val))
                 continue;
             $val = substr($val,0,-1);
-            if(strlen($val)>50){
+            if (strlen($val)>50) {
                 $data .= $v.":\n\t".substr(chunk_split($val, 50, "\n\t"), 0, -1);
-            }else{
+            }
+            else {
                 $data .= $v.':'.$val."\n";
             }
         }
-        if(!empty($message->categories))
+        if (!empty($message->categories))
             $data .= 'CATEGORIES:'.implode(',', $this->escape($message->categories))."\n";
-        if(!empty($message->picture))
+        if (!empty($message->picture))
             $data .= 'PHOTO;ENCODING=BASE64;TYPE=JPEG:'."\n\t".substr(chunk_split($message->picture, 50, "\n\t"), 0, -1);
-        if(isset($message->birthday))
+        if (isset($message->birthday))
             $data .= 'BDAY:'.date('Y-m-d', $message->birthday)."\n";
         $data .= "END:VCARD";
 
@@ -1276,7 +1293,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $raw = $this->server->get(false, false, true);
         if ($raw !== false) {
             $xml = new SimpleXMLElement($raw);
-            foreach($xml->addressbook_element as $response) {
+            foreach ($xml->addressbook_element as $response) {
                 if ($this->gal_url !== false) {
                     if (strcmp(urldecode($response->url), $this->gal_url) == 0) {
                         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::discoverAddressbooks() Ignoring GAL addressbook '%s'", $this->gal_url));

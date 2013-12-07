@@ -285,7 +285,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         }
                     }
                     else {
-                        $xml_sinkdata = new SimpleXMLElement($this->sinkdata);
+                        $xml_sinkdata = new SimpleXMLElement($this->sinkdata[$addressbook]);
                         if (count($xml_vcards->element) != count($xml_sinkdata->element)) {
                             // If the number of cards is different, we know for sure, there are changes
                             $changed = true;
@@ -1237,6 +1237,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 if(!empty($message->$i))
                     $val .= $this->escape($message->$i);
                 $val.=';';
+            }
+            if($k == 'body' && isset($message->asbody)) {
+                $val = $message->asbody->data;
             }
             if(empty($val))
                 continue;

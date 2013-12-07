@@ -1,6 +1,6 @@
 This is a CardDAV backend based in the vcarddir backend.
 
-It supports DAViCal, Sogo and SabreDav... and should works with any carddav server.
+It supports DAViCal, Sogo, OwnCloud, SabreDav... and should works with any carddav server. So if it doesn't work with your server, please open a issue.
 
 It supports ChangesSink method that will detect and send faster changes to your device.
 

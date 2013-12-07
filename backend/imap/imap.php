@@ -211,7 +211,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SendMail(): Unable to mark the message as Answered"));
                     }
                 }
-                
+
                 // If it's a forward, we mark the original message as forwarded
                 if ($sm->forwardflag) {
                     if (!@imap_setflag_full($this->mbox, $sm->source->itemid, "\\Forwarded", ST_UID)) {
@@ -517,6 +517,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline"))
                         || (isset($part->ctype_primary) && $part->ctype_primary != "text" &&  $part->ctype_primary != "multipart")) {
                     $this->addSubPart($email, $part);
+                }
+                if (isset($part->parts)) {
+                    $this->addExtraSubParts($email, $part->parts);
                 }
             }
         }

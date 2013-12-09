@@ -703,79 +703,85 @@ EOFXMLGETXMLVCARD;
 
             foreach ($xml->response as $response)
             {
-                if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
-                {
-                    $id = basename($response->href);
-                    $id = str_replace($this->url_vcard_extension, null, $id);
-
-                    if (!empty($id))
+                // If the response doesn't have propstat will have a status node with an error http_code
+                if (isset($response->propstat)) {
+                    if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
                     {
-                        $simplified_xml->startElement('element');
-                        $simplified_xml->writeElement('id', $id);
-                        $simplified_xml->writeElement('etag', str_replace('"', null, $response->propstat->prop->getetag));
-                        $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
+                        $id = basename($response->href);
+                        $id = str_replace($this->url_vcard_extension, null, $id);
 
-                        if ($include_vcards === true)
+                        if (!empty($id))
                         {
-                            $simplified_xml->writeElement('vcard', $this->get_vcard($id));
+                            $simplified_xml->startElement('element');
+                            $simplified_xml->writeElement('id', $id);
+                            $simplified_xml->writeElement('etag', str_replace('"', null, $response->propstat->prop->getetag));
+                            $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
+
+                            if ($include_vcards === true)
+                            {
+                                $simplified_xml->writeElement('vcard', $this->get_vcard($id));
+                            }
+                            $simplified_xml->endElement();
                         }
+                    }
+                    else if (isset($response->propstat->prop->resourcetype->addressbook))
+                    {
+                        if (isset($response->propstat->prop->href))
+                        {
+                            $href = $response->propstat->prop->href;
+                        }
+                        else if (isset($response->href))
+                        {
+                            $href = $response->href;
+                        }
+                        else
+                        {
+                            $href = null;
+                        }
+
+                        $url = str_replace($this->url_parts['path'], null, $this->url) . $href;
+                        $simplified_xml->startElement('addressbook_element');
+                        $simplified_xml->writeElement('display_name', $response->propstat->prop->displayname);
+                        $simplified_xml->writeElement('url', $url);
+                        $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
                         $simplified_xml->endElement();
                     }
-                }
-                else if (isset($response->propstat->prop->resourcetype->addressbook))
-                {
-                    if (isset($response->propstat->prop->href))
+                    else if (isset($response->propstat->prop->{'address-data'}) || isset($response->propstat->prop->{'addressbook-data'}))
                     {
-                        $href = $response->propstat->prop->href;
-                    }
-                    else if (isset($response->href))
-                    {
-                        $href = $response->href;
-                    }
-                    else
-                    {
-                        $href = null;
-                    }
+                        $id = basename($response->href);
+                        $id = str_replace($this->url_vcard_extension, null, $id);
+                        $etag = str_replace('"', null, $response->propstat->prop->getetag);
 
-                    $url = str_replace($this->url_parts['path'], null, $this->url) . $href;
-                    $simplified_xml->startElement('addressbook_element');
-                    $simplified_xml->writeElement('display_name', $response->propstat->prop->displayname);
-                    $simplified_xml->writeElement('url', $url);
-                    $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
-                    $simplified_xml->endElement();
-                }
-                else if (isset($response->propstat->prop->{'address-data'}) || isset($response->propstat->prop->{'addressbook-data'}))
-                {
-                    $id = basename($response->href);
-                    $id = str_replace($this->url_vcard_extension, null, $id);
-                    $etag = str_replace('"', null, $response->propstat->prop->getetag);
-
-                    if ($remove_duplicates === false)
-                    {
-                        unset($unique_etags[$etag]);
-                    }
-
-                    if (!empty($id) && !isset($unique_etags[$etag]))
-                    {
-                        $unique_etags[$etag] = true;
-                        $simplified_xml->startElement('element');
-                        $simplified_xml->writeElement('id', $id);
-                        $simplified_xml->writeElement('etag', $etag);
-                        $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
-
-                        if ($include_vcards === true)
+                        if ($remove_duplicates === false)
                         {
-                            if (isset($response->propstat->prop->{'address-data'}))
-                            {
-                                $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
-                            }
-                            else
-                            {
-                                $simplified_xml->writeElement('vcard', $response->propstat->prop->{'addressbook-data'});
-                            }
+                            unset($unique_etags[$etag]);
                         }
-                        $simplified_xml->endElement();
+
+                        if (!empty($id) && !isset($unique_etags[$etag]))
+                        {
+                            $unique_etags[$etag] = true;
+                            $simplified_xml->startElement('element');
+                            $simplified_xml->writeElement('id', $id);
+                            $simplified_xml->writeElement('etag', $etag);
+                            $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
+
+                            if ($include_vcards === true)
+                            {
+                                if (isset($response->propstat->prop->{'address-data'}))
+                                {
+                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
+                                }
+                                else
+                                {
+                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'addressbook-data'});
+                                }
+                            }
+                            $simplified_xml->endElement();
+                        }
                     }
+                }
+                else {
+                    throw new Exception('The XML response is an error message and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE);
                 }
             }
 

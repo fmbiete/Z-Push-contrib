@@ -361,6 +361,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
             }
             else if (IMAP_SENTFOLDER) {
+                // try to open the sentfolder
+                if (!$this->imap_reopenFolder(IMAP_SENTFOLDER, false)) {
+                    // if we cannot open it, it mustn't exist, we try to create it.
+                    $this->imap_createFolder($this->server . IMAP_SENTFOLDER);
+                }
                 $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
             }
@@ -2056,7 +2061,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param boolean       $force          re-open the folder even if currently opened
      *
      * @access protected
-     * @return
+     * @return boolean      if folder is opened
      */
     protected function imap_reopenFolder($folderid, $force = false) {
         // if the stream is not alive, we open it again
@@ -2075,7 +2080,33 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             $this->mboxFolder = $folderid;
         }
+
+        return true;
     }
+
+
+    /**
+     * Creates a new IMAP folder.
+     *
+     * @param string        $foldername     full folder name
+     *
+     * @access private
+     * @return boolean      success
+     */
+    private function ($foldername) {
+        $name = Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($foldername));
+
+        res = @imap_createmailbox($this->mbox, $name);
+        if (res) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_createFolder('%s'): new folder created", $foldername));
+        }
+        else {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->imap_createFolder('%s'): failed to create folder: %s", $foldername, implode(", ", imap_errors())));
+        }
+
+        return res;
+    }
+
 
     /**
      * Adds a message with seen flag to a specified folder (used for saving sent items)

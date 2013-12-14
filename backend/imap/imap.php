@@ -237,6 +237,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): No From address defined, we try for a default one"));
             $fromaddr = $this->getDefaultFromValue();
+            $message->headers["from"] = $fromaddr;
         }
         if (isset($message->headers["to"])) {
             $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));

@@ -481,31 +481,17 @@ EOFXMLINITIALSYNC;
     /**
      * Gets a clean vCard from the CardDAV server
      *
-     * @param	string	$vcard_id	vCard id on the CardDAV server
+     * @param	string	$vcard_href	vCard href on the CardDAV server
      * @return	string				vCard (text/vcard)
      */
-    public function get_vcard($vcard_id)
+    private function get_vcard($vcard_href)
     {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_vcard"));
-        $vcard_id = str_replace($this->url_vcard_extension, null, $vcard_id);
-        $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET');
-
+        $url = $this->url_parts['scheme'] . '://' . $this->url_parts['host'] . ':' . $this->url_parts['port'] . $vcard_href;
+        $result = $this->query($url, 'GET');
 
         switch ($result['http_code'])
         {
-            case 404:
-                $result = $this->query($this->url . $vcard_id, 'GET');
-                switch ($result['http_code'])
-                {
-                    case 200:
-                    case 207:
-                        return $result['response'];
-                    break;
-                    default:
-                        throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET_VCARD);
-                    break;
-                }
-            break;
             case 200:
             case 207:
                 return $result['response'];
@@ -719,7 +705,7 @@ EOFXMLGETXMLVCARD;
 
                             if ($include_vcards === true)
                             {
-                                $simplified_xml->writeElement('vcard', $this->get_vcard($id));
+                                $simplified_xml->writeElement('vcard', $this->get_vcard($response->href));
                             }
                             $simplified_xml->endElement();
                         }

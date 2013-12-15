@@ -520,11 +520,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private function addExtraSubParts(&$email, $parts) {
         if (isset($parts)) {
             foreach ($parts as $part) {
-                if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline"))
-                        || (isset($part->ctype_primary) && $part->ctype_primary != "text" &&  $part->ctype_primary != "multipart")) {
+                // Only if it's an attachment we will add the text parts, because all the inline/no disposition have been already added
+                if (isset($part->disposition) && $part->disposition == "attachment") {
+                    // it's an attachment
                     $this->addSubPart($email, $part);
                 }
+                else {
+                    if (isset($part->ctype_primary) && $part->ctype_primary != "text" && $part->ctype_primary != "multipart") {
+                        // it's not a text part or a multipart
+                        $this->addSubPart($email, $part);
+                    }
+                }
                 if (isset($part->parts)) {
+                    // We have sub-parts
                     $this->addExtraSubParts($email, $part->parts);
                 }
             }

@@ -202,6 +202,7 @@ class carddav_backend
     const EXCEPTION_WRONG_HTTP_STATUS_CODE_UPDATE			= 1005;
     const EXCEPTION_MALFORMED_XML_RESPONSE					= 1006;
     const EXCEPTION_COULD_NOT_GENERATE_NEW_VCARD_ID			= 1007;
+    const EXCEPTION_COULD_NOT_FIND_VCARD_HREF               = 1008;
 
 
     /**
@@ -458,23 +459,36 @@ EOFXMLINITIALSYNC;
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
 
-        switch ($result['http_code'])
-        {
-            case 200:
-            case 207:
-                if ($raw === true)
-                {
-                    return $result['response'];
-                }
-                else
-                {
-                    return $this->simplify($result['response'], $include_vcards, $remove_duplicates);
-                }
-            break;
+        try {
+            switch ($result['http_code']) {
+                case 200:
+                case 207:
+                    if ($raw === true) {
+                        return $result['response'];
+                    }
+                    else {
+                        return $this->simplify($result['response'], $include_vcards, $remove_duplicates);
+                    }
+                break;
 
-            default:
-                throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET);
-            break;
+                default:
+                    throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET);
+                break;
+            }
+        } catch(Exception $ex) {
+            // vcard not found
+            if ($ex->getCode() == self::EXCEPTION_COULD_NOT_FIND_VCARD_HREF) {
+                if (stripos($xml, $this->url_vcard_extension) === FALSE) {
+                    throw $ex;
+                }
+                else {
+                    // try to do the same without the $this->url_vcard_extension
+                    return $this->do_query_report(str_ireplace($this->url_vcard_extension, "", $xml), $include_vcards, $raw, $remove_duplicates);
+                }
+            }
+            else {
+                throw $ex;
+            }
         }
     }
 
@@ -514,13 +528,16 @@ EOFXMLINITIALSYNC;
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_xml_vcard"));
         $href = $this->url_parts['path'] . str_replace($this->url_vcard_extension, null, $vcard_id) . $this->url_vcard_extension;
 
-
+        // If we don't ask for allprop, SOGo doesn't return the content_type
         $xml = <<<EOFXMLGETXMLVCARD
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
     <D:prop>
         <D:getetag/>
         <D:getlastmodified/>
+        <C:address-data>
+            <C:allprop/>
+        </C:address-data>
     </D:prop>
     <D:href>$href</D:href>
 </C:addressbook-multiget>
@@ -691,7 +708,7 @@ EOFXMLGETXMLVCARD;
             {
                 // If the response doesn't have propstat will have a status node with an error http_code
                 if (isset($response->propstat)) {
-                    if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || preg_match('/vcf/', $response->href))
+                    if (preg_match('/vcard/', $response->propstat->prop->getcontenttype))
                     {
                         $id = basename($response->href);
                         $id = str_replace($this->url_vcard_extension, null, $id);
@@ -703,9 +720,15 @@ EOFXMLGETXMLVCARD;
                             $simplified_xml->writeElement('etag', str_replace('"', null, $response->propstat->prop->getetag));
                             $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
 
-                            if ($include_vcards === true)
-                            {
-                                $simplified_xml->writeElement('vcard', $this->get_vcard($response->href));
+                            if ($include_vcards === true) {
+                                if (isset($response->propstat->prop->{'address-data'})) {
+                                    // We already have the full vcard
+                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
+                                }
+                                else {
+                                    // We don't have the vcard, we need to get it
+                                    $simplified_xml->writeElement('vcard', $this->get_vcard($response->href));
+                                }
                             }
                             $simplified_xml->endElement();
                         }
@@ -767,7 +790,12 @@ EOFXMLGETXMLVCARD;
                     }
                 }
                 else {
-                    throw new Exception('The XML response is an error message and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE);
+                    if (isset($response->status) && preg_match('/404 Not Found/', $response->status)) {
+                        throw new Exception('Not found!', self::EXCEPTION_COULD_NOT_FIND_VCARD_HREF);
+                    }
+                    else {
+                        throw new Exception('The XML response is an error message and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE);
+                    }
                 }
             }
 
@@ -789,14 +817,45 @@ EOFXMLGETXMLVCARD;
     private function clean_response($response)
     {
         $response = utf8_encode($response);
-        $response = str_replace('<D:', '<', $response);
-        $response = str_replace('<d:', '<', $response);
-        $response = str_replace('<C:', '<', $response);
-        $response = str_replace('<c:', '<', $response);
-        $response = str_replace('</D:', '</', $response);
-        $response = str_replace('</d:', '</', $response);
-        $response = str_replace('</C:', '</', $response);
-        $response = str_replace('</c:', '</', $response);
+        /*
+        $response = str_ireplace('<d:', '<', $response);
+        $response = str_ireplace('<c:', '<', $response);
+        $response = str_ireplace('<vc:', '<', $response);
+        $response = str_ireplace('</d:', '</', $response);
+        $response = str_ireplace('</c:', '</', $response);
+        $response = str_ireplace('</vc:', '</', $response);
+        */
+
+//         $response = preg_replace('/<[a-z0-9]+:(.*)/i', '<$1', $response);
+//         $response = preg_replace('/<\/[a-z0-9]+:(.*)/i', '</$1', $response);
+
+
+        // Removing namespace it's pretty hard with regex.
+        // Also, each server uses different namespaces, so using namespaces it's impossible
+        // This uses DOMDocument, so it won't be the fastest or least memory-using way.
+        // Feel free to suggest or improve it
+        // http://stackoverflow.com/questions/15634291/remove-name-space-from-xml-file-and-save-as-new-xml
+        $xsl = <<<EOFXSL
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"><xsl:output method="xml" version="1.0" encoding="UTF-8" />
+        <xsl:template match="*">
+                <xsl:element name="{local-name()}">
+                        <xsl:apply-templates select="@* | node()"/>
+                </xsl:element>
+        </xsl:template>
+</xsl:stylesheet>
+EOFXSL;
+
+        $dom = new DOMDocument();
+        $dom->loadXML($response);
+        $stylesheet = new DOMDocument();
+        $stylesheet->loadXML($xsl);
+        $xsltprocessor = new XSLTProcessor();
+        $xsltprocessor->importStylesheet($stylesheet);
+
+        $response = $xsltprocessor->transformToXML($dom);
+        $dom = null;
+        $stylesheet = null;
+        $xsltprocessor = null;
 
         return $response;
     }

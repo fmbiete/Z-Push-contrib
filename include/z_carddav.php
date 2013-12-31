@@ -560,14 +560,12 @@ EOFXMLGETXMLVCARD;
      * @param	string	$vcard_id	vCard id on the CardDAV server
      * @return	boolean
      */
-    public function delete($vcard_id)
-    {
+    public function delete($vcard_id) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->delete"));
         $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'DELETE');
 
 
-        switch ($result['http_code'])
-        {
+        switch ($result['http_code']) {
             case 204:
                 return true;
             break;
@@ -585,11 +583,9 @@ EOFXMLGETXMLVCARD;
      * @param	string	$vcard_id	vCard id on the CardDAV server
      * @return	string			The new vCard id
      */
-    public function add($vcard, $vcard_id = null)
-    {
+    public function add($vcard, $vcard_id = null) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->add"));
-        if ($vcard_id === null)
-        {
+        if ($vcard_id === null) {
             $vcard_id	= $this->generate_vcard_id();
         }
 
@@ -597,8 +593,7 @@ EOFXMLGETXMLVCARD;
         $result = $this->query($this->url . $vcard_id . $this->url_vcard_extension, 'PUT', $vcard, 'text/vcard');
 
 
-        switch($result['http_code'])
-        {
+        switch($result['http_code']) {
             case 201:
             case 204:
                 return $vcard_id;
@@ -617,14 +612,11 @@ EOFXMLGETXMLVCARD;
      * @param	string	$vcard_id	vCard id on the CardDAV server
      * @return	boolean
      */
-    public function update($vcard, $vcard_id)
-    {
-        try
-        {
+    public function update($vcard, $vcard_id) {
+        try {
             return $this->add($vcard, $vcard_id);
         }
-        catch (Exception $e)
-        {
+        catch (Exception $e) {
             throw new Exception($e->getMessage(), self::EXCEPTION_WRONG_HTTP_STATUS_CODE_UPDATE);
         }
     }
@@ -637,21 +629,17 @@ EOFXMLGETXMLVCARD;
      * @param   boolean $remove_duplicates  If we will apply uniqness to the response vcards
      * @return	string						Simplified CardDAV XML response
      */
-    private function simplify($response, $include_vcards = true, $remove_duplicates = false)
-    {
+    private function simplify($response, $include_vcards = true, $remove_duplicates = false) {
         $response = $this->clean_response($response);
 
-        try
-        {
+        try {
             $xml = new SimpleXMLElement($response);
         }
-        catch(Exception $e)
-        {
+        catch(Exception $e) {
             throw new Exception('The XML response seems to be malformed and can\'t be simplified!', self::EXCEPTION_MALFORMED_XML_RESPONSE, $e);
         }
 
-        if (!empty($xml->{'sync-token'}))
-        {
+        if (!empty($xml->{'sync-token'})) {
             $this->synctoken[$this->url] = $xml->{'sync-token'};
         }
 
@@ -662,21 +650,17 @@ EOFXMLGETXMLVCARD;
         $simplified_xml->startDocument('1.0', 'utf-8');
         $simplified_xml->startElement('response');
 
-        if (!empty($xml->response))
-        {
+        if (!empty($xml->response)) {
             $unique_etags = array();
 
-            foreach ($xml->response as $response)
-            {
-                // If the response doesn't have propstat will have a status node with an error http_code
+            foreach ($xml->response as $response) {
                 if (isset($response->propstat)) {
-                    if (preg_match('/vcard/', $response->propstat->prop->getcontenttype))
-                    {
+                    if (preg_match('/vcard/', $response->propstat->prop->getcontenttype) || isset($response->propstat->prop->{'address-data'}) || isset($response->propstat->prop->{'addressbook-data'})) {
+                        // It's a vcard
                         $id = basename($response->href);
                         $id = str_replace($this->url_vcard_extension, null, $id);
 
-                        if (!empty($id))
-                        {
+                        if (!empty($id)) {
                             $simplified_xml->startElement('element');
                             $simplified_xml->writeElement('id', $id);
                             $simplified_xml->writeElement('etag', str_replace('"', null, $response->propstat->prop->getetag));
@@ -687,26 +671,27 @@ EOFXMLGETXMLVCARD;
                                     // We already have the full vcard
                                     $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
                                 }
+                                else if (isset($response->propstat->prop->{'addressbook-data'})) {
+                                    // We already have the full vcard, also
+                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'addressbook-data'});
+                                }
                                 else {
-                                    // We don't have the vcard, we need to get it
+                                    // We don't have the vcard, we need to get it. We never should hit here, it would mean a buggy server
                                     $simplified_xml->writeElement('vcard', $this->get_vcard($response->href));
                                 }
                             }
                             $simplified_xml->endElement();
                         }
                     }
-                    else if (isset($response->propstat->prop->resourcetype->addressbook))
-                    {
-                        if (isset($response->propstat->prop->href))
-                        {
+                    else if (isset($response->propstat->prop->resourcetype->addressbook)) {
+                        // It's an addressbook
+                        if (isset($response->propstat->prop->href)) {
                             $href = $response->propstat->prop->href;
                         }
-                        else if (isset($response->href))
-                        {
+                        else if (isset($response->href)) {
                             $href = $response->href;
                         }
-                        else
-                        {
+                        else {
                             $href = null;
                         }
 
@@ -717,41 +702,9 @@ EOFXMLGETXMLVCARD;
                         $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
                         $simplified_xml->endElement();
                     }
-                    else if (isset($response->propstat->prop->{'address-data'}) || isset($response->propstat->prop->{'addressbook-data'}))
-                    {
-                        $id = basename($response->href);
-                        $id = str_replace($this->url_vcard_extension, null, $id);
-                        $etag = str_replace('"', null, $response->propstat->prop->getetag);
-
-                        if ($remove_duplicates === false)
-                        {
-                            unset($unique_etags[$etag]);
-                        }
-
-                        if (!empty($id) && !isset($unique_etags[$etag]))
-                        {
-                            $unique_etags[$etag] = true;
-                            $simplified_xml->startElement('element');
-                            $simplified_xml->writeElement('id', $id);
-                            $simplified_xml->writeElement('etag', $etag);
-                            $simplified_xml->writeElement('last_modified', $response->propstat->prop->getlastmodified);
-
-                            if ($include_vcards === true)
-                            {
-                                if (isset($response->propstat->prop->{'address-data'}))
-                                {
-                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'address-data'});
-                                }
-                                else
-                                {
-                                    $simplified_xml->writeElement('vcard', $response->propstat->prop->{'addressbook-data'});
-                                }
-                            }
-                            $simplified_xml->endElement();
-                        }
-                    }
                 }
                 else {
+                    // We don't have a propstat node, so it will be an error answer
                     if (isset($response->status) && preg_match('/404 Not Found/', $response->status)) {
                         throw new Exception('Not found!', self::EXCEPTION_COULD_NOT_FIND_VCARD_HREF);
                     }

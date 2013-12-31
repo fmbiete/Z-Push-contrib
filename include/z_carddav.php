@@ -555,19 +555,6 @@ EOFXMLGETXMLVCARD;
     }
 
     /**
-     * Cleans the vCard
-     *
-     * @param	string	$vcard	vCard
-     * @return	string	$vcard	vCard
-     */
-    private function clean_vcard($vcard)
-    {
-        $vcard = str_replace("\t", null, $vcard);
-
-        return $vcard;
-    }
-
-    /**
      * Deletes an entry from the CardDAV server
      *
      * @param	string	$vcard_id	vCard id on the CardDAV server

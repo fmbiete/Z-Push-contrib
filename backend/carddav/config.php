@@ -71,7 +71,7 @@ define('CARDDAV_PATH', '/caldav.php/%u/');
 // %u: replaced with the username
 // %d: replaced with the domain
 //   Add the trailing /
-define('CARDDAV_DEFAULT_PATH', '/caldav.php/%u/addresses');
+define('CARDDAV_DEFAULT_PATH', '/caldav.php/%u/addresses/');
 
 // Server path to the GAL addressbook. This addressbook is readonly and searchable by the user, but it will NOT be synced.
 // If you don't want GAL, comment it

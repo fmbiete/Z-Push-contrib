@@ -288,35 +288,30 @@ class carddav_backend
     }
 
     /**
-     * Gets all vCards including additional information from the CardDAV server
+     * Gets all vCards including additional information from the CardDAV server.
+     *  This operation could be slow if you have a lot of vcards.
      *
      * @param	boolean	$include_vcards		Include vCards within the response (simplified only)
      * @param	boolean	$raw				Get response raw or simplified
      * @params  boolean $discover           Only discover addressbooks
      * @return	string						Raw or simplified XML response
      */
-    public function get($include_vcards = true, $raw = false, $discover = false)
-    {
+    public function get($include_vcards = true, $raw = false, $discover = false) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get"));
-        if ($discover)
-        {
+        if ($discover) {
             $result = $this->query($this->url, 'PROPFIND', null, null, '1');
         }
-        else
-        {
+        else {
             $result = $this->query($this->url, 'PROPFIND');
         }
 
-        switch ($result['http_code'])
-        {
+        switch ($result['http_code']) {
             case 200:
             case 207:
-                if ($raw === true)
-                {
+                if ($raw === true) {
                     return $result['response'];
                 }
-                else
-                {
+                else {
                     return $this->simplify($result['response'], $include_vcards);
                 }
             break;
@@ -338,11 +333,9 @@ class carddav_backend
      * @param   boolean $support_fn_search  If the server supports searchs by fn
      * @return  string                      Raw or simplified XML response
      */
-    public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false, $support_fn_search = false)
-    {
+    public function search_vcards($pattern, $limit, $include_vcards = true, $raw = false, $support_fn_search = false) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->search_vcards"));
-        if ($support_fn_search)
-        {
+        if ($support_fn_search) {
             $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
@@ -363,8 +356,7 @@ class carddav_backend
 </C:addressbook-query>
 EOFCONTENTSEARCH;
         }
-        else
-        {
+        else {
             $xml = <<<EOFCONTENTSEARCH
 <?xml version="1.0" encoding="utf-8" ?>
 <C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
@@ -403,18 +395,14 @@ EOFCONTENTSEARCH;
      * @param boolean $support_carddav_sync If the cardDAV server supports sync-collection operations (DAViCal supports it)
      * @return string                       Simplified XML response
      */
-    public function do_sync($initial = true, $include_vcards = false, $support_carddav_sync = false)
-    {
+    public function do_sync($initial = true, $include_vcards = false, $support_carddav_sync = false) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_sync"));
 
-        if ($support_carddav_sync)
-        {
-            if ($initial)
-            {
+        if ($support_carddav_sync) {
+            if ($initial) {
                 $token = "";
             }
-            else
-            {
+            else {
                 $token = $this->synctoken[$this->url];
             }
 
@@ -432,8 +420,7 @@ EOFXMLINITIALSYNC;
 
             return $this->do_query_report($xml, $include_vcards, false);
         }
-        else
-        {
+        else {
             return $this->get($include_vcards, false);
         }
     }
@@ -448,8 +435,7 @@ EOFXMLINITIALSYNC;
      * @param boolean $remove_duplicates If we will apply uniqness to the response vcards
      * @return string
      */
-    private function do_query_report($xml, $include_vcards = true, $raw = false, $remove_duplicates = false)
-    {
+    private function do_query_report($xml, $include_vcards = true, $raw = false, $remove_duplicates = false) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->do_query_report"));
         $result = $this->query($this->url, 'REPORT', $xml, 'text/xml');
 
@@ -469,10 +455,11 @@ EOFXMLINITIALSYNC;
                     throw new Exception('Woops, something\'s gone wrong! The CardDAV server returned the http status code ' . $result['http_code'] . '.', self::EXCEPTION_WRONG_HTTP_STATUS_CODE_GET);
                 break;
             }
-        } catch(Exception $ex) {
+        }
+        catch(Exception $ex) {
             // vcard not found
             if ($ex->getCode() == self::EXCEPTION_COULD_NOT_FIND_VCARD_HREF) {
-                if (stripos($xml, $this->url_vcard_extension) === FALSE) {
+                if (strlen($this->url_vcard_extension) == 0 || stripos($xml, $this->url_vcard_extension) === FALSE) {
                     throw $ex;
                 }
                 else {

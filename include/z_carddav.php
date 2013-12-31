@@ -729,21 +729,12 @@ EOFXMLGETXMLVCARD;
      * @param	string	$response	CardDAV XML response
      * @return	string	$response	Cleaned CardDAV XML response
      */
-    private function clean_response($response)
-    {
+    private function clean_response($response) {
+        // TODO: we could need to convert from non ISO-8859-1
         $response = utf8_encode($response);
-        /*
-        $response = str_ireplace('<d:', '<', $response);
-        $response = str_ireplace('<c:', '<', $response);
-        $response = str_ireplace('<vc:', '<', $response);
-        $response = str_ireplace('</d:', '</', $response);
-        $response = str_ireplace('</c:', '</', $response);
-        $response = str_ireplace('</vc:', '</', $response);
-        */
 
 //         $response = preg_replace('/<[a-z0-9]+:(.*)/i', '<$1', $response);
 //         $response = preg_replace('/<\/[a-z0-9]+:(.*)/i', '</$1', $response);
-
 
         // Removing namespace it's pretty hard with regex.
         // Also, each server uses different namespaces, so using namespaces it's impossible
@@ -780,10 +771,8 @@ EOFXSL;
      *
      * @return void
      */
-    public function curl_init()
-    {
-        if (empty($this->curl))
-        {
+    public function curl_init() {
+        if (empty($this->curl)) {
             $this->curl = curl_init();
             curl_setopt($this->curl, CURLOPT_HEADER, true);
             curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -791,8 +780,7 @@ EOFXSL;
             curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($this->curl, CURLOPT_USERAGENT, self::USERAGENT.self::VERSION);
 
-            if ($this->auth !== null)
-            {
+            if ($this->auth !== null) {
                 curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
                 curl_setopt($this->curl, CURLOPT_USERPWD, $this->auth);
             }
@@ -809,8 +797,7 @@ EOFXSL;
      * @param   string  $depth              Set Depth
      * @return	array						Raw CardDAV Response and http status code
      */
-    private function query($url, $method, $content = null, $content_type = null, $depth = "infinity")
-    {
+    private function query($url, $method, $content = null, $content_type = null, $depth = "infinity") {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->query - '%s' '%s' '%s' '%s'", $url, $method, $content, $content_type));
 
         $this->curl_init();
@@ -818,23 +805,19 @@ EOFXSL;
         curl_setopt($this->curl, CURLOPT_URL, $url);
         curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
 
-        if ($content !== null)
-        {
+        if ($content !== null) {
             curl_setopt($this->curl, CURLOPT_POST, true);
             curl_setopt($this->curl, CURLOPT_POSTFIELDS, $content);
         }
-        else
-        {
+        else {
             curl_setopt($this->curl, CURLOPT_POST, false);
             curl_setopt($this->curl, CURLOPT_POSTFIELDS, null);
         }
 
-        if ($content_type !== null)
-        {
+        if ($content_type !== null) {
             curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type, 'Depth: '.$depth));
         }
-        else
-        {
+        else {
             curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Depth: '.$depth));
         }
 
@@ -849,8 +832,7 @@ EOFXSL;
             'http_code'		=> $http_code
         );
 
-        if ($this->debug === true)
-        {
+        if ($this->debug === true) {
             $debug = $return;
             $debug['url']			= $url;
             $debug['method']		= $method;
@@ -868,38 +850,31 @@ EOFXSL;
      *
      * @return	string	$vcard_id	Valid vCard id
      */
-    private function generate_vcard_id()
-    {
+    private function generate_vcard_id() {
         $vcard_id = null;
 
-        for ($number = 0; $number <= 25; $number ++)
-        {
-            if ($number == 8 || $number == 17)
-            {
+        for ($number = 0; $number <= 25; $number ++) {
+            if ($number == 8 || $number == 17) {
                 $vcard_id .= '-';
             }
-            else
-            {
+            else {
                 $vcard_id .= $this->vcard_id_chars[mt_rand(0, (count($this->vcard_id_chars) - 1))];
             }
         }
 
-        try
-        {
+        try {
             $carddav = new carddav_backend($this->url);
             $carddav->set_auth($this->username, $this->password);
 
             $result = $carddav->query($this->url . $vcard_id . $this->url_vcard_extension, 'GET');
 
-            if ($result['http_code'] !== 404)
-            {
+            if ($result['http_code'] !== 404) {
                 $vcard_id = $this->generate_vcard_id();
             }
 
             return $vcard_id;
         }
-        catch (Exception $e)
-        {
+        catch (Exception $e) {
             throw new Exception($e->getMessage(), self::EXCEPTION_COULD_NOT_GENERATE_NEW_VCARD_ID);
         }
     }
@@ -910,10 +885,8 @@ EOFXSL;
      *
      * @return	void
      */
-    public function __destruct()
-    {
-        if (!empty($this->curl))
-        {
+    public function __destruct() {
+        if (!empty($this->curl)) {
             curl_close($this->curl);
         }
     }

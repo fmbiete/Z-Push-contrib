@@ -104,14 +104,14 @@ class carddav_backend
      *
      * @constant	string
      */
-    const VERSION = '0.6+';
+    const VERSION = '0.6.c';
 
     /**
      * User agent displayed in http requests
      *
      * @constant	string
      */
-    const USERAGENT = 'CardDAV PHP/';
+    const USERAGENT = 'Z-Push CardDAV/';
 
     /**
      * CardDAV server url
@@ -225,8 +225,7 @@ class carddav_backend
      * @param	array	$debug_information		Debug information
      * @return	void
      */
-    public function set_debug(array $debug_information)
-    {
+    public function set_debug(array $debug_information) {
         $this->debug_information[] = $debug_information;
     }
 
@@ -236,14 +235,12 @@ class carddav_backend
      * @param	string	$url	CardDAV server url
      * @return	void
      */
-    public function set_url($url)
-    {
+    public function set_url($url) {
         $this->url = $url;
 
         // Url always end with trailing /
-        if (substr($this->url, -1, 1) !== '/')
-        {
-            $this->url = $this->url . '/';
+        if (substr($this->url, -1, 1) !== '/') {
+            $this->url .= '/';
         }
 
         $this->url_parts = parse_url($this->url);
@@ -256,8 +253,7 @@ class carddav_backend
      * @param	string	$password	CardDAV server password
      * @return	void
      */
-    public function set_auth($username, $password)
-    {
+    public function set_auth($username, $password) {
         $this->username	= $username;
         $this->password	= $password;
         $this->auth		= $username . ':' . $password;
@@ -268,8 +264,7 @@ class carddav_backend
      *
      * @return	array	$this->debug_information	All available debug information
      */
-    public function get_debug()
-    {
+    public function get_debug() {
         return $this->debug_information;
     }
 
@@ -288,8 +283,7 @@ class carddav_backend
     * @param  string  $extension  File extension
     * @return  void
     */
-    public function set_vcard_extension($extension)
-    {
+    public function set_vcard_extension($extension) {
         $this->url_vcard_extension = $extension;
     }
 

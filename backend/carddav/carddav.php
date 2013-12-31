@@ -103,7 +103,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         else {
             $this->gal_url = false;
         }
-        $this->server = new carddav_backend($this->url);
+        $this->server = new carddav_backend($this->url, CARDDAV_URL_VCARD_EXTENSION);
         $this->server->set_auth($username, $password);
 
         if (($connected = $this->server->check_connection())) {

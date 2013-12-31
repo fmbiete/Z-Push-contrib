@@ -189,7 +189,7 @@ class carddav_backend
      *
      * @var string
      */
-    private $url_vcard_extension = '.vcf';
+    private $url_vcard_extension;
 
     /**
      * Exception codes
@@ -209,14 +209,14 @@ class carddav_backend
      * Constructor
      * Sets the CardDAV server url
      *
-     * @param	string	$url	CardDAV server url
+     * @param	string  $url                    CardDAV server url
+     * @param   string  $url_vcard_extension    extension needed to recover the vcard, it could be empty
      */
-    public function __construct($url = null)
-    {
-        if ($url !== null)
-        {
+    public function __construct($url = null, $url_vcard_extension = '.vcf') {
+        if ($url !== null) {
             $this->set_url($url);
         }
+        $this->url_vcard_extension = $url_vcard_extension;
     }
 
     /**

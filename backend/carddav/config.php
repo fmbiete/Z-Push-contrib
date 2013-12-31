@@ -100,3 +100,9 @@ define('CARDDAV_SUPPORTS_SYNC', false);
 // Setting this to true will search by FN. If false will search by sn, givenName and email
 // It's safe to leave it as false
 define('CARDDAV_SUPPORTS_FN_SEARCH', false);
+
+
+// If your carddav server needs to use file extension to recover a vcard.
+//    Davical needs it
+//    SOGo official demo online needs it, but some SOGo installation don't need it, so test it
+define('CARDDAV_URL_VCARD_EXTENSION', '.vcf');

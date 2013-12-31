@@ -28,6 +28,7 @@ License: GNU Affero Genaral Public License v3.0 (AGPLv3)
 
 Documentation
 =============
+You can find some configuration guidelines in the Wiki https://github.com/fmbiete/Z-Push-contrib/wiki
 
 Requisites
 ==========

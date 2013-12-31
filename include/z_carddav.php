@@ -479,14 +479,12 @@ EOFXMLINITIALSYNC;
      * @param	string	$vcard_href	vCard href on the CardDAV server
      * @return	string				vCard (text/vcard)
      */
-    private function get_vcard($vcard_href)
-    {
+    private function get_vcard($vcard_href) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_vcard"));
         $url = $this->url_parts['scheme'] . '://' . $this->url_parts['host'] . ':' . $this->url_parts['port'] . $vcard_href;
         $result = $this->query($url, 'GET');
 
-        switch ($result['http_code'])
-        {
+        switch ($result['http_code']) {
             case 200:
             case 207:
                 return $result['response'];
@@ -504,8 +502,7 @@ EOFXMLINITIALSYNC;
      * @param	string		$vcard_id	vCard id on the CardDAV Server
      * @return	string					Raw or simplified vCard (text/xml)
      */
-    public function get_xml_vcard($vcard_id)
-    {
+    public function get_xml_vcard($vcard_id) {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->get_xml_vcard"));
         $href = $this->url_parts['path'] . str_replace($this->url_vcard_extension, null, $vcard_id) . $this->url_vcard_extension;
 
@@ -532,8 +529,7 @@ EOFXMLGETXMLVCARD;
      *
      * @return	void
      */
-    public function enable_debug()
-    {
+    public function enable_debug() {
         $this->debug = true;
     }
 
@@ -542,14 +538,12 @@ EOFXMLGETXMLVCARD;
      *
      * @return	boolean
      */
-    public function check_connection()
-    {
+    public function check_connection() {
 //         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->carddav_backend->check_connection"));
         $result = $this->query($this->url, 'OPTIONS');
 
         $status = false;
-        switch($result['http_code'])
-        {
+        switch($result['http_code']) {
             case 200:
             case 207:
             case 401:

@@ -1050,7 +1050,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         }
                         break;
                 }
-            }else {
+            }
+            else {
                 foreach ($val as $i => $v) {
                     $val[$i] = $this->unescape($v);
                 }

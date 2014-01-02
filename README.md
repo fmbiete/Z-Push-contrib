@@ -78,12 +78,12 @@ PHP-FPM
 max_execution_time=600
 short_open_tag=On
 
-And configure enough php-fpm process to have 1.5 x number users
+And configure enough php-fpm processes, you will need 1.5 x number users
 
 
 Backends
 ========
-Each backend has a README file, or comments in their config.php file. Look at them to configure correctly.
+Each backend has a README file, or comments in their config.php file. Look at them to configure correctly. Also you can look here https://github.com/fmbiete/Z-Push-contrib/wiki
 
 
 StateMachine

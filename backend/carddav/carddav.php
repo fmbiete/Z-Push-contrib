@@ -1010,7 +1010,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
             foreach ($fieldparts as $fieldpart) {
                 if (preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)) {
-                    if (!in_array(strtolower($matches[1]),array('value','type','encoding','language')))
+                    if (!in_array(strtolower($matches[1]), array('value', 'type', 'encoding', 'language')))
                         continue;
                     if (isset($fieldvalue[strtolower($matches[1])]) && is_array($fieldvalue[strtolower($matches[1])])) {
                         $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));

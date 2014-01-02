@@ -1221,24 +1221,25 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return string               vcard text
      */
     private function ParseToVCard($message) {
+        // http://tools.ietf.org/html/rfc6350
         $mapping = array(
             'fileas' => 'FN',
             'lastname;firstname;middlename;title;suffix' => 'N',
-            'email1address' => 'EMAIL;INTERNET',
-            'email2address' => 'EMAIL;INTERNET',
-            'email3address' => 'EMAIL;INTERNET',
-            'businessphonenumber' => 'TEL;WORK',
-            'business2phonenumber' => 'TEL;WORK',
-            'businessfaxnumber' => 'TEL;WORK;FAX',
-            'homephonenumber' => 'TEL;HOME',
-            'home2phonenumber' => 'TEL;HOME',
-            'homefaxnumber' => 'TEL;HOME;FAX',
-            'mobilephonenumber' => 'TEL;CELL',
-            'carphonenumber' => 'TEL;CAR',
-            'pagernumber' => 'TEL;PAGER',
-            ';;businessstreet;businesscity;businessstate;businesspostalcode;businesscountry' => 'ADR;WORK',
-            ';;homestreet;homecity;homestate;homepostalcode;homecountry' => 'ADR;HOME',
-            ';;otherstreet;othercity;otherstate;otherpostalcode;othercountry' => 'ADR',
+            'email1address' => 'EMAIL;PREF=1',
+            'email2address' => 'EMAIL;PREF=2',
+            'email3address' => 'EMAIL;PREF=3',
+            'businessphonenumber' => 'TEL;TYPE=WORK,VOICE',
+            'business2phonenumber' => 'TEL;TYPE=WORK,VOICE',
+            'businessfaxnumber' => 'TEL;TYPE=WORK,FAX',
+            'homephonenumber' => 'TEL;TYPE=HOME,VOICE',
+            'home2phonenumber' => 'TEL;TYPE=HOME,VOICE',
+            'homefaxnumber' => 'TEL;TYPE=HOME,FAX',
+            'mobilephonenumber' => 'TEL;TYPE=CELL',
+            'carphonenumber' => 'TEL;TYPE=VOICE',
+            'pagernumber' => 'TEL;TYPE=PAGER',
+            'businessstreet;businesscity;businessstate;businesspostalcode;businesscountry' => 'ADR;TYPE=WORK',
+            'homestreet;homecity;homestate;homepostalcode;homecountry' => 'ADR;TYPE=HOME',
+            'otherstreet;othercity;otherstate;otherpostalcode;othercountry' => 'ADR',
             'companyname' => 'ORG',
             'body' => 'NOTE',
             'jobtitle' => 'ROLE',
@@ -1260,8 +1261,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             }
             if (empty($val))
                 continue;
-            $val = substr($val,0,-1);
-            if (strlen($val)>50) {
+            // Remove trailing ;
+            $val = substr($val, 0, -1);
+            if (strlen($val) > 50) {
                 $data .= $v.":\n\t".substr(chunk_split($val, 50, "\n\t"), 0, -1);
             }
             else {

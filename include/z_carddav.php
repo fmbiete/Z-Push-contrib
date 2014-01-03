@@ -730,9 +730,6 @@ EOFXMLGETXMLVCARD;
      * @return	string	$response	Cleaned CardDAV XML response
      */
     private function clean_response($response) {
-        // TODO: we could need to convert from non ISO-8859-1
-        $response = utf8_encode($response);
-
 //         $response = preg_replace('/<[a-z0-9]+:(.*)/i', '<$1', $response);
 //         $response = preg_replace('/<\/[a-z0-9]+:(.*)/i', '</$1', $response);
 
@@ -815,7 +812,7 @@ EOFXSL;
         }
 
         if ($content_type !== null) {
-            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type, 'Depth: '.$depth));
+            curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-type: '.$content_type. '; charset=utf-8', 'Depth: '.$depth));
         }
         else {
             curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Depth: '.$depth));

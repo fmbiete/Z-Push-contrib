@@ -1147,7 +1147,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
                         if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-                            $finalEmail = new Mail_mimePart($message->body, array('headers' => $message->headers));
+                            $finalEmail = new Mail_mimePart(isset($message->body) ? $message->body : "", array('headers' => $message->headers));
                             if (isset($message->parts)) {
                                 foreach ($message->parts as $part) {
                                     $this->fixCharsetAndAddSubParts($finalEmail, $part);

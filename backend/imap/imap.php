@@ -1177,7 +1177,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                     $mimeHeaders .= $key . ": =?utf-8?B?" . base64_encode(Utils::FixAddressName($value)) . "\n";
                                 }
                                 else {
-                                    $mimeHeaders .= $key . ": " . $value . "\n";
+                                    if (is_array($value)) {
+                                        foreach($value as $v) {
+                                            $mimeHeaders .= $key . ": " . $v . "\n";
+                                        }
+                                    }
+                                    else {
+                                        $mimeHeaders .= $key . ": " . $value . "\n";
+                                    }
                                 }
                             }
 

@@ -146,7 +146,7 @@ class BackendCalDAV extends BackendDiff {
 		}
 		return $folder;
 	}
-	
+
 	/**
 	 * Returns information on the folder.
 	 * @see BackendDiff::StatFolder()
@@ -272,7 +272,7 @@ class BackendCalDAV extends BackendDiff {
 	 */
 	public function ChangeMessage($folderid, $id, $message, $contentParameters) {
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangeMessage('%s','%s')", $folderid,  $id));
-		 
+
 		if ($id)
 		{
 			$mod = $this->StatMessage($folderid, $id);
@@ -354,7 +354,7 @@ class BackendCalDAV extends BackendDiff {
     public function GetSupportedASVersion() {
         return ZPush::ASV_14;
     }
-    
+
 	/**
 	 * Convert a iCAL VEvent to ActiveSync format
 	 * @param ical_vevent $data
@@ -366,7 +366,7 @@ class BackendCalDAV extends BackendDiff {
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->_ParseVEventToAS(): Parsing VEvent"));
 		$truncsize = Utils::GetTruncSize($contentparameters->GetTruncation());
 		$message = new SyncAppointment();
-		 
+
 		$ical = new iCalComponent($data);
 		$timezones = $ical->GetComponents("VTIMEZONE");
 		$timezone = "";
@@ -379,7 +379,7 @@ class BackendCalDAV extends BackendDiff {
 			$timezone = date_default_timezone_get();
 		}
 		$message->timezone = $this->_GetTimezoneString($timezone);
-		 
+
 		$vevents = $ical->GetComponents("VTIMEZONE", false);
 		foreach ($vevents as $event)
 		{
@@ -420,7 +420,7 @@ class BackendCalDAV extends BackendDiff {
 	{
 		//Defaults
 		$message->busystatus = "2";
-		 
+
 		$properties = $event->GetProperties();
 		foreach ($properties as $property)
 		{
@@ -467,6 +467,16 @@ class BackendCalDAV extends BackendDiff {
 						$message->alldayevent = "1";
 					}
 					break;
+
+                case "DURATION":
+                    if (!isset($message->endtime))
+                    {
+                        $start = date_create("@" . $message->starttime);
+                        $val = str_replace("+", "", $property->Value());
+                        $interval = new DateInterval($val);
+                        $message->endtime = date_timestamp_get(date_add($start, $interval));
+                    }
+                break;
 
 				case "RRULE":
 					$message->recurrence = $this->_ParseRecurrence($property->Value(), "vevent");
@@ -577,7 +587,7 @@ class BackendCalDAV extends BackendDiff {
 					}
 					$message->exceptions[] = $exception;
 					break;
-				
+
 				//We can ignore the following
 				case "PRIORITY":
 				case "SEQUENCE":
@@ -593,7 +603,7 @@ class BackendCalDAV extends BackendDiff {
 					ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->_ParseVEventToSyncObject(): '%s' is not yet supported.", $property->Name()));
 			}
 		}
-		 
+
 		$valarm = current($event->GetComponents("VALARM"));
 		if ($valarm)
 		{
@@ -619,7 +629,7 @@ class BackendCalDAV extends BackendDiff {
 				}
 			}
 		}
-		 
+
 		return $message;
 	}
 
@@ -683,7 +693,7 @@ class BackendCalDAV extends BackendDiff {
 							}
 							else
 							{
-								$recurrence->weekofmonth = 1;	
+								$recurrence->weekofmonth = 1;
 							}
 							$recurrence->type = "3";
 						}
@@ -728,7 +738,7 @@ class BackendCalDAV extends BackendDiff {
 					$days = explode(",", $rule[1]);
 					$recurrence->dayofmonth = $days[0];
 					break;
-					 
+
 				case "BYMONTH":
 					$recurrence->monthofyear = $rule[1];
 					break;
@@ -753,7 +763,7 @@ class BackendCalDAV extends BackendDiff {
 		$ical->AddProperty("VERSION", "2.0");
 		$ical->AddProperty("PRODID", "-//php-push//NONSGML PHP-Push Calendar//EN");
 		$ical->AddProperty("CALSCALE", "GREGORIAN");
-		 
+
 		if ($folderid[0] == "C")
 		{
 			$vevent = $this->_ParseASEventToVEvent($data, $id);
@@ -784,7 +794,7 @@ class BackendCalDAV extends BackendDiff {
 			$vtodo->AddProperty("DTSTAMP", gmdate("Ymd\THis\Z"));
 			$ical->AddComponent($vtodo);
 		}
-		 
+
 		return $ical->Render();
 	}
 
@@ -937,7 +947,7 @@ class BackendCalDAV extends BackendDiff {
 		{
 			$vevent->AddProperty("CATEGORIES", implode(",", $data->categories));
 		}
-		 
+
 		return $vevent;
 	}
 
@@ -997,7 +1007,7 @@ class BackendCalDAV extends BackendDiff {
 				}
 				else
 				{
-					$days[] = $week . "SU";	
+					$days[] = $week . "SU";
 				}
 			}
 			if (($rec->dayofweek & 2) == 2)
@@ -1008,7 +1018,7 @@ class BackendCalDAV extends BackendDiff {
 				}
 				else
 				{
-					$days[] = $week . "MO";	
+					$days[] = $week . "MO";
 				}
 			}
 			if (($rec->dayofweek & 4) == 4)
@@ -1088,10 +1098,10 @@ class BackendCalDAV extends BackendDiff {
 	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->_ParseVTodoToAS(): Parsing VTodo"));
 		$truncsize = Utils::GetTruncSize($contentparameters->GetTruncation());
-		
+
 		$message = new SyncTask();
 		$ical = new iCalComponent($data);
-		
+
 		$vtodos = $ical->GetComponents("VTODO");
 		//Should only loop once
 		foreach ($vtodos as $vtodo)
@@ -1113,7 +1123,7 @@ class BackendCalDAV extends BackendDiff {
 		$message->reminderset = "0";
 		$message->importance = "1";
 		$message->complete = "0";
-		
+
 		$properties = $vtodo->GetProperties();
 		foreach ($properties as $property)
 		{
@@ -1122,7 +1132,7 @@ class BackendCalDAV extends BackendDiff {
 				case "SUMMARY":
 					$message->subject = $property->Value();
 					break;
-				
+
 				case "STATUS":
 					switch ($property->Value())
 					{
@@ -1136,15 +1146,15 @@ class BackendCalDAV extends BackendDiff {
 							break;
 					}
 					break;
-				
+
 				case "COMPLETED":
 					$message->datecompleted = $this->_MakeUTCDate($property->Value());
 					break;
-					
+
 				case "DUE":
 					$message->utcduedate = $this->_MakeUTCDate($property->Value());
 					break;
-					
+
 				case "PRIORITY":
 					$priority = $property->Value();
 					if ($priority <= 3)
@@ -1154,11 +1164,11 @@ class BackendCalDAV extends BackendDiff {
 					if ($priority > 6)
 						$message->importance = "2";
 					break;
-					
+
 				case "RRULE":
 					$message->recurrence = $this->_ParseRecurrence($property->Value(), "vtodo");
 					break;
-				
+
 				case "CLASS":
 					switch ($property->Value())
 					{
@@ -1173,27 +1183,27 @@ class BackendCalDAV extends BackendDiff {
 							break;
 					}
 					break;
-					
+
 				case "DTSTART":
 					$message->utcstartdate = $this->_MakeUTCDate($property->Value());
 					break;
-				
+
 				case "SUMMARY":
 					$message->subject = $property->Value();
 					break;
-					
+
 				case "CATEGORIES":
 					$categories = explode(",", $property->Value());
 					$message->categories = $categories;
 					break;
 			}
 		}
-		
+
 		if (isset($message->recurrence))
 		{
 			$message->recurrence->start = $message->utcstartdate;
 		}
-		
+
 		$valarm = current($vtodo->GetComponents("VALARM"));
 		if ($valarm)
 		{
@@ -1219,9 +1229,9 @@ class BackendCalDAV extends BackendDiff {
 				}
 			}
 		}
-		return $message;		
+		return $message;
 	}
-	
+
 	/**
 	 * Generate a VTODO from a SyncAppointment(Exception)
 	 * @param string $data
@@ -1232,7 +1242,7 @@ class BackendCalDAV extends BackendDiff {
 	{
 		$vtodo = new iCalComponent();
 		$vtodo->SetType("VTODO");
-		
+
 		if (isset($data->body))
 		{
 			$vtodo->AddProperty("DESCRIPTION", $data->body);
@@ -1302,11 +1312,11 @@ class BackendCalDAV extends BackendDiff {
 				case "0":
 					$vtodo->AddProperty("CLASS", "PUBLIC");
 					break;
-					
+
 				case "2":
 					$vtodo->AddProperty("CLASS", "PRIVATE");
 					break;
-					
+
 				case "3":
 					$vtodo->AddProperty("CLASS", "CONFIDENTIAL");
 					break;
@@ -1332,7 +1342,7 @@ class BackendCalDAV extends BackendDiff {
 		{
 			$vtodo->AddProperty("CATEGORIES", implode(",", $data->categories));
 		}
-		
+
 		return $vtodo;
 	}
 
@@ -1375,7 +1385,7 @@ class BackendCalDAV extends BackendDiff {
 		date_timezone_set($dt, timezone_open($timezone));
 		return date_format($dt, $format);
 	}
-	
+
 	/**
 	 * Generate a tzid from various formats
 	 * @param str $timezone

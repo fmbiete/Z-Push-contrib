@@ -630,7 +630,7 @@ EOFXMLGETXMLVCARD;
      * @return	string						Simplified CardDAV XML response
      */
     private function simplify($response, $include_vcards = true, $remove_duplicates = false) {
-        $response = $this->clean_response($response);
+        $response = $this->remove_namespaces($response);
 
         try {
             $xml = new SimpleXMLElement($response);
@@ -729,7 +729,7 @@ EOFXMLGETXMLVCARD;
      * @param	string	$response	CardDAV XML response
      * @return	string	$response	Cleaned CardDAV XML response
      */
-    private function clean_response($response) {
+    private function remove_namespaces($response) {
 //         $response = preg_replace('/<[a-z0-9]+:(.*)/i', '<$1', $response);
 //         $response = preg_replace('/<\/[a-z0-9]+:(.*)/i', '</$1', $response);
 

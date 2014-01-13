@@ -1259,7 +1259,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             if ($k == 'body' && isset($message->asbody)) {
                 $val = $message->asbody->data;
             }
-            if (empty($val))
+            if (empty($val) || preg_match('/^(\;)+$/', $val) == 1)
                 continue;
             // Remove trailing ;
             $val = substr($val, 0, -1);

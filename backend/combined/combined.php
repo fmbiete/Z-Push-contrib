@@ -458,18 +458,22 @@ class BackendCombined extends Backend implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink(%d)", $timeout));
         
         $notifications = array();
-        //we will wait an equal part of the total timeout in each backend that support changesink
-        $timeout_backend = (int) ($timeout / $this->numberChangesSink);
-        foreach ($this->backends as $i => $b) {
-            if ($this->backends[$i]->HasChangesSink()) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink - Calling in '%s' with %d", get_class($b), $timeout_backend));
-                
-                $notifications_backend = $this->backends[$i]->ChangesSink($timeout_backend);
-                //preppend backend delimiter
-                for ($c = 0; $c < count($notifications_backend); $c++) {
-                    $notifications_backend[$c] = $i . $this->config['delimiter'] . $notifications_backend[$c];
+        if ($this->numberChangesSink == 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined doesn't include any Sinkable backends"));
+        } else {
+            //we will wait an equal part of the total timeout in each backend that support changesink
+            $timeout_backend = (int) ($timeout / $this->numberChangesSink);
+            foreach ($this->backends as $i => $b) {
+                if ($this->backends[$i]->HasChangesSink()) {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink - Calling in '%s' with %d", get_class($b), $timeout_backend));
+
+                    $notifications_backend = $this->backends[$i]->ChangesSink($timeout_backend);
+                    //preppend backend delimiter
+                    for ($c = 0; $c < count($notifications_backend); $c++) {
+                        $notifications_backend[$c] = $i . $this->config['delimiter'] . $notifications_backend[$c];
+                    }
+                    $notifications = array_merge($notifications, $notifications_backend);
                 }
-                $notifications = array_merge($notifications, $notifications_backend);
             }
         }
 

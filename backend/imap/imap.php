@@ -1347,8 +1347,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $output->importance = 1;
             }
 
-            // Attachments are not needed for MIME messages
-            if($bpReturnType != SYNC_BODYPREFERENCE_MIME && isset($message->parts)) {
+            // Attachments are also needed for MIME messages
+            if(isset($message->parts)) {
                 $mparts = $message->parts;
                 for ($i=0; $i<count($mparts); $i++) {
                     $part = $mparts[$i];

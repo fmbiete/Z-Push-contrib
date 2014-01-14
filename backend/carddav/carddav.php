@@ -1129,25 +1129,32 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 else {
                     $a = 'other';
                 }
-                if (!empty($adr['val'][2])) {
+                if (count($adr['val']) == 5) {
+                    // We don't have the 2 first fields: post office box, extended address. This is a workaround for a buggy server implementation (Owncloud 6)
+                    $start_pos = 0;
+                }
+                else {
+                    $start_pos = 2;
+                }
+                if (!empty($adr['val'][$start_pos])) {
                     $b=$a.'street';
-                    $message->$b = $adr['val'][2];
+                    $message->$b = $adr['val'][$start_pos];
                 }
-                if (!empty($adr['val'][3])) {
+                if (!empty($adr['val'][$start_pos+1])) {
                     $b=$a.'city';
-                    $message->$b = $adr['val'][3];
+                    $message->$b = $adr['val'][$start_pos+2];
                 }
-                if (!empty($adr['val'][4])) {
+                if (!empty($adr['val'][$start_pos+2])) {
                     $b=$a.'state';
-                    $message->$b = $adr['val'][4];
+                    $message->$b = $adr['val'][$start_pos+2];
                 }
-                if (!empty($adr['val'][5])) {
+                if (!empty($adr['val'][$start_pos+3])) {
                     $b=$a.'postalcode';
-                    $message->$b = $adr['val'][5];
+                    $message->$b = $adr['val'][$start_pos+3];
                 }
-                if (!empty($adr['val'][6])) {
+                if (!empty($adr['val'][$start_pos+4])) {
                     $b=$a.'country';
-                    $message->$b = $adr['val'][6];
+                    $message->$b = $adr['val'][$start_pos+4];
                 }
             }
         }

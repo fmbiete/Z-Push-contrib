@@ -520,20 +520,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private function addExtraSubParts(&$email, $parts) {
         if (isset($parts)) {
             foreach ($parts as $part) {
+                $new_part = null;
                 // Only if it's an attachment we will add the text parts, because all the inline/no disposition have been already added
                 if (isset($part->disposition) && $part->disposition == "attachment") {
                     // it's an attachment
-                    $this->addSubPart($email, $part);
+                    $new_part = $this->addSubPart($email, $part);
                 }
                 else {
                     if (isset($part->ctype_primary) && $part->ctype_primary != "text" && $part->ctype_primary != "multipart") {
                         // it's not a text part or a multipart
-                        $this->addSubPart($email, $part);
+                        $new_part = $this->addSubPart($email, $part);
                     }
                 }
                 if (isset($part->parts)) {
-                    // We have sub-parts
-                    $this->addExtraSubParts($email, $part->parts);
+                    // We have sub-parts, to the new part, not to the main message
+                    $this->addExtraSubParts($new_part, $part->parts);
                 }
             }
         }
@@ -550,8 +551,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function addSubPart(&$email, $part) {
         //http://tools.ietf.org/html/rfc4021
+        $new_part = null;
         $params = array();
-        if (isset($part)) {
+        if (isset($part) && isset($email)) {
             if (isset($part->ctype_primary)) {
                 $params['content_type'] = $part->ctype_primary;
             }
@@ -560,7 +562,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             if (isset($part->ctype_parameters)) {
                 foreach ($part->ctype_parameters as $k => $v) {
-                    $params['content_type'] .= '; ' . $k . '=' . $v;
+                    if(strcasecmp($k, 'boundary') != 0) {
+                        $params['content_type'] .= '; ' . $k . '=' . $v;
+                    }
                 }
             }
             if (isset($part->disposition)) {
@@ -573,14 +577,35 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
             foreach ($part->headers as $k => $v) {
-                $params[$k] = $v;
+                switch($k) {
+                    case "content-description":
+                        $params['description'] = $v;
+                        break;
+                    case "content-type":
+                    case "content-disposition":
+                    case "content-transfer-encoding":
+                        // Do nothing, we already did
+                        break;
+                    case "content-id":
+                        $params['cid'] = str_replace('<', '', str_replace('>', '', $v));
+                        break;
+                    default:
+                        $params[$k] = $v;
+                        break;
+                }
             }
-            if (!isset($params['encoding'])) {
+
+            // If not exist body, the part will be multipart/alternative, so we don't add encoding
+            if (!isset($params['encoding']) && isset($part->body)) {
                 $params['encoding'] = 'base64';
             }
-            $email->addSubPart($part->body, $params);
+            // We could not have body; recursive messages
+            $new_part = $email->addSubPart(isset($part->body) ? $part->body : "", $params);
             unset($params);
         }
+
+        // return the new part
+        return $new_part;
     }
 
 
@@ -595,14 +620,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function fixCharsetAndAddSubParts(&$email, $part) {
         if (isset($part)) {
+            $new_part = null;
             if (isset($part->ctype_parameters['charset'])) {
                 $part->ctype_parameters['charset'] = 'UTF-8';
-                $this->addSubPart($email, $part);
+                $new_part = $this->addSubPart($email, $part);
+            }
+            else {
+                // We don't add the charset because it could be a non-text part
+                $new_part = $this->addSubPart($email, $part);
+            }
 
-                if (isset($part->parts)) {
-                    foreach ($part->parts as $subpart) {
-                        $this->fixCharsetAndAddSubParts($email, $subpart);
-                    }
+            if (isset($part->parts)) {
+                foreach ($part->parts as $subpart) {
+                    // Subparts are added to the part, not the main message
+                    $this->fixCharsetAndAddSubParts($new_part, $subpart);
                 }
             }
         }
@@ -1154,38 +1185,45 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                 }
                             }
 
+                            $boundary = '=_' . md5(rand() . microtime());
                             $mimeHeaders = "";
                             foreach ($message->headers as $key => $value) {
-                                if (strcasecmp($key, 'content-type') == 0) {
-                                    $mimeHeaders .= $key . ": " . $message->ctype_primary . "/" . $message->ctype_secondary;
+                                switch($key) {
+                                    case 'content-type':
+                                        $mimeHeaders .= $key . ": " . $message->ctype_primary . "/" . $message->ctype_secondary;
 
-                                    foreach ($message->ctype_parameters as $ckey => $cvalue) {
-                                        if (strcasecmp($ckey, 'charset') == 0) {
-                                            $mimeHeaders .= '; charset="UTF-8"';
+                                        foreach ($message->ctype_parameters as $ckey => $cvalue) {
+                                            switch($ckey) {
+                                                case 'charset':
+                                                    $mimeHeaders .= '; charset="UTF-8"';
+                                                    break;
+                                                case 'boundary':
+                                                    $mimeHeaders .= '; boundary="' . $boundary . '"';
+                                                    break;
+                                                default:
+                                                    $mimeHeaders .= '; ' . $ckey . '="' . $cvalue . '"';
+                                                    break;
+                                            }
                                         }
-                                        else if(strcasecmp($ckey, 'boundary') != 0) {
-                                            $mimeHeaders .= '; ' . $ckey . '="' . $cvalue . '"';
-                                        }
-                                    }
 
-                                    $mimeHeaders .= "\n";
-                                }
-                                else if (strcasecmp($key, 'content-transfer-encoding') == 0) {
-                                    $mimeHeaders .= $key . ": 8bit\n";
-                                }
-                                else {
-                                    if (is_array($value)) {
-                                        foreach($value as $v) {
-                                            $mimeHeaders .= $key . ": " . $v . "\n";
+                                        $mimeHeaders .= "\n";
+                                        break;
+                                    case 'content-transfer-encoding':
+                                        $mimeHeaders .= $key . ": 8bit\n";
+                                        break;
+                                    default:
+                                        if (is_array($value)) {
+                                            foreach($value as $v) {
+                                                $mimeHeaders .= $key . ": " . $v . "\n";
+                                            }
                                         }
-                                    }
-                                    else {
-                                        $mimeHeaders .= $key . ": " . $value . "\n";
-                                    }
+                                        else {
+                                            $mimeHeaders .= $key . ": " . $value . "\n";
+                                        }
+                                        break;
                                 }
                             }
 
-                            $boundary = '=_' . md5(rand() . microtime());
                             $finalEmail = $finalEmail->encode($boundary);
                             $output->asbody->data = $mimeHeaders . "\n\n" . "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
                             unset($finalEmail);

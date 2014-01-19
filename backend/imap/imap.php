@@ -1185,47 +1185,88 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                 }
                             }
 
-                            $boundary = '=_' . md5(rand() . microtime());
-                            $mimeHeaders = "";
+                            $mimeHeaders = Array();
+                            $mimeHeaders['headers'] = Array();
+                            $is_mime = false;
                             foreach ($message->headers as $key => $value) {
                                 switch($key) {
                                     case 'content-type':
-                                        $mimeHeaders .= $key . ": " . $message->ctype_primary . "/" . $message->ctype_secondary;
+                                        $new_value = $message->ctype_primary . "/" . $message->ctype_secondary;
+                                        $is_mime = (strcasecmp($message->ctype_primary, 'multipart') == 0);
 
                                         foreach ($message->ctype_parameters as $ckey => $cvalue) {
                                             switch($ckey) {
                                                 case 'charset':
-                                                    $mimeHeaders .= '; charset="UTF-8"';
+                                                    $new_value .= '; charset="UTF-8"';
                                                     break;
                                                 case 'boundary':
-                                                    $mimeHeaders .= '; boundary="' . $boundary . '"';
+                                                    // Do nothing, we are encoding also the headers
                                                     break;
                                                 default:
-                                                    $mimeHeaders .= '; ' . $ckey . '="' . $cvalue . '"';
+                                                    $new_value .= '; ' . $ckey . '="' . $cvalue . '"';
                                                     break;
                                             }
                                         }
 
-                                        $mimeHeaders .= "\n";
+                                        $mimeHeaders['content_type'] = $new_value;
                                         break;
                                     case 'content-transfer-encoding':
-                                        $mimeHeaders .= $key . ": 8bit\n";
+                                        if (strcasecmp($value, "base64") == 0 || strcasecmp($value, "binary") == 0) {
+                                            $mimeHeaders['encoding'] = "base64";
+                                        }
+                                        else {
+                                            $mimeHeaders['encoding'] = "8bit";
+                                        }
+                                        break;
+                                    case 'content-id':
+                                        $mimeHeaders['cid'] = $value;
+                                        break;
+                                    case 'content-location':
+                                        $mimeHeaders['location'] = $value;
+                                        break;
+                                    case 'content-disposition':
+                                        $mimeHeaders['disposition'] = $value;
+                                        break;
+                                    case 'content-description':
+                                        $mimeHeaders['description'] = $value;
                                         break;
                                     default:
                                         if (is_array($value)) {
                                             foreach($value as $v) {
-                                                $mimeHeaders .= $key . ": " . $v . "\n";
+                                                $mimeHeaders['headers'][$key] = $v;
                                             }
                                         }
                                         else {
-                                            $mimeHeaders .= $key . ": " . $value . "\n";
+                                            $mimeHeaders['headers'][$key] = $value;
                                         }
                                         break;
                                 }
                             }
 
+                            $finalEmail = new Mail_mimePart(isset($message->body) ? $message->body : "", $mimeHeaders);
+                            unset($mimeHeaders['headers']);
+                            unset($mimeHeaders);
+
+                            if (isset($message->parts)) {
+                                foreach ($message->parts as $part) {
+                                    $this->fixCharsetAndAddSubParts($finalEmail, $part);
+                                }
+                            }
+
+                            $boundary = '=_' . md5(rand() . microtime());
                             $finalEmail = $finalEmail->encode($boundary);
-                            $output->asbody->data = $mimeHeaders . "\n\n" . "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
+                            $headers = "";
+                            foreach ($finalEmail['headers'] as $key => $value) {
+                                $headers .= "$key: $value\n";
+                            }
+
+                            if ($is_mime) {
+                                $output->asbody->data = "$headers\nThis is a multi-part message in MIME format.\n".$finalEmail['body'];
+                            }
+                            else {
+                                $output->asbody->data = "$headers\n".$finalEmail['body'];
+                            }
+                            unset($headers);
                             unset($finalEmail);
                         }
                         else {

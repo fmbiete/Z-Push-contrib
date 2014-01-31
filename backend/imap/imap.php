@@ -67,9 +67,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $sinkstates = array();
     private $changessinkinit = false;
     private $excludedFolders;
+    private static $mimeTypes = false;
 
 
     public function BackendIMAP() {
+        if (BackendIMAP::$mimeTypes === false) {
+            BackendIMAP::$mimeTypes = $this->SystemExtensionMimeTypes();
+        }
         $this->wasteID = false;
         $this->sentID = false;
         $this->mboxFolder = "";
@@ -1466,6 +1470,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             $attachment->contentid = isset($part->headers['content-id']) ? str_replace("<", "", str_replace(">", "", $part->headers['content-id'])) : "";
                             if (isset($part->disposition) && $part->disposition == "inline") {
                                 $attachment->isinline = 1;
+                                // We try to fix the name for the inline file.
+                                // FIXME: This is a dirty hack as the used in the Zarafa backend, if you have a better method let me know!
+                                if (isset($part->ctype_primary) && isset($part->ctype_secondary)) {
+                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Guessing extension for inline attachment [primary_type %s secondary_type %s]", $part->ctype_primary, $part->ctype_secondary));
+                                    if (isset(BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary])) {
+                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - primary_type %s secondary_type %s", $part->ctype_primary, $part->ctype_secondary));
+                                        $attachment->displayname = "inline_".$i.".".BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary];
+                                    }
+                                    else {
+                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in /etc/mime.types'!!"));
+                                    }
+                                }
+                                else {
+                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no primary_type or secondary_type"));
+                                }
                             }
                             else {
                                 $attachment->isinline = 0;
@@ -2313,6 +2332,35 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         return $v;
+    }
+
+
+    /**
+     * Returns a list of mime-types with extension files
+     *
+     * @access private
+     * @return array[mime-type => extension]
+     */
+    private function SystemExtensionMimeTypes() {
+        $out = array();
+        $mime_file = '/etc/mime.types';
+        if (file_exists($mime_file)) {
+            $file = fopen('/etc/mime.types', 'r');
+            while(($line = fgets($file)) !== false) {
+                $line = trim(preg_replace('/#.*/', '', $line));
+                if(!$line)
+                    continue;
+                $parts = preg_split('/\s+/', $line);
+                if(count($parts) == 1)
+                    continue;
+                $type = array_shift($parts);
+                foreach($parts as $part)
+                    $out[$type] = $part;
+            }
+            fclose($file);
+        }
+
+        return $out;
     }
 
     /* BEGIN fmbiete's contribution r1528, ZP-320 */

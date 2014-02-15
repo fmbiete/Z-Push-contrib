@@ -731,10 +731,7 @@ class Mail_mimeDecode
                     $text = str_replace('_', ' ', $text);
                     preg_match_all('/=([a-f0-9]{2})/i', $text, $matches);
                     foreach($matches[1] as $value) {
-                        //We don't convert back =2C into coma chars. As this will break RFC822
-                        if (strcmp($value, "2C") != 0) {
-                            $text = str_replace('='.$value, chr(hexdec($value)), $text);
-                        }
+                        $text = str_replace('='.$value, chr(hexdec($value)), $text);
                     }
                     break;
             }

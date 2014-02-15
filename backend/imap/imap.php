@@ -1337,7 +1337,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $output->messageclass = "IPM.Note";
             $output->subject = isset($message->headers["subject"]) ? $message->headers["subject"] : "";
             $output->read = $stat["flags"];
-            $output->from = isset($message->headers["from"]) ? Utils::FixAddressName($message->headers["from"]) : null;
+            $output->from = isset($message->headers["from"]) ? $message->headers["from"] : null;
 
             /* BEGIN fmbiete's contribution r1528, ZP-320 */
             if (isset($message->headers["thread-topic"])) {
@@ -1396,7 +1396,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 else {
                     foreach($addrlist as $addr) {
                         $address = $addr->mailbox . "@" . $addr->host;
-                        $name = Utils::FixAddressName($addr->personal);
+                        $name = $addr->personal;
 
                         if (!isset($output->displayto) && $name != "")
                             $output->displayto = $name;

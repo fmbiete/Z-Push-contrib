@@ -915,18 +915,6 @@ class Utils {
 
         return 0;
     }
-
-    /**
-     * Fix Address Name. We convert the =2C into coma char
-     *
-     * @param string $text
-     *
-     * @access public
-     * @return string
-     */
-    public static function FixAddressName($text) {
-        return str_replace('=2C', ',', $text);
-    }
 }
 
 

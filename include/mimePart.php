@@ -24,8 +24,8 @@
  * - Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
- * - Neither the name of the authors, nor the names of its contributors 
- *   may be used to endorse or promote products derived from this 
+ * - Neither the name of the authors, nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -52,7 +52,7 @@
  * @link      http://pear.php.net/package/Mail_mime
  */
 
- 
+
 /**
  * Z-Push changes
  *
@@ -179,6 +179,10 @@ class Mail_mimePart
             $this->_eol = $params['eol'];
         } else if (defined('MAIL_MIMEPART_CRLF')) { // backward-copat.
             $this->_eol = MAIL_MIMEPART_CRLF;
+        } else if (defined('PHP_EOL')) {
+            $this->_eol = PHP_EOL;
+        } else {
+            $this->_eol = (strpos(PHP_OS, 'WIN') === false) ? "\n" : "\r\n";
         }
 
         // Additional part headers
@@ -321,7 +325,7 @@ class Mail_mimePart
 
             $this->_headers['Content-Type'] .= ";$eol boundary=\"$boundary\"";
 
-            $encoded['body'] = ''; 
+            $encoded['body'] = '';
 
             for ($i = 0; $i < count($this->_subparts); $i++) {
                 $encoded['body'] .= '--' . $boundary . $eol;
@@ -764,7 +768,7 @@ class Mail_mimePart
             $add_len = strlen($prefix . $suffix) + strlen($name) + 6;
             $len = $add_len + strlen($value);
 
-            while ($len > $maxLength) { 
+            while ($len > $maxLength) {
                 // We can cut base64-encoded string every 4 characters
                 $real_len = floor(($maxLength - $add_len) / 4) * 4;
                 $_quote = substr($value, 0, $real_len);

@@ -103,7 +103,7 @@ $imap_smtp_params = array();
 
 // If you are using IMAP_SMTP_METHOD = mail or sendmail and your sent messages are not correctly displayed you can change this to "\n".
 //   BUT, it doesn't with RFC 2822 and will break if using smp method
-defined('MAIL_MIMEPART_CRLF', "\r\n");
+define('MAIL_MIMEPART_CRLF', "\r\n");
 
 
 // convert messages content with mb_string functions

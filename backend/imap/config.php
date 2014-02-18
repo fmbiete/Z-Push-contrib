@@ -101,6 +101,11 @@ $imap_smtp_params = array();
 //$imap_smtp_params = array('host' => 'ssl://localhost', 'port' => 465, 'auth' => true, 'username' => 'imap_username', 'password' => 'imap_password');
 
 
+// If you are using IMAP_SMTP_METHOD = mail or sendmail and your sent messages are not correctly displayed you can change this to "\n".
+//   BUT, it doesn't with RFC 2822 and will break if using smp method
+defined('MAIL_MIMEPART_CRLF', "\r\n");
+
+
 // convert messages content with mb_string functions
 // options: false -> Don't convert at all
 //          string -> Encoding preferences, example: "UTF-16, UTF-8, ISO-8859-15, ISO-8859-1, Windows-1252"

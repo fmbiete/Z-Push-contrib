@@ -179,10 +179,6 @@ class Mail_mimePart
             $this->_eol = $params['eol'];
         } else if (defined('MAIL_MIMEPART_CRLF')) { // backward-copat.
             $this->_eol = MAIL_MIMEPART_CRLF;
-        } else if (defined('PHP_EOL')) {
-            $this->_eol = PHP_EOL;
-        } else {
-            $this->_eol = (strpos(PHP_OS, 'WIN') === false) ? "\n" : "\r\n";
         }
 
         // Additional part headers

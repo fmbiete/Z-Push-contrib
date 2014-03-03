@@ -13,4 +13,4 @@ Also, it can autodetect multiple addressbooks and will present them to the mobil
 
 
 REQUISITES:
-php-curl
+php-curl php-xsl

@@ -540,7 +540,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 if (isset($part->parts)) {
                     // We add sub-parts to the new part (if any), not to the main message. Recursive calling
-                    $this->addExtraSubParts($new_part === null ? $email : $new_part, $part->parts);
+                    if ($new_part === null) {
+                        $this->addExtraSubParts($email, $part->parts);
+                    }
+                    else {
+                        $this->addExtraSubParts($new_part, $part->parts);
+                    }
                 }
             }
         }

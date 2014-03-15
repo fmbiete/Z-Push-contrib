@@ -1414,24 +1414,26 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 else {
                     foreach($addrlist as $addr) {
-                        $address = $addr->mailbox . "@" . $addr->host;
-                        $name = $addr->personal;
+                        if (isset($addr->mailbox) && isset($addr->host) && isset($addr->personal)) {
+                            $address = $addr->mailbox . "@" . $addr->host;
+                            $name = $addr->personal;
 
-                        if (!isset($output->displayto) && $name != "")
-                            $output->displayto = $name;
+                            if (!isset($output->displayto) && $name != "")
+                                $output->displayto = $name;
 
-                        if($name == "" || $name == $address)
-                            $fulladdr = $address;
-                        else {
-                            if (substr($name, 0, 1) != '"' && substr($name, -1) != '"') {
-                                $fulladdr = "\"" . $name ."\" <" . $address . ">";
-                            }
+                            if($name == "" || $name == $address)
+                                $fulladdr = $address;
                             else {
-                                $fulladdr = $name ." <" . $address . ">";
+                                if (substr($name, 0, 1) != '"' && substr($name, -1) != '"') {
+                                    $fulladdr = "\"" . $name ."\" <" . $address . ">";
+                                }
+                                else {
+                                    $fulladdr = $name ." <" . $address . ">";
+                                }
                             }
-                        }
 
-                        array_push($output->$type, $fulladdr);
+                            array_push($output->$type, $fulladdr);
+                        }
                     }
                 }
             }

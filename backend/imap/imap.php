@@ -700,6 +700,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $mobj = new Mail_mimeDecode($mail);
         $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
 
+        if (!isset($message->parts)) {
+            throw new StatusException(sprintf("BackendIMAP->GetAttachmentData('%s'): Error, message without parts. Requesting part key: '%d'", $attname, $part), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+        }
+
         /* BEGIN fmbiete's contribution r1528, ZP-320 */
         //trying parts
         $mparts = $message->parts;

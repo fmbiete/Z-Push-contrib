@@ -1217,17 +1217,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                         $new_value = $message->ctype_primary . "/" . $message->ctype_secondary;
                                         $is_mime = (strcasecmp($message->ctype_primary, 'multipart') == 0);
 
-                                        foreach ($message->ctype_parameters as $ckey => $cvalue) {
-                                            switch($ckey) {
-                                                case 'charset':
-                                                    $new_value .= '; charset="UTF-8"';
-                                                    break;
-                                                case 'boundary':
-                                                    // Do nothing, we are encoding also the headers
-                                                    break;
-                                                default:
-                                                    $new_value .= '; ' . $ckey . '="' . $cvalue . '"';
-                                                    break;
+                                        if (isset($message->ctype_parameters)) {
+                                            foreach ($message->ctype_parameters as $ckey => $cvalue) {
+                                                switch($ckey) {
+                                                    case 'charset':
+                                                        $new_value .= '; charset="UTF-8"';
+                                                        break;
+                                                    case 'boundary':
+                                                        // Do nothing, we are encoding also the headers
+                                                        break;
+                                                    default:
+                                                        $new_value .= '; ' . $ckey . '="' . $cvalue . '"';
+                                                        break;
+                                                }
                                             }
                                         }
 

@@ -564,6 +564,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         //http://tools.ietf.org/html/rfc4021
         $new_part = null;
         $params = array();
+        $params['content_type'] = '';
         if (isset($part) && isset($email)) {
             if (isset($part->ctype_primary)) {
                 $params['content_type'] = $part->ctype_primary;

@@ -1459,7 +1459,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 for ($i=0; $i<count($mparts); $i++) {
                     $part = $mparts[$i];
                     //recursively add parts
-                    if($part->ctype_primary == "multipart" && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related")) {
+                    if((isset($part->ctype_primary) && $part->ctype_primary == "multipart") && (isset($part->ctype_secondary) && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related"))) {
                         foreach($part->parts as $spart)
                             $mparts[] = $spart;
                         continue;

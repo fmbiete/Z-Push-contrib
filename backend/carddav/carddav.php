@@ -115,9 +115,10 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             $this->discoverAddressbooks();
         }
         else {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $this->url));
-            $this->server = null;
             //TODO: get error message
+            $error = '';
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->Logon(): User '%s' failed to authenticate on '%s': %s", $username, $this->url, $error));
+            $this->server = null;
         }
 
         return $connected;

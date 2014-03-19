@@ -689,7 +689,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         list($folderid, $id, $part) = explode(":", $attname);
 
-        if (!$folderid || !$id || !$part)
+        if (!isset($folderid) || !isset($id) || !isset($part))
             throw new StatusException(sprintf("BackendIMAP->GetAttachmentData('%s'): Error, attachment name key can not be parsed", $attname), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
 
         // convert back to work on an imap-id

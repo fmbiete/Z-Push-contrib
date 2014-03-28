@@ -1087,8 +1087,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (!$overviews || !is_array($overviews)) {
             $error = imap_last_error();
-            if (strlen($error) > 0) {
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->GetMessageList('%s','%s'): Failed to retrieve overview: %s",$folderid, $cutoffdate, imap_last_error()));
+            if (strlen($error) > 0 && imap_num_msg($this->mbox) > 0) {
+                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->GetMessageList('%s','%s'): Failed to retrieve overview: %s", $folderid, $cutoffdate, imap_last_error()));
             }
             return $messages;
         }

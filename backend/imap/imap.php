@@ -2371,7 +2371,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $out = array();
         $mime_file = '/etc/mime.types';
         if (file_exists($mime_file)) {
-            $file = fopen('/etc/mime.types', 'r');
+            $file = fopen($mime_file, 'r');
             while(($line = fgets($file)) !== false) {
                 $line = trim(preg_replace('/#.*/', '', $line));
                 if(!$line)

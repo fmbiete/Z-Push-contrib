@@ -196,7 +196,7 @@ class Mail
 
         foreach ($headers as $key => $value) {
             if (strcasecmp($key, 'From') === 0) {
-                include_once 'include/RFC822.php';
+                include_once 'include/z_RFC822.php';
                 $parser = new Mail_RFC822();
                 $addresses = $parser->parseAddressList($value, 'localhost', false);
                 //if (is_a($addresses, 'PEAR_Error')) {
@@ -254,7 +254,7 @@ class Mail
      */
     function parseRecipients($recipients)
     {
-        include_once 'include/RFC822.php';
+        include_once 'include/z_RFC822.php';
 
         // if we're passed an array, assume addresses are valid and
         // implode them before parsing.

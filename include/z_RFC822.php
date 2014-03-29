@@ -962,7 +962,7 @@ class Mail_RFC822 {
      * @access private
      */
     function raiseError($message) {
-        ZLog::Write(LOGLEVEL_ERROR, "RFC822 error: ". $message);
+        ZLog::Write(LOGLEVEL_ERROR, "z_RFC822 error: ". $message);
         return false;
     }
 }

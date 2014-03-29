@@ -4,7 +4,7 @@
 include_once('include/Mail.php');
 include_once('include/mimeDecode.php');
 include_once('include/mimePart.php');
-include_once('include/RFC822.php');
+include_once('include/z_RFC822.php');
 
 define('IMAP_MBCONVERT', "UTF-16, UTF-8, ISO-8859-15, ISO-8859-1, Windows-1252");
 

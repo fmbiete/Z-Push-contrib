@@ -15,7 +15,7 @@
 require_once("backend/caldav/config.php");
 
 include_once('lib/default/diffbackend/diffbackend.php');
-include_once('include/caldav-client-v2.php');
+include_once('include/caldav.php');
 include_once('include/z_RTF.php');
 include_once('include/iCalendar.php');
 
@@ -270,7 +270,8 @@ class BackendCalDAV extends BackendDiff {
 	 * Change/Add a message with contents received from ActiveSync
 	 * @see BackendDiff::ChangeMessage()
 	 */
-	public function ChangeMessage($folderid, $id, $message, $contentParameters) {
+	public function ChangeMessage($folderid, $id, $message, $contentParameters)
+	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangeMessage('%s','%s')", $folderid,  $id));
 
 		if ($id)
@@ -304,7 +305,8 @@ class BackendCalDAV extends BackendDiff {
 	 * Change the read flag is not supported.
 	 * @see BackendDiff::SetReadFlag()
 	 */
-	public function SetReadFlag($folderid, $id, $flags, $contentParameters) {
+	public function SetReadFlag($folderid, $id, $flags, $contentParameters)
+	{
 		return false;
 	}
 
@@ -319,7 +321,8 @@ class BackendCalDAV extends BackendDiff {
      * @return boolean                      status of the operation
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
-    public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
+    public function SetStarFlag($folderid, $id, $flags, $contentParameters)
+	{
         return false;
     }
 
@@ -327,7 +330,8 @@ class BackendCalDAV extends BackendDiff {
 	 * Delete a message from the CalDAV server.
 	 * @see BackendDiff::DeleteMessage()
 	 */
-	public function DeleteMessage($folderid, $id, $contentParameters) {
+	public function DeleteMessage($folderid, $id, $contentParameters)
+	{
 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->DeleteMessage('%s','%s')", $folderid,  $id));
 		$url = $this->_caldav_path . substr($folderid, 1) . "/" . $id;
 		$http_status_code = $this->_caldav->DoDELETERequest($url);
@@ -341,7 +345,8 @@ class BackendCalDAV extends BackendDiff {
 	 * Move a message is not supported by CalDAV.
 	 * @see BackendDiff::MoveMessage()
 	 */
-	public function MoveMessage($folderid, $id, $newfolderid, $contentParameters) {
+	public function MoveMessage($folderid, $id, $newfolderid, $contentParameters)
+	{
 		return false;
 	}
 

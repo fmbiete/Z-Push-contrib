@@ -75,7 +75,7 @@ class BackendCombined extends Backend implements ISearchProvider {
 
         foreach ($this->config['backends'] as $i => $b){
             // only load backends that are actually configured
-            if ($i == $this->config['rootcreatefolderbackend'] || in_array($i, $this->config['folderbackend'])) {
+            if (in_array($i, $this->config['folderbackend'])) {
                 // load and instatiate backend
                 ZPush::IncludeBackend($b['name']);
                 $this->backends[$i] = new $b['name']();

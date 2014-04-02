@@ -4,9 +4,12 @@
 *
 * Based on caldav-client-v2.php by Andrew McMillan <andrew@mcmillan.net.nz>
 * but using cURL instead of home-brew request construction. cURL code re-used
-* from carddav.php by Jean-Louis Dupond.
+* from carddav.php by Jean-Louis Dupond. Additional bugfixes to
+* caldav-client-v2.php by xbgmsharp <xbgmsharp@gmail.com>.
 *
-* Copyright for the combined work 2014 Thorsten Köster
+* Copyright Andrew McMillan (original caldav-client-v2.php), Jean-Louis Dupond (cURL code), xbgmsharp (bugfixes)
+* Copyright Thorsten Köster
+* License   GNU LGPL version 3 or later (http://www.gnu.org/licenses/lgpl-3.0.txt)
 */
 
 require_once('XMLDocument.php');

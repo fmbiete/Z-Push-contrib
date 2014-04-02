@@ -49,10 +49,54 @@ if (!function_exists("quoted_printable_encode")) {
      *
      * @param string    $string     string to be encoded
      *
-     * @see http://www.php.net/manual/en/function.quoted-printable-decode.php#89417
+     * @see http://www.php.net/manual/en/function.quoted-printable-encode.php#106078
      */
     function quoted_printable_encode($string) {
-        return preg_replace('/[^\r\n]{73}[^=\r\n]{2}/', "$0=\n", str_replace(array('%20', '%0D%0A', '%'), array(' ', "\r\n", '='), rawurlencode($string)));
+        $lp = 0;
+        $ret = '';
+        $hex = "0123456789ABCDEF";
+        $length = strlen($str);
+        $str_index = 0;
+
+        while ($length--) {
+            if ((($c = $str[$str_index++]) == "\015") && ($str[$str_index] == "\012") && $length > 0) {
+                $ret .= "\015";
+                $ret .= $str[$str_index++];
+                $length--;
+                $lp = 0;
+            } else {
+                if (ctype_cntrl($c)
+                    || (ord($c) == 0x7f)
+                    || (ord($c) & 0x80)
+                    || ($c == '=')
+                    || (($c == ' ') && ($str[$str_index] == "\015")))
+                {
+                    if (($lp += 3) > PHP_QPRINT_MAXL)
+                    {
+                        $ret .= '=';
+                        $ret .= "\015";
+                        $ret .= "\012";
+                        $lp = 3;
+                    }
+                    $ret .= '=';
+                    $ret .= $hex[ord($c) >> 4];
+                    $ret .= $hex[ord($c) & 0xf];
+                }
+                else
+                {
+                    if ((++$lp) > PHP_QPRINT_MAXL)
+                    {
+                        $ret .= '=';
+                        $ret .= "\015";
+                        $ret .= "\012";
+                        $lp = 1;
+                    }
+                    $ret .= $c;
+                }
+            }
+        }
+
+        return $ret;
     }
 }
 

@@ -91,8 +91,6 @@ class CalDAVClient {
 	 */
 	private $curl;
 
-	private $debug = false; // Whether we are debugging
-
 	/**
 	* Constructor, initialises the class
 	*
@@ -111,22 +109,6 @@ class CalDAVClient {
 		if (substr($this->base_url, -1, 1) !== '/') {
 			$this->base_url = $this->base_url . '/';
 		}
-	}
-
-
-	/**
-	* Call this to enable / disable debugging.  It will return the prior value of the debugging flag.
-	* @param boolean $new_value The new value for debugging.
-	* @return boolean The previous value, in case you want to restore it later.
-	*/
-	function SetDebug( $new_value ) {
-		$old_value = $this->debug;
-		if ( $new_value ) {
-			$this->debug = true;
-		} else {
-			$this->debug = false;
-		}
-		return $old_value;
 	}
 
 
@@ -173,15 +155,11 @@ class CalDAVClient {
 			xml_parser_set_option ( $parser, XML_OPTION_CASE_FOLDING, 0 );
 
 			if ( xml_parse_into_struct( $parser, $this->xmlResponse, $this->xmlnodes, $this->xmltags ) === 0 ) {
-	        	if ( $this->debug ) {
-					printf( "XML parsing error: %s - %s\n", xml_get_error_code($parser), xml_error_string(xml_get_error_code($parser)) );
-				}
+				ZLog::Write(LOGLEVEL_DEBUG, sprintf("XML parsing error: %s - %s", xml_get_error_code($parser), xml_error_string(xml_get_error_code($parser))));
 //				debug_print_backtrace();
 //				echo "\nNodes array............................................................\n"; print_r( $this->xmlnodes );
 //				echo "\nTags array............................................................\n";  print_r( $this->xmltags );
-				if ( $this->debug ) {
-					printf( "\nXML Reponse:\n%s\n", $this->xmlResponse );
-				}
+				ZLog::Write(LOGLEVEL_DEBUG, sprintf("XML Reponse:\n%s\n", $this->xmlResponse));
 			}
 
 			xml_parser_free($parser);
@@ -321,9 +299,7 @@ class CalDAVClient {
 			$etag = $matches[1];
 		}
 		if ( !isset($etag) || $etag == '' ) {
-			if ( $this->debug ) {
-				printf( "No etag in:\n%s\n", $this->httpResponseHeaders );
-			}
+			ZLog::Write(LOGLEVEL_DEBUG, sprintf("No etag in:\n%s\n", $this->httpResponseHeaders));
 			$save_request = $this->httpRequest;
 			$save_response_headers = $this->httpResponseHeaders;
 			$this->DoHEADRequest( $url );
@@ -331,9 +307,7 @@ class CalDAVClient {
 				$etag = $matches[1];
 			}
 			if ( !isset($etag) || $etag == '' ) {
-				if ( $this->debug ) {
-					printf( "Still No etag in:\n%s\n", $this->httpResponseHeaders );
-				}
+				ZLog::Write(LOGLEVEL_DEBUG, sprintf("Still No etag in:\n%s\n", $this->httpResponseHeaders));
 			}
 			$this->httpRequest = $save_request;
 			$this->httpResponseHeaders = $save_response_headers;
@@ -460,9 +434,7 @@ class CalDAVClient {
 			}
 		}
 		else {
-			if ( $this->debug ) {
-				printf( "xmltags[$tagname] or xmltags[$tagname][$i] is not set\n");
-			}
+			ZLog::Write(LOGLEVEL_DEBUG, sprintf("xmltags[$tagname] or xmltags[$tagname][$i] is not set."));
 		}
 		return null;
 	}

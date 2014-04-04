@@ -2042,7 +2042,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $filter .= ' BEFORE "' . $searchLess . '"';
         }
 
-        $filter .= ' BODY "' . $searchText . '"';
+        $filter .= ' TEXT "' . $searchText . '"';
 
         return $filter;
     }

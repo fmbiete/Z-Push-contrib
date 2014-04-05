@@ -54,11 +54,48 @@ define('IMAP_PORT', 143);
 // best cross-platform compatibility (see http://php.net/imap_open for options)
 define('IMAP_OPTIONS', '/notls/norsh');
 
-// overwrite the "from" header if it isn't set when sending emails
-// options: 'username'    - the username will be set (usefull if your login is equal to your emailaddress)
-//        'domain'    - the value of the "domain" field is used
+// overwrite the "from" header with some value
+// options:
+//        ''              - do nothing, use the From header
+//        'username'      - the username will be set (usefull if your login is equal to your emailaddress)
+//        'domain'        - the value of the "domain" field is used
+//        'sql'           - the username will be the result of a sql query. REMEMBER TO INSTALL PHP-PDO AND PHP-DATABASE
+//        'ldap'          - the username will be the result of a ldap query. REMEMBER TO INSTALL PHP-LDAP!!
 //        '@mydomain.com' - the username is used and the given string will be appended
 define('IMAP_DEFAULTFROM', '');
+
+// DSN: formatted PDO connection string
+//    mysql:host=xxx;port=xxx;dbname=xxx
+// USER: username to DB
+// PASSWORD: password to DB
+// OPTIONS: array with options needed
+// QUERY: query to execute
+// FIELDS: columns in the query
+// FROM: string that will be the from, replacing the column names with the values
+define('IMAP_FROM_SQL_DSN', '');
+define('IMAP_FROM_SQL_USER', '');
+define('IMAP_FROM_SQL_PASSWORD', '');
+define('IMAP_FROM_SQL_OPTIONS', serialize(array(PDO::ATTR_PERSISTENT => true)));
+define('IMAP_FROM_SQL_QUERY', 'select first_name, last_name, mail_address from users where mail_address = "#username@#domain"');
+define('IMAP_FROM_SQL_FIELDS', serialize(array('first_name', 'last_name', 'mail_address')));
+define('IMAP_FROM_SQL_FROM', '#first_name #last_name <#mail_address>');
+
+// SERVER: ldap server
+// SERVER_PORT: ldap port
+// USER: dn to use for connecting
+// PASSWORD: password
+// QUERY: query to execute
+// FIELDS: columns in the query
+// FROM: string that will be the from, replacing the field names with the values
+define('IMAP_FROM_LDAP_SERVER', 'localhost');
+define('IMAP_FROM_LDAP_SERVER_PORT', '389');
+define('IMAP_FROM_LDAP_USER', 'cn=zpush,ou=servers,dc=zpush,dc=org');
+define('IMAP_FROM_LDAP_PASSWORD', 'password');
+define('IMAP_FROM_LDAP_BASE', 'dc=zpush,dc=org');
+define('IMAP_FROM_LDAP_QUERY', '(mail=#username@#domain)');
+define('IMAP_FROM_LDAP_FIELDS', serialize(array('givenname', 'sn', 'mail')));
+define('IMAP_FROM_LDAP_FROM', '#givenname #sn <#mail>');
+
 
 // copy outgoing mail to this folder. If not set z-push will try the default folders
 define('IMAP_SENTFOLDER', '');

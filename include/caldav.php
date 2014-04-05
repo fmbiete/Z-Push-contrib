@@ -47,7 +47,7 @@ class CalDAVClient {
 	*
 	* @var string
 	*/
-	protected $base_url, $user, $pass, $auth;
+	protected $server, $base_url, $user, $pass, $auth;
 
 	/**
 	* The principal-URL we're using
@@ -94,21 +94,28 @@ class CalDAVClient {
 	/**
 	* Constructor, initialises the class
 	*
-	* @param string $base_url  The URL for the calendar server
-	* @param string $user      The name of the user logging in
-	* @param string $pass      The password for that user
+	* @param string $caldav_url  The URL for the calendar server
+	* @param string $user        The name of the user logging in
+	* @param string $pass        The password for that user
 	*/
-	function __construct( $base_url, $user, $pass ) {
+	function __construct( $caldav_url, $user, $pass ) {
 		$this->user = $user;
 		$this->pass = $pass;
 		$this->auth = $user . ':' . $pass;
 		$this->headers = array();
 
-		$this->base_url = $base_url;
+		$parsed_url = parse_url($caldav_url);
+		if ($parsed_url == FALSE) {
+			ZLog::Write(LOGLEVEL_ERROR, sprintf('Couldn\'t parse URL: %s', $caldav_url));
+		} else
+			$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
+			$this->base_url  = $parsed_url['path'];
+//			$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
+//			$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
 
-		if (substr($this->base_url, -1, 1) !== '/') {
-			$this->base_url = $this->base_url . '/';
-		}
+			if (substr($this->base_url, -1, 1) !== '/') {
+				$this->base_url = $this->base_url . '/';
+			}
 	}
 
 
@@ -195,6 +202,9 @@ class CalDAVClient {
 		$this->curl_init();
 
 		if ( !isset($url) ) $url = $this->base_url;
+		$url = preg_replace('{^https?://[^/]+}', '', $url);
+		$url = $this->server . $url;
+		
 		curl_setopt($this->curl, CURLOPT_URL, $url);
 		curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
 

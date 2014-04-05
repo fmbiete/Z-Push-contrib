@@ -4,7 +4,7 @@ Z-Push-contrib
 This is a Z-Push fork with changes that I will try to put into the contrib branch, so they can get into the official Z-Push
 
 IMPORTANT:
-For them to get into the official Z-Push, you must sign a developer agreement with Zarafa (creators of Z-Push), and give them your rights over the code.
+For them to get into the official Z-Push, you must release the code under AGPLv3. Add this text to your commits "Released under the Affero GNU General Public License (AGPL) version 3" before merging.
 
 If you see some changes here, and you are the author, I will not contrib them, as I have no rights over them.
 But I will try to reimplement with different code/approach so I can contribute them. When a sustitution is ready I will remove your changes from this repo.
@@ -18,8 +18,7 @@ All the code is AGPL licensed (or compatible, like the "include" files). So you 
 ----------------------------------------------------
 Original Z-Push
 
-URL: http://developer.berlios.de/projects/z-push/
-URL: http://z-push.sourceforge.net/soswp/
+URL: http://www.zpush.org
 
 Z-Push is an implementation of the ActiveSync protocol, which is used 'over-the-air' for multi platform ActiveSync devices, including Windows Mobile, Ericsson and Nokia phones. With Z-Push any groupware can be connected and synced with these devices.
 
@@ -32,7 +31,7 @@ You can find some configuration guidelines in the Wiki https://github.com/fmbiet
 
 Requisites
 ==========
-PHP 5.4 (5.3 should also work, but 5.4 is better)
+PHP 5.5 (5.3 should also work, 5.4 it's fine, but 5.5 is better)
 NGINX or APACHE
 PHP-FPM or MOD_PHP
 

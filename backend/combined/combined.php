@@ -73,13 +73,10 @@ class BackendCombined extends Backend implements ISearchProvider {
         parent::Backend();
         $this->config = BackendCombinedConfig::GetBackendCombinedConfig();
 
-        foreach ($this->config['backends'] as $i => $b){
-            // only load backends that are actually configured
-            if (in_array($i, $this->config['folderbackend'])) {
-                // load and instatiate backend
-                ZPush::IncludeBackend($b['name']);
-                $this->backends[$i] = new $b['name']();
-            }
+        $backend_values = array_unique(array_values($this->config['folderbackend']));
+        foreach ($backend_values as $i) {
+            ZPush::IncludeBackend($this->config['backends'][$i]['name']);
+            $this->backends[$i] = new $this->config['backends'][$i]['name']();
         }
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("Combined %d backends loaded.", count($this->backends)));
     }
@@ -120,7 +117,7 @@ class BackendCombined extends Backend implements ISearchProvider {
                 return false;
             }
         }
-        
+
         ZLog::Write(LOGLEVEL_DEBUG, "Combined->Logon() success");
         return true;
     }
@@ -403,15 +400,15 @@ class BackendCombined extends Backend implements ISearchProvider {
      */
     public function HasChangesSink() {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->HasChangesSink()"));
-        
+
         $this->numberChangesSink = 0;
-        
+
         foreach ($this->backends as $i => $b) {
             if ($this->backends[$i]->HasChangesSink()) {
                 $this->numberChangesSink++;
             }
         }
-        
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->HasChangesSink - Number ChangesSink found: %d", $this->numberChangesSink));
 
         return true;
@@ -429,13 +426,13 @@ class BackendCombined extends Backend implements ISearchProvider {
      */
      public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSinkInitialize('%s')", $folderid));
-        
+
         $backend = $this->GetBackend($folderid);
         if($backend === false) {
             // if not backend is found we return true, we don't want this to never cause an error
             return true;
         }
-        
+
         if ($backend->HasChangesSink()) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSinkInitialize('%s') is supported, initializing", $folderid));
             return $backend->ChangesSinkInitialize($this->GetBackendFolder($folderid));
@@ -459,7 +456,7 @@ class BackendCombined extends Backend implements ISearchProvider {
      */
     public function ChangesSink($timeout = 30) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink(%d)", $timeout));
-        
+
         $notifications = array();
         if ($this->numberChangesSink == 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined doesn't include any Sinkable backends"));
@@ -601,7 +598,7 @@ class BackendCombined extends Backend implements ISearchProvider {
         if ($i !== false) {
             $result = $this->backends[$i]->GetGALSearchResults($searchquery, $searchrange);
         }
-        
+
         return $result;
     }
 
@@ -623,7 +620,7 @@ class BackendCombined extends Backend implements ISearchProvider {
             $cpo->SetSearchFolderid($this->GetBackendFolder($cpo->GetSearchFolderid()));
             $result = $this->backends[$i]->GetMailboxSearchResults($cpo, $i . $this->config['delimiter']);
         }
-        
+
         return $result;
     }
 

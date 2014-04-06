@@ -2210,7 +2210,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     protected function imap_reopen_folder($folderid, $force = false) {
         // if the stream is not alive, we open it again
         if (!@imap_ping($this->mbox)) {
-            $this->mbox = @imap_open($this->server , $this->username, $this->password, OP_HALFOPEN);
+            $this->mbox = @imap_open($this->server, $this->username, $this->password, OP_HALFOPEN);
             $this->mboxFolder = "";
         }
 
@@ -2219,7 +2219,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $s = @imap_reopen($this->mbox, $this->server . $folderid);
             // TODO throw status exception
             if (!$s) {
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->imap_reopen_folder('%s'): failed to change folder: %s",$folderid, implode(", ", imap_errors())));
+                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->imap_reopen_folder('%s'): failed to change folder: %s", $folderid, implode(", ", imap_errors())));
                 return false;
             }
             $this->mboxFolder = $folderid;

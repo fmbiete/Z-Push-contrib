@@ -1615,39 +1615,35 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
-        // TODO SyncInterval check + ContentParameters
-        // see https://jira.zarafa.com/browse/ZP-258 for details
-        // before changing the message, it should be checked if the message is in the SyncInterval
-        // to determine the cutoffdate use Utils::GetCutOffDate($contentparameters->GetFilterType());
-        // if the message is not in the interval an StatusException with code SYNC_STATUS_SYNCCANNOTBECOMPLETED should be thrown
-
-        /* BEGIN fmbiete's contribution r1529, ZP-321 */
         if (isset($message->flag)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('Setting flag')"));
 
             $folderImapid = $this->getImapIdFromFolderId($folderid);
-
             $this->imap_reopenFolder($folderImapid);
 
-            if (isset($message->flag->flagstatus) && $message->flag->flagstatus == 2) {
-                ZLog::Write(LOGLEVEL_DEBUG, "Set On FollowUp -> IMAP Flagged");
-                $status = @imap_setflag_full($this->mbox, $id, "\\Flagged",ST_UID);
-            }
-            else {
-                ZLog::Write(LOGLEVEL_DEBUG, "Clearing Flagged");
-                $status = @imap_clearflag_full ( $this->mbox, $id, "\\Flagged", ST_UID);
-            }
+            if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+                if (isset($message->flag->flagstatus) && $message->flag->flagstatus == 2) {
+                    ZLog::Write(LOGLEVEL_DEBUG, "Set On FollowUp -> IMAP Flagged");
+                    $status = @imap_setflag_full($this->mbox, $id, "\\Flagged", ST_UID);
+                }
+                else {
+                    ZLog::Write(LOGLEVEL_DEBUG, "Clearing Flagged");
+                    $status = @imap_clearflag_full($this->mbox, $id, "\\Flagged", ST_UID);
+                }
 
-            if ($status) {
-                ZLog::Write(LOGLEVEL_DEBUG, "Flagged changed");
+                if ($status) {
+                    ZLog::Write(LOGLEVEL_DEBUG, "Flagged changed");
+                }
+                else {
+                    ZLog::Write(LOGLEVEL_DEBUG, "Flagged failed");
+                }
             }
             else {
-                ZLog::Write(LOGLEVEL_DEBUG, "Flagged failed");
+                throw new StatusException(sprintf("BackendIMAP->ChangeMessage(): Message is outside the sync range"), SYNC_STATUS_SYNCCANNOTBECOMPLETED);
             }
         }
 
         return $this->StatMessage($folderid, $id);
-        /* END fmbiete's contribution r1529, ZP-321 */
     }
 
     /**
@@ -1664,22 +1660,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     public function SetReadFlag($folderid, $id, $flags, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SetReadFlag('%s','%s','%s')", $folderid, $id, $flags));
+
         $folderImapid = $this->getImapIdFromFolderId($folderid);
-
-        // TODO SyncInterval check + ContentParameters
-        // see https://jira.zarafa.com/browse/ZP-258 for details
-        // before setting the read flag, it should be checked if the message is in the SyncInterval
-        // to determine the cutoffdate use Utils::GetCutOffDate($contentparameters->GetFilterType());
-        // if the message is not in the interval an StatusException with code SYNC_STATUS_OBJECTNOTFOUND should be thrown
-
         $this->imap_reopenFolder($folderImapid);
 
-        if ($flags == 0) {
-            // set as "Unseen" (unread)
-            $status = @imap_clearflag_full ( $this->mbox, $id, "\\Seen", ST_UID);
-        } else {
-            // set as "Seen" (read)
-            $status = @imap_setflag_full($this->mbox, $id, "\\Seen", ST_UID);
+        if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            if ($flags == 0) {
+                // set as "Unseen" (unread)
+                $status = @imap_clearflag_full($this->mbox, $id, "\\Seen", ST_UID);
+            } else {
+                // set as "Seen" (read)
+                $status = @imap_setflag_full($this->mbox, $id, "\\Seen", ST_UID);
+            }
+        }
+        else {
+            throw new StatusException(sprintf("BackendIMAP->SetReadFlag(): Message is outside the sync range"), SYNC_STATUS_OBJECTNOTFOUND);
         }
 
         return $status;
@@ -1699,16 +1694,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SetStarFlag('%s','%s','%s')", $folderid, $id, $flags));
-        $folderImapid = $this->getImapIdFromFolderId($folderid);
 
+        $folderImapid = $this->getImapIdFromFolderId($folderid);
         $this->imap_reopenFolder($folderImapid);
 
-        if ($flags == 0) {
-            // set as "UnFlagged" (unstarred)
-            $status = @imap_clearflag_full ( $this->mbox, $id, "\\Flagged", ST_UID);
-        } else {
-            // set as "Flagged" (starred)
-            $status = @imap_setflag_full($this->mbox, $id, "\\Flagged",ST_UID);
+        if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            if ($flags == 0) {
+                // set as "UnFlagged" (unstarred)
+                $status = @imap_clearflag_full($this->mbox, $id, "\\Flagged", ST_UID);
+            } else {
+                // set as "Flagged" (starred)
+                $status = @imap_setflag_full($this->mbox, $id, "\\Flagged", ST_UID);
+            }
+        }
+        else {
+            throw new StatusException(sprintf("BackendIMAP->SetStarFlag(): Message is outside the sync range"), SYNC_STATUS_OBJECTNOTFOUND);
         }
 
         return $status;
@@ -1727,20 +1727,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     public function DeleteMessage($folderid, $id, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->DeleteMessage('%s','%s')", $folderid, $id));
+
         $folderImapid = $this->getImapIdFromFolderId($folderid);
-
-        // TODO SyncInterval check + ContentParameters
-        // see https://jira.zarafa.com/browse/ZP-258 for details
-        // before deleting the message, it should be checked if the message is in the SyncInterval
-        // to determine the cutoffdate use Utils::GetCutOffDate($contentparameters->GetFilterType());
-        // if the message is not in the interval an StatusException with code SYNC_STATUS_OBJECTNOTFOUND should be thrown
-
         $this->imap_reopenFolder($folderImapid);
-        $s1 = @imap_delete ($this->mbox, $id, FT_UID);
-        $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
-        $s2 = @imap_expunge($this->mbox);
 
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->DeleteMessage('%s','%s'): result: s-delete: '%s' s-expunge: '%s' setflag: '%s'", $folderid, $id, $s1, $s2, $s11));
+        if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            $s1 = @imap_delete ($this->mbox, $id, FT_UID);
+            $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
+            $s2 = @imap_expunge($this->mbox);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->DeleteMessage('%s','%s'): result: s-delete: '%s' s-expunge: '%s' setflag: '%s'", $folderid, $id, $s1, $s2, $s11));
+        }
+        else {
+            throw new StatusException(sprintf("BackendIMAP->DeleteMessage(): Message is outside the sync range"), SYNC_STATUS_OBJECTNOTFOUND);
+        }
+
 
         return ($s1 && $s2 && $s11);
     }
@@ -1762,62 +1762,65 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $folderImapid = $this->getImapIdFromFolderId($folderid);
         $newfolderImapid = $this->getImapIdFromFolderId($newfolderid);
 
-        // TODO SyncInterval check + ContentParameters
-        // see https://jira.zarafa.com/browse/ZP-258 for details
-        // before moving the message, it should be checked if the message is in the SyncInterval
-        // to determine the cutoffdate use Utils::GetCutOffDate($contentparameters->GetFilterType());
-        // if the message is not in the interval an StatusException with code SYNC_MOVEITEMSSTATUS_INVALIDSOURCEID should be thrown
-
         if ($folderImapid == $newfolderImapid) {
             throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, destination folder is source folder. Canceling the move.", $folderid, $id, $newfolderid), SYNC_MOVEITEMSSTATUS_SAMESOURCEANDDEST);
         }
 
         $this->imap_reopenFolder($folderImapid);
 
-        // read message flags
-        $overview = @imap_fetch_overview ( $this->mbox , $id, FT_UID);
+        if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            // read message flags
+            $overview = @imap_fetch_overview($this->mbox, $id, FT_UID);
 
-        if (!$overview)
-            throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, unable to retrieve overview of source message: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_INVALIDSOURCEID);
+            if (!is_array($overview)) {
+                throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, unable to retrieve overview of source message: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_INVALIDSOURCEID);
+            }
+            else {
+                // get next UID for destination folder
+                // when moving a message we have to announce through ActiveSync the new messageID in the
+                // destination folder. This is a "guessing" mechanism as IMAP does not inform that value.
+                // when lots of simultaneous operations happen in the destination folder this could fail.
+                // in the worst case the moved message is displayed twice on the mobile.
+                $destStatus = imap_status($this->mbox, $this->server . $newfolderImapid, SA_ALL);
+                if (!$destStatus)
+                    throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, unable to open destination folder: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_INVALIDDESTID);
+
+                $newid = $destStatus->uidnext;
+
+                // move message
+                $s1 = imap_mail_move($this->mbox, $id, $newfolderImapid, CP_UID);
+                if (!$s1)
+                    throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, copy to destination folder failed: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
+
+
+                // delete message in from-folder
+                $s2 = imap_expunge($this->mbox);
+
+                // open new folder
+                $stat = $this->imap_reopenFolder($newfolderImapid);
+                if (! $s1)
+                    throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, opening the destination folder: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
+
+
+                // remove all flags
+                $s3 = @imap_clearflag_full($this->mbox, $newid, "\\Seen \\Answered \\Flagged \\Deleted \\Draft", FT_UID);
+                $newflags = "";
+                if ($overview[0]->seen)
+                    $newflags .= "\\Seen";
+                if ($overview[0]->flagged)
+                    $newflags .= " \\Flagged";
+                if ($overview[0]->answered)
+                    $newflags .= " \\Answered";
+                $s4 = @imap_setflag_full ($this->mbox, $newid, $newflags, FT_UID);
+
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): result s-move: '%s' s-expunge: '%s' unset-Flags: '%s' set-Flags: '%s'", $folderid, $id, $newfolderid, Utils::PrintAsString($s1), Utils::PrintAsString($s2), Utils::PrintAsString($s3), Utils::PrintAsString($s4)));
+
+                // return the new id "as string"
+                return $newid . "";
+            }
+        }
         else {
-            // get next UID for destination folder
-            // when moving a message we have to announce through ActiveSync the new messageID in the
-            // destination folder. This is a "guessing" mechanism as IMAP does not inform that value.
-            // when lots of simultaneous operations happen in the destination folder this could fail.
-            // in the worst case the moved message is displayed twice on the mobile.
-            $destStatus = imap_status($this->mbox, $this->server . $newfolderImapid, SA_ALL);
-            if (!$destStatus)
-                throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, unable to open destination folder: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_INVALIDDESTID);
-
-            $newid = $destStatus->uidnext;
-
-            // move message
-            $s1 = imap_mail_move($this->mbox, $id, $newfolderImapid, CP_UID);
-            if (! $s1)
-                throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, copy to destination folder failed: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
-
-
-            // delete message in from-folder
-            $s2 = imap_expunge($this->mbox);
-
-            // open new folder
-            $stat = $this->imap_reopenFolder($newfolderImapid);
-            if (! $s1)
-                throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, opening the destination folder: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
-
-
-            // remove all flags
-            $s3 = @imap_clearflag_full ($this->mbox, $newid, "\\Seen \\Answered \\Flagged \\Deleted \\Draft", FT_UID);
-            $newflags = "";
-            if ($overview[0]->seen) $newflags .= "\\Seen";
-            if ($overview[0]->flagged) $newflags .= " \\Flagged";
-            if ($overview[0]->answered) $newflags .= " \\Answered";
-            $s4 = @imap_setflag_full ($this->mbox, $newid, $newflags, FT_UID);
-
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): result s-move: '%s' s-expunge: '%s' unset-Flags: '%s' set-Flags: '%s'", $folderid, $id, $newfolderid, Utils::PrintAsString($s1), Utils::PrintAsString($s2), Utils::PrintAsString($s3), Utils::PrintAsString($s4)));
-
-            // return the new id "as string""
-            return $newid . "";
+            throw new StatusException(sprintf("BackendIMAP->MoveMessage(): Message is outside the sync range"), SYNC_MOVEITEMSSTATUS_INVALIDSOURCEID);
         }
     }
 
@@ -2248,6 +2251,46 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         return $res;
     }
 
+    /**
+     * Check if the message was sent before the cutoffdate.
+     *
+     * @access private
+     * @param integer   $cutoffdate     EPOCH of the bottom sync range. 0 if no range is defined
+     * @param integer   $id             Message id
+     * @return boolean
+     */
+    private function imap_inside_cutoffdate($cutoffdate, $id) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Checking if the messages is withing the cutoffdate %d, %s", $cutoffdate, $id));
+        $is_inside = false;
+
+        if ($cutoffdate == 0) {
+            // No cutoffdate, all the messages are in range
+            $is_inside = true;
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): No cutoffdate, all the messages are in range"));
+        }
+        else {
+            $overview = imap_fetch_overview($this->mbox, $id, FT_UID);
+            if (is_array($overview)) {
+                if (isset($overview[0]->date)) {
+                    $epoch_sent = strtotime($overview[0]->date);
+                    $is_inside = ($cutoffdate <= $epoch_sent);
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Message is %s cutoffdate range", ($is_inside ? : "INSIDE" : "OUTSIDE")));
+                }
+                else {
+                    // No sent date defined, that's a buggy message but we will think that the message is in range
+                    $is_inside = true;
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): No sent date defined, that's a buggy message but we will think that the message is in range"));
+                }
+            }
+            else {
+                // No overview, maybe the message is no longer there
+                $is_inside = false;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): No overview, maybe the message is no longer there"));
+            }
+        }
+
+        return $is_inside;
+    }
 
     /**
      * Adds a message with seen flag to a specified folder (used for saving sent items)

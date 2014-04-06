@@ -377,7 +377,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 // try to open the sentfolder
                 if (!$this->imap_reopen_folder(IMAP_SENTFOLDER, false)) {
                     // if we cannot open it, it mustn't exist, we try to create it.
-                    $this->imap_createFolder($this->server . IMAP_SENTFOLDER);
+                    $this->imap_create_folder($this->server . IMAP_SENTFOLDER);
                 }
                 $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
@@ -2237,15 +2237,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access private
      * @return boolean      success
      */
-    private function imap_createFolder($foldername) {
+    private function imap_create_folder($foldername) {
         $name = Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($foldername));
 
         $res = @imap_createmailbox($this->mbox, $name);
         if ($res) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_createFolder('%s'): new folder created", $foldername));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_create_folder('%s'): new folder created", $foldername));
         }
         else {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->imap_createFolder('%s'): failed to create folder: %s", $foldername, implode(", ", imap_errors())));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->imap_create_folder('%s'): failed to create folder: %s", $foldername, implode(", ", imap_errors())));
         }
 
         return $res;

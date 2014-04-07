@@ -1605,13 +1605,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string              $folderid            id of the folder
      * @param string              $id                  id of the message
      * @param SyncXXX             $message             the SyncObject containing a message
-     * @param ContentParameters   $contentParameters
+     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return array                        same return value as StatMessage()
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
-    public function ChangeMessage($folderid, $id, $message, $contentParameters) {
+    public function ChangeMessage($folderid, $id, $message, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
@@ -1652,13 +1652,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string              $folderid            id of the folder
      * @param string              $id                  id of the message
      * @param int                 $flags               read flag of the message
-     * @param ContentParameters   $contentParameters
+     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return boolean                      status of the operation
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
-    public function SetReadFlag($folderid, $id, $flags, $contentParameters) {
+    public function SetReadFlag($folderid, $id, $flags, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SetReadFlag('%s','%s','%s')", $folderid, $id, $flags));
 
         $folderImapid = $this->getImapIdFromFolderId($folderid);
@@ -1686,13 +1686,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string        $folderid       id of the folder
      * @param string        $id             id of the message
      * @param int           $flags          read flag of the message
-     * @param ContentParameters   $contentParameters
+     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return boolean                      status of the operation
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
-    public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
+    public function SetStarFlag($folderid, $id, $flags, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SetStarFlag('%s','%s','%s')", $folderid, $id, $flags));
 
         $folderImapid = $this->getImapIdFromFolderId($folderid);
@@ -1719,13 +1719,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      *
      * @param string              $folderid             id of the folder
      * @param string              $id                   id of the message
-     * @param ContentParameters   $contentParameters
+     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return boolean                      status of the operation
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
-    public function DeleteMessage($folderid, $id, $contentParameters) {
+    public function DeleteMessage($folderid, $id, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->DeleteMessage('%s','%s')", $folderid, $id));
 
         $folderImapid = $this->getImapIdFromFolderId($folderid);
@@ -1751,13 +1751,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string              $folderid            id of the source folder
      * @param string              $id                  id of the message
      * @param string              $newfolderid         id of the destination folder
-     * @param ContentParameters   $contentParameters
+     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return boolean                      status of the operation
      * @throws StatusException              could throw specific SYNC_MOVEITEMSSTATUS_* exceptions
      */
-    public function MoveMessage($folderid, $id, $newfolderid, $contentParameters) {
+    public function MoveMessage($folderid, $id, $newfolderid, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MoveMessage('%s','%s','%s')", $folderid, $id, $newfolderid));
         $folderImapid = $this->getImapIdFromFolderId($folderid);
         $newfolderImapid = $this->getImapIdFromFolderId($newfolderid);

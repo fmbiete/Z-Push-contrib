@@ -2274,7 +2274,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 if (isset($overview[0]->date)) {
                     $epoch_sent = strtotime($overview[0]->date);
                     $is_inside = ($cutoffdate <= $epoch_sent);
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Message is %s cutoffdate range", ($is_inside ? : "INSIDE" : "OUTSIDE")));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Message is %s cutoffdate range", ($is_inside ? "INSIDE" : "OUTSIDE")));
                 }
                 else {
                     // No sent date defined, that's a buggy message but we will think that the message is in range

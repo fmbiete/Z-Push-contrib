@@ -1,7 +1,7 @@
 <?php
 
 // Test CardDAV server
-// This code will do an addressbook disvocer, an initial sync and will get a vcard.
+// This code will do an addressbook discover, an initial sync and will get a vcard.
 
 include_once('include/z_carddav.php');
 

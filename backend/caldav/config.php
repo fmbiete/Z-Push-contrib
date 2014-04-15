@@ -44,17 +44,23 @@
 // ************************
 //  BackendCalDAV settings
 // ************************
+
 // Server address
 define('CALDAV_SERVER', 'http://calendar.domain.com');
 
 // Port
 define('CALDAV_PORT', '80');
 
-// Path 
+// Path
 define('CALDAV_PATH', '/caldav.php/%u/');
 
 // Personal CalDAV folder (calendar folder/principal)
 define('CALDAV_PERSONAL', 'home');
+
+// If the CalDAV server supports the sync-collection operation
+// DAViCal and SOGo support it
+// Setting this to false will work with most servers, but it will be slower
+define('CALDAV_SUPPORTS_SYNC', false);
 
 
 ?>

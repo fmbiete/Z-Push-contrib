@@ -270,8 +270,7 @@ class BackendCalDAV extends BackendDiff {
      * Change/Add a message with contents received from ActiveSync
      * @see BackendDiff::ChangeMessage()
      */
-    public function ChangeMessage($folderid, $id, $message, $contentParameters)
-    {
+    public function ChangeMessage($folderid, $id, $message, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangeMessage('%s','%s')", $folderid,  $id));
 
         if ($id) {

@@ -91,6 +91,9 @@ class CalDAVClient {
 	 */
 	private $curl;
 
+
+    private $synctoken = array();
+
 	/**
 	* Constructor, initialises the class
 	*
@@ -204,7 +207,7 @@ class CalDAVClient {
 		if ( !isset($url) ) $url = $this->base_url;
 		$url = preg_replace('{^https?://[^/]+}', '', $url);
 		$url = $this->server . $url;
-		
+
 		curl_setopt($this->curl, CURLOPT_URL, $url);
 		curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
 
@@ -881,5 +884,85 @@ EOFILTER;
 		$href = str_replace( rawurlencode('/'),'/',rawurlencode($href));
 		return $this->DoGETRequest( $href );
 	}
+
+
+    /**
+     * Do a Sync operation. This is the fastest way to detect changes.
+     *
+     * @param string    $url                URL for the calendar
+     * @param boolean   $initial            It's the first synchronization
+     * @param boolean   $support_dav_sync   The CalDAV server supports sync-collection
+     *
+     * @return array of responses
+     */
+    public function GetSync($relative_url = null, $initial = true, $support_dav_sync = false) {
+        if (!empty($relative_url)) {
+            $this->SetCalendar($relative_url);
+        }
+
+        if ($support_dav_sync) {
+            $token = ($initial ? "" : $this->synctoken[$this->calendar_url]);
+
+            $body = <<<EOXML
+<?xml version="1.0" encoding="utf-8"?>
+<D:sync-collection xmlns:D="DAV:">
+    <D:sync-token>$token</D:sync-token>
+    <D:sync-level>1</D:sync-level>
+    <D:prop>
+        <D:getetag/>
+        <D:getlastmodified/>
+    </D:prop>
+</D:sync-collection>
+EOXML;
+        }
+        else {
+            $body = <<<EOXML
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <D:getetag/>
+    <D:getlastmodified/>
+    <C:filter>
+        <C:comp-filter name="VCALENDAR">
+        </C:comp-filter>
+    </C:filter>
+  </D:prop>
+</C:calendar-query>
+EOXML;
+        }
+
+        $this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
+
+        $report = array();
+        foreach( $this->xmlnodes as $k => $v ) {
+            switch( $v['tag'] ) {
+                case 'DAV::response':
+                    if ( $v['type'] == 'open' ) {
+                        $response = array();
+                    } elseif ( $v['type'] == 'close' ) {
+                        $report[] = $response;
+                    }
+                    break;
+                case 'DAV::href':
+                    $response['href'] = basename( rawurldecode($v['value']) );
+                    break;
+                case 'DAV::getlastmodified':
+                    if (isset($v['value'])) {
+                        $response['getlastmodified'] = $v['value'];
+                    }
+                    else {
+                        $response['getlastmodified'] = '';
+                    }
+                    break;
+                case 'DAV::getetag':
+                    $response['etag'] = preg_replace('/^"?([^"]+)"?/', '$1', $v['value']);
+                    break;
+                case 'DAV::sync-token':
+                    $this->synctoken[$this->calendar_url] = $v['value'];
+                    break;
+            }
+        }
+        return $report;
+    }
 
 }

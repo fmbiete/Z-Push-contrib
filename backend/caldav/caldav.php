@@ -57,6 +57,25 @@ class BackendCalDAV extends BackendDiff {
     private $_collection = array();
     private $_username;
 
+    private $changessinkinit;
+    private $sinkdata;
+    private $sinkmax;
+
+
+    /**
+     * Constructor
+     *
+     */
+    public function BackendCalDAV() {
+        if (!function_exists("curl_init")) {
+            throw new FatalException("BackendCalDAV(): php-curl is not found", 0, null, LOGLEVEL_FATAL);
+        }
+
+        $this->changessinkinit = false;
+        $this->sinkdata = array();
+        $this->sinkmax = array();
+    }
+
     /**
      * Login to the CalDAV backend
      * @see IBackend::Logon()
@@ -81,6 +100,14 @@ class BackendCalDAV extends BackendDiff {
      * @see IBackend::Logoff()
      */
     public function Logoff() {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logoff()"));
+        $this->_caldav = null;
+
+        $this->SaveStorages();
+
+        unset($this->sinkdata);
+        unset($this->sinkmax);
+
         return true;
     }
 
@@ -352,6 +379,127 @@ class BackendCalDAV extends BackendDiff {
     public function GetSupportedASVersion() {
         return ZPush::ASV_14;
     }
+
+    /**
+     * Indicates if the backend has a ChangesSink.
+     * A sink is an active notification mechanism which does not need polling.
+     * The CalDAV backend simulates a sink by polling revision dates from the events or use the native sync-collection.
+     *
+     * @access public
+     * @return boolean
+     */
+    public function HasChangesSink() {
+        return true;
+    }
+
+    /**
+     * The folder should be considered by the sink.
+     * Folders which were not initialized should not result in a notification
+     * of IBackend->ChangesSink().
+     *
+     * @param string        $folderid
+     *
+     * @access public
+     * @return boolean      false if found can not be found
+     */
+    public function ChangesSinkInitialize($folderid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
+
+        // We don't need the actual events, we only need to get the changes since this moment
+        $init_ok = true;
+        $url = $this->_caldav_path . substr($folderid, 1) . "/";
+        $this->sinkdata[$folderid] = $this->_caldav->GetSync($url, true, CALDAV_SUPPORTS_SYNC);
+        if (CALDAV_SUPPORTS_SYNC) {
+            // we don't need to store the sinkdata if the caldav server supports native sync
+            unset($this->sinkdata[$url]);
+            $this->sinkdata[$folderid] = array();
+        }
+
+        $this->changessinkinit = $init_ok;
+        $this->sinkmax = array();
+
+        return $this->changessinkinit;
+    }
+
+    /**
+     * The actual ChangesSink.
+     * For max. the $timeout value this method should block and if no changes
+     * are available return an empty array.
+     * If changes are available a list of folderids is expected.
+     *
+     * @param int           $timeout        max. amount of seconds to block
+     *
+     * @access public
+     * @return array
+     */
+    public function ChangesSink($timeout = 30) {
+        $notifications = array();
+        $stopat = time() + $timeout - 1;
+
+        //We can get here and the ChangesSink not be initialized yet
+        if (!$this->changessinkinit) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Not initialized ChangesSink, sleep and exit"));
+            // We sleep and do nothing else
+            sleep($timeout);
+            return $notifications;
+        }
+
+        while($stopat > time() && empty($notifications)) {
+
+            foreach ($this->sinkdata as $k => $v) {
+                $changed = false;
+
+                $url = $this->_caldav_path . substr($k, 1) . "/";
+                $response = $this->_caldav->GetSync($url, false, CALDAV_SUPPORTS_SYNC);
+
+                if (CALDAV_SUPPORTS_SYNC) {
+                    if (count($response) > 0) {
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
+                    }
+                }
+                else {
+                    // If the numbers of events are different, we know for sure, there are changes
+                    if (count($response) != count($v)) {
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
+                    }
+                    else {
+                        // If the numbers of events are equals, we compare the biggest date
+                        // FIXME: we are comparing strings no dates
+                        if (!isset($this->sinkmax[$k])) {
+                            $this->sinkmax[$k] = '';
+                            for ($i = 0; $i < count($v); $i++) {
+                                if ($v[$i]['getlastmodified'] > $this->sinkmax[$k]) {
+                                    $this->sinkmax[$k] = $v[$i]['getlastmodified'];
+                                }
+                            }
+                        }
+
+                        for ($i = 0; $i < count($response); $i++) {
+                            if ($response[$i]['getlastmodified'] > $this->sinkmax[$k]) {
+                                $changed = true;
+                            }
+                        }
+
+                        if ($changed) {
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
+                        }
+                    }
+                }
+
+                if ($changed) {
+                    $notifications[] = $k;
+                }
+            }
+
+            if (empty($notifications))
+                sleep(5);
+        }
+
+        return $notifications;
+    }
+
 
     /**
      * Convert a iCAL VEvent to ActiveSync format

@@ -468,7 +468,7 @@ class BackendCombined extends Backend implements ISearchProvider {
             do {
                 foreach ($this->backends as $i => $b) {
                     if ($this->backends[$i]->HasChangesSink()) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink - Calling in '%s' with %d", get_class($b), $timeout_backend));
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSink - Calling in '%s' with %d", get_class($b), 2));
 
                         // 2 seconds hardcoded timeout!!!
                         $notifications_backend = $this->backends[$i]->ChangesSink(2);

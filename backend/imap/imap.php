@@ -934,7 +934,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "trash" || $lid == "deleted messages") {
+        else if(($lid == "trash" || $lid == "deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
@@ -952,7 +952,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "inbox.trash" || $lid == "inbox/trash") {
+        else if(($lid == "inbox.trash" || $lid == "inbox/trash") && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;

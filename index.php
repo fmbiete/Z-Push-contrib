@@ -140,8 +140,14 @@ include_once('version.php');
                                     Request::GetCommand(), Request::GetGETUser(), Request::GetDeviceID(), Request::GetDeviceType()));
 
         // Stop here if this is an OPTIONS request
-        if (Request::IsMethodOPTIONS())
-            throw new NoPostRequestException("Options request", NoPostRequestException::OPTIONS_REQUEST);
+        if (Request::IsMethodOPTIONS()) {
+            if (!Request::AuthenticationInfo() || !Request::GetGETUser()) {
+                throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
+            }
+            else {
+                throw new NoPostRequestException("Options request", NoPostRequestException::OPTIONS_REQUEST);
+            }
+        }
 
         ZPush::CheckAdvancedConfig();
 

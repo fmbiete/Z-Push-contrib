@@ -261,10 +261,8 @@ class Net_SMTP
         $this->_debug("Send: $data");
 
         $result = $this->_socket->write($data);
-        if (!$result) {
-            throw new PEAR_Exception('Failed to write to socket: unknown error');
-        } elseif (PEAR::isError($result)) {
-            throw new PEAR_Exception('Failed to write to socket: ' . $result->getMessage(),
+        if ($result === false) {
+            return Net_SMTP::raiseError('Failed to write to socket: ' . $result->getMessage(),
                                      $result);
         }
 
@@ -293,7 +291,7 @@ class Net_SMTP
         }
 
         if (strcspn($command, "\r\n") !== strlen($command)) {
-            throw new PEAR_Exception('Commands cannot contain newlines');
+            return Net_SMTP::raiseError('Commands cannot contain newlines');
         }
 
         return $this->_send($command . "\r\n");
@@ -436,9 +434,9 @@ class Net_SMTP
         }
 
         /*
-         * Now that we're connected, reset the socket's timeout value for 
-         * future I/O operations.  This allows us to have different socket 
-         * timeout values for the initial connection (our $timeout parameter) 
+         * Now that we're connected, reset the socket's timeout value for
+         * future I/O operations.  This allows us to have different socket
+         * timeout values for the initial connection (our $timeout parameter)
          * and all other socket operations.
          */
         if ($this->_timeout > 0) {

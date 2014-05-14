@@ -1466,7 +1466,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 for ($i=0; $i<count($mparts); $i++) {
                     $part = $mparts[$i];
                     //recursively add parts
-                    if((isset($part->ctype_primary) && $part->ctype_primary == "multipart") && (isset($part->ctype_secondary) && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related"))) {
+                    if ((isset($part->ctype_primary) && $part->ctype_primary == "multipart") && (isset($part->ctype_secondary) && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related"))) {
                         foreach($part->parts as $spart)
                             $mparts[] = $spart;
                         continue;
@@ -1475,11 +1475,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) ||
                         (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
 
-                        if(isset($part->d_parameters['filename']))
+                        if (isset($part->d_parameters['filename']))
                             $attname = $part->d_parameters['filename'];
-                        else if(isset($part->ctype_parameters['name']))
+                        else if (isset($part->ctype_parameters['name']))
                             $attname = $part->ctype_parameters['name'];
-                        else if(isset($part->headers['content-description']))
+                        else if (isset($part->headers['content-description']))
                             $attname = $part->headers['content-description'];
                         else $attname = "unknown attachment";
 

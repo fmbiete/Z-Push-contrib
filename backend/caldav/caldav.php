@@ -533,7 +533,7 @@ class BackendCalDAV extends BackendDiff {
                 if (!$tzid) {
                     $tzid = $timezone;
                 }
-                $exception->exceptionstarttime = $this->_MakeUTCDate($recurrence_id->Value(), $tzid);
+                $exception->exceptionstarttime = Utils::MakeUTCDate($recurrence_id->Value(), $tzid);
                 $exception->deleted = "0";
                 $exception = $this->_ParseVEventToSyncObject($event, $exception, $truncsize);
                 if (!isset($message->exceptions)) {
@@ -562,11 +562,11 @@ class BackendCalDAV extends BackendDiff {
         foreach ($properties as $property) {
             switch ($property->Name()) {
                 case "LAST-MODIFIED":
-                    $message->dtstamp = $this->_MakeUTCDate($property->Value());
+                    $message->dtstamp = Utils::MakeUTCDate($property->Value());
                     break;
 
                 case "DTSTART":
-                    $message->starttime = $this->_MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->starttime = Utils::MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }
@@ -594,7 +594,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTEND":
-                    $message->endtime = $this->_MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->endtime = Utils::MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }
@@ -705,7 +705,7 @@ class BackendCalDAV extends BackendDiff {
                 case "EXDATE":
                     $exception = new SyncAppointmentException();
                     $exception->deleted = "1";
-                    $exception->exceptionstarttime = $this->_MakeUTCDate($property->Value());
+                    $exception->exceptionstarttime = Utils::MakeUTCDate($property->Value());
                     if (!isset($message->exceptions)) {
                         $message->exceptions = array();
                     }
@@ -735,7 +735,7 @@ class BackendCalDAV extends BackendDiff {
                 if ($property->Name() == "TRIGGER") {
                     $parameters = $property->Parameters();
                     if (array_key_exists("VALUE", $parameters) && $parameters["VALUE"] == "DATE-TIME") {
-                        $trigger = date_create("@" . $this->_MakeUTCDate($property->Value()));
+                        $trigger = date_create("@" . Utils::MakeUTCDate($property->Value()));
                         $begin = date_create("@" . $message->starttime);
                         $interval = date_diff($begin, $trigger);
                         $message->reminder = $interval->format("%i") + $interval->format("%h") * 60 + $interval->format("%a") * 60 * 24;
@@ -782,7 +782,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "UNTIL":
-                    $recurrence->until = $this->_MakeUTCDate($rule[1]);
+                    $recurrence->until = Utils::MakeUTCDate($rule[1]);
                     break;
 
                 case "COUNT":
@@ -1186,11 +1186,11 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "COMPLETED":
-                    $message->datecompleted = $this->_MakeUTCDate($property->Value());
+                    $message->datecompleted = Utils::MakeUTCDate($property->Value());
                     break;
 
                 case "DUE":
-                    $message->utcduedate = $this->_MakeUTCDate($property->Value());
+                    $message->utcduedate = Utils::MakeUTCDate($property->Value());
                     break;
 
                 case "PRIORITY":
@@ -1222,7 +1222,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTSTART":
-                    $message->utcstartdate = $this->_MakeUTCDate($property->Value());
+                    $message->utcstartdate = Utils::MakeUTCDate($property->Value());
                     break;
 
                 case "SUMMARY":
@@ -1247,7 +1247,7 @@ class BackendCalDAV extends BackendDiff {
                 if ($property->Name() == "TRIGGER") {
                     $parameters = $property->Parameters();
                     if (array_key_exists("VALUE", $parameters) && $parameters["VALUE"] == "DATE-TIME") {
-                        $message->remindertime = $this->_MakeUTCDate($property->Value());
+                        $message->remindertime = Utils::MakeUTCDate($property->Value());
                         $message->reminderset = "1";
                     }
                     elseif (!array_key_exists("VALUE", $parameters) || $parameters["VALUE"] == "DURATION") {
@@ -1356,33 +1356,6 @@ class BackendCalDAV extends BackendDiff {
         }
 
         return $vtodo;
-    }
-
-    /**
-     * Generate date object from string and timezone.
-     * @param string $value
-     * @param string $timezone
-     */
-    private function _MakeUTCDate($value, $timezone = null) {
-        $tz = null;
-        if ($timezone) {
-            $tz = timezone_open($timezone);
-        }
-        if (!$tz) {
-            //If there is no timezone set, we use the default timezone
-            $tz = timezone_open(date_default_timezone_get());
-        }
-        //20110930T090000Z
-        $date = date_create_from_format('Ymd\THis\Z', $value, timezone_open("UTC"));
-        if (!$date) {
-            //20110930T090000
-            $date = date_create_from_format('Ymd\THis', $value, $tz);
-        }
-        if (!$date) {
-            //20110930 (Append T000000Z to the date, so it starts at midnight)
-            $date = date_create_from_format('Ymd\THis\Z', $value . "T000000Z", $tz);
-        }
-        return date_timestamp_get($date);
     }
 
     private function _GetDateFromUTC($format, $date, $tz_str) {

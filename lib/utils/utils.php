@@ -917,6 +917,37 @@ class Utils {
 
         return 0;
     }
+
+    /**
+     * Generate date object from string and timezone.
+     *
+     * @param string $value
+     * @param string $timezone
+     *
+     * @access public
+     * @return int epoch
+     */
+    public static function MakeUTCDate($value, $timezone = null) {
+        $tz = null;
+        if ($timezone) {
+            $tz = timezone_open($timezone);
+        }
+        if (!$tz) {
+            //If there is no timezone set, we use the default timezone
+            $tz = timezone_open(date_default_timezone_get());
+        }
+        //20110930T090000Z
+        $date = date_create_from_format('Ymd\THis\Z', $value, timezone_open("UTC"));
+        if (!$date) {
+            //20110930T090000
+            $date = date_create_from_format('Ymd\THis', $value, $tz);
+        }
+        if (!$date) {
+            //20110930 (Append T000000Z to the date, so it starts at midnight)
+            $date = date_create_from_format('Ymd\THis\Z', $value . "T000000Z", $tz);
+        }
+        return date_timestamp_get($date);
+    }
 }
 
 

@@ -948,6 +948,31 @@ class Utils {
         }
         return date_timestamp_get($date);
     }
+
+
+    /**
+     * Generate a tzid from various formats
+     *
+     * @param str $timezone
+     *
+     * @access public
+     * @return timezone id
+     */
+    public static function ParseTimezone($timezone) {
+        //(GMT+01.00) Amsterdam / Berlin / Bern / Rome / Stockholm / Vienna
+        if (preg_match('/GMT(\\+|\\-)0(\d)/', $timezone, $matches)) {
+            return "Etc/GMT" . $matches[1] . $matches[2];
+        }
+        //(GMT+10.00) XXX / XXX / XXX / XXX
+        if (preg_match('/GMT(\\+|\\-)1(\d)/', $timezone, $matches)) {
+            return "Etc/GMT" . $matches[1] . "1" . $matches[2];
+        }
+        ///inverse.ca/20101018_1/Europe/Amsterdam or /inverse.ca/20101018_1/America/Argentina/Buenos_Aires
+        if (preg_match('/\/[.[:word:]]+\/\w+\/(\w+)\/([\w\/]+)/', $timezone, $matches)) {
+            return $matches[1] . "/" . $matches[2];
+        }
+        return trim($timezone, '"');
+    }
 }
 
 

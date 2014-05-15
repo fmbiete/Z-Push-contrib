@@ -516,7 +516,7 @@ class BackendCalDAV extends BackendDiff {
         $timezones = $ical->GetComponents("VTIMEZONE");
         $timezone = "";
         if (count($timezones) > 0) {
-            $timezone = $this->_ParseTimezone($timezones[0]->GetPValue("TZID"));
+            $timezone = Utils::ParseTimezone($timezones[0]->GetPValue("TZID"));
         }
         if (!$timezone) {
             $timezone = date_default_timezone_get();
@@ -529,7 +529,7 @@ class BackendCalDAV extends BackendDiff {
             if (count($rec) > 0) {
                 $recurrence_id = reset($rec);
                 $exception = new SyncAppointmentException();
-                $tzid = $this->_ParseTimezone($recurrence_id->GetParameterValue("TZID"));
+                $tzid = Utils::ParseTimezone($recurrence_id->GetParameterValue("TZID"));
                 if (!$tzid) {
                     $tzid = $timezone;
                 }
@@ -566,7 +566,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTSTART":
-                    $message->starttime = Utils::MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->starttime = Utils::MakeUTCDate($property->Value(), Utils::ParseTimezone($property->GetParameterValue("TZID")));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }
@@ -594,7 +594,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTEND":
-                    $message->endtime = Utils::MakeUTCDate($property->Value(), $this->_ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->endtime = Utils::MakeUTCDate($property->Value(), Utils::ParseTimezone($property->GetParameterValue("TZID")));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }
@@ -1363,27 +1363,6 @@ class BackendCalDAV extends BackendDiff {
         $dt = date_create('@' . $date);
         date_timezone_set($dt, timezone_open($timezone));
         return date_format($dt, $format);
-    }
-
-    /**
-     * Generate a tzid from various formats
-     * @param str $timezone
-     * @return timezone id
-     */
-    private function _ParseTimezone($timezone) {
-        //(GMT+01.00) Amsterdam / Berlin / Bern / Rome / Stockholm / Vienna
-        if (preg_match('/GMT(\\+|\\-)0(\d)/', $timezone, $matches)) {
-            return "Etc/GMT" . $matches[1] . $matches[2];
-        }
-        //(GMT+10.00) XXX / XXX / XXX / XXX
-        if (preg_match('/GMT(\\+|\\-)1(\d)/', $timezone, $matches)) {
-            return "Etc/GMT" . $matches[1] . "1" . $matches[2];
-        }
-        ///inverse.ca/20101018_1/Europe/Amsterdam or /inverse.ca/20101018_1/America/Argentina/Buenos_Aires
-        if (preg_match('/\/[.[:word:]]+\/\w+\/(\w+)\/([\w\/]+)/', $timezone, $matches)) {
-            return $matches[1] . "/" . $matches[2];
-        }
-        return trim($timezone, '"');
     }
 
     //This returns a timezone that matches the timezonestring.

@@ -1471,71 +1471,78 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             $mparts[] = $spart;
                         continue;
                     }
-                    //add part as attachment if it's disposition indicates so or if it is not a text part
-                    if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) ||
-                        (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
+                    if (isset($part->ctype_primary) && $part->ctype_primary == "text" && isset($part->ctype_secondary) && $part->ctype_secondary == "calendar") {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - text/calendar part found, trying to convert"));
+                        $output->meetingrequest = new SyncMeetingRequest();
+                        $this->parseMeetingCalendar($part, $output);
+                    }
+                    else {
+                        //add part as attachment if it's disposition indicates so or if it is not a text part
+                        if ((isset($part->disposition) && ($part->disposition == "attachment" || $part->disposition == "inline")) ||
+                            (isset($part->ctype_primary) && $part->ctype_primary != "text")) {
 
-                        if (isset($part->d_parameters['filename']))
-                            $attname = $part->d_parameters['filename'];
-                        else if (isset($part->ctype_parameters['name']))
-                            $attname = $part->ctype_parameters['name'];
-                        else if (isset($part->headers['content-description']))
-                            $attname = $part->headers['content-description'];
-                        else $attname = "unknown attachment";
+                            if (isset($part->d_parameters['filename']))
+                                $attname = $part->d_parameters['filename'];
+                            else if (isset($part->ctype_parameters['name']))
+                                $attname = $part->ctype_parameters['name'];
+                            else if (isset($part->headers['content-description']))
+                                $attname = $part->headers['content-description'];
+                            else $attname = "unknown attachment";
 
-                        /* BEGIN fmbiete's contribution r1528, ZP-320 */
-                        if (Request::GetProtocolVersion() >= 12.0) {
-                            if (!isset($output->asattachments) || !is_array($output->asattachments))
-                                $output->asattachments = array();
+                            /* BEGIN fmbiete's contribution r1528, ZP-320 */
+                            if (Request::GetProtocolVersion() >= 12.0) {
+                                if (!isset($output->asattachments) || !is_array($output->asattachments))
+                                    $output->asattachments = array();
 
-                            $attachment = new SyncBaseAttachment();
+                                $attachment = new SyncBaseAttachment();
 
-                            $attachment->estimatedDataSize = isset($part->d_parameters['size']) ? $part->d_parameters['size'] : isset($part->body) ? strlen($part->body) : 0;
+                                $attachment->estimatedDataSize = isset($part->d_parameters['size']) ? $part->d_parameters['size'] : isset($part->body) ? strlen($part->body) : 0;
 
-                            $attachment->displayname = $attname;
-                            $attachment->filereference = $folderid . ":" . $id . ":" . $i;
-                            $attachment->method = 1; //Normal attachment
-                            $attachment->contentid = isset($part->headers['content-id']) ? str_replace("<", "", str_replace(">", "", $part->headers['content-id'])) : "";
-                            if (isset($part->disposition) && $part->disposition == "inline") {
-                                $attachment->isinline = 1;
-                                // We try to fix the name for the inline file.
-                                // FIXME: This is a dirty hack as the used in the Zarafa backend, if you have a better method let me know!
-                                if (isset($part->ctype_primary) && isset($part->ctype_secondary)) {
-                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Guessing extension for inline attachment [primary_type %s secondary_type %s]", $part->ctype_primary, $part->ctype_secondary));
-                                    if (isset(BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary])) {
-                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - primary_type %s secondary_type %s", $part->ctype_primary, $part->ctype_secondary));
-                                        $attachment->displayname = "inline_".$i.".".BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary];
+                                $attachment->displayname = $attname;
+                                $attachment->filereference = $folderid . ":" . $id . ":" . $i;
+                                $attachment->method = 1; //Normal attachment
+                                $attachment->contentid = isset($part->headers['content-id']) ? str_replace("<", "", str_replace(">", "", $part->headers['content-id'])) : "";
+                                if (isset($part->disposition) && $part->disposition == "inline") {
+                                    $attachment->isinline = 1;
+                                    // We try to fix the name for the inline file.
+                                    // FIXME: This is a dirty hack as the used in the Zarafa backend, if you have a better method let me know!
+                                    if (isset($part->ctype_primary) && isset($part->ctype_secondary)) {
+                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Guessing extension for inline attachment [primary_type %s secondary_type %s]", $part->ctype_primary, $part->ctype_secondary));
+                                        if (isset(BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary])) {
+                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - primary_type %s secondary_type %s", $part->ctype_primary, $part->ctype_secondary));
+                                            $attachment->displayname = "inline_".$i.".".BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary];
+                                        }
+                                        else {
+                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in /etc/mime.types'!!"));
+                                        }
                                     }
                                     else {
-                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in /etc/mime.types'!!"));
+                                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no primary_type or secondary_type"));
                                     }
                                 }
                                 else {
-                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no primary_type or secondary_type"));
+                                    $attachment->isinline = 0;
                                 }
+
+                                array_push($output->asattachments, $attachment);
                             }
-                            else {
-                                $attachment->isinline = 0;
+                            else { //ASV_2.5
+                                if (!isset($output->attachments) || !is_array($output->attachments))
+                                    $output->attachments = array();
+
+                                $attachment = new SyncAttachment();
+
+                                $attachment->attsize = isset($part->d_parameters['size']) ? $part->d_parameters['size'] : isset($part->body) ? strlen($part->body) : 0;
+
+                                $attachment->displayname = $attname;
+                                $attachment->attname = $folderid . ":" . $id . ":" . $i;
+                                $attachment->attmethod = 1;
+                                $attachment->attoid = isset($part->headers['content-id']) ? str_replace("<", "", str_replace(">", "", $part->headers['content-id'])) : "";
+
+                                array_push($output->attachments, $attachment);
                             }
-
-                            array_push($output->asattachments, $attachment);
+                            /* END fmbiete's contribution r1528, ZP-320 */
                         }
-                        else { //ASV_2.5
-                            if (!isset($output->attachments) || !is_array($output->attachments))
-                                $output->attachments = array();
-
-                            $attachment = new SyncAttachment();
-
-                            $attachment->attsize = isset($part->d_parameters['size']) ? $part->d_parameters['size'] : isset($part->body) ? strlen($part->body) : 0;
-
-                            $attachment->displayname = $attname;
-                            $attachment->attname = $folderid . ":" . $id . ":" . $i;
-                            $attachment->attmethod = 1;
-                            $attachment->attoid = isset($part->headers['content-id']) ? str_replace("<", "", str_replace(">", "", $part->headers['content-id'])) : "";
-
-                            array_push($output->attachments, $attachment);
-                        }
-                        /* END fmbiete's contribution r1528, ZP-320 */
                     }
                 }
             }
@@ -2558,6 +2565,141 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         return $out;
+    }
+
+
+    /**
+     * Converts a text/calendar part into SyncMeetingRequest
+     *
+     * @params $part    MIME part
+     * @params $output  SyncMail object
+     *
+     * @access private
+     */
+    private function parseMeetingCalendar($part, &$output) {
+        $ical = new iCalComponent();
+        $ical->ParseFrom($part->body);
+
+        if (isset($part->ctype_parameters["method"])) {
+            switch (strtolower($part->ctype_parameters["method"])) {
+                case "cancel":
+                    $output->messageclass = "IPM.Schedule.Meeting.Canceled";
+                    break;
+                case "counter":
+                    $output->messageclass = "IPM.Schedule.Meeting.Resp.Tent";
+                    break;
+                case "reply":
+                    $props = $ical->GetPropertiesByPath('!VTIMEZONE/ATTENDEE');
+                    if (count($props) == 1) {
+                        if (isset($props[0]->Parameters()["PARTSTAT"])) {
+                            switch (strtolower($props[0]->Parameters()["PARTSTAT"])) {
+                                case "accepted":
+                                    $output->messageclass = "IPM.Schedule.Meeting.Resp.Pos";
+                                    break;
+                                case "needs-action":
+                                case "tentative":
+                                    $output->messageclass = "IPM.Schedule.Meeting.Resp.Tent";
+                                    break;
+                                case "declined":
+                                    $output->messageclass = "IPM.Schedule.Meeting.Resp.Neg";
+                                    break;
+                                default:
+                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - Unknown reply status %s", strtolower($props[0]->Parameters()["PARTSTAT"])));
+                                    $output->messageclass = "IPM.Appointment";
+                                    break;
+                            }
+                        }
+                        else {
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - No reply status found"));
+                            $output->messageclass = "IPM.Appointment";
+                        }
+                    }
+                    else {
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - There are not attendees"));
+                        $output->messageclass = "IPM.Appointment";
+                    }
+                    break;
+                case "request":
+                    $output->messageclass = "IPM.Schedule.Meeting.Request";
+                    break;
+                default:
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - Unknown method %s", strtolower($part->headers["method"])));
+                    $output->messageclass = "IPM.Appointment";
+                    break;
+            }
+        }
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - No method header"));
+            $output->messageclass = "IPM.Appointment";
+        }
+
+        $props = $ical->GetPropertiesByPath('VEVENT/DTSTAMP');
+        if (count($props) == 1) {
+            $output->meetingrequest->dtstamp = Utils::MakeUTCDate($props[0]->Value());
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/UID');
+        if (count($props) == 1) {
+            $output->meetingrequest->globalobjid = $props[0]->Value();
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/DTSTART');
+        if (count($props) == 1) {
+            $output->meetingrequest->starttime = Utils::MakeUTCDate($props[0]->Value());
+            if (strlen($props[0]->Value()) == 8) {
+                $output->meetingrequest->alldayevent = 1;
+            }
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/DTEND');
+        if (count($props) == 1) {
+            $output->meetingrequest->endtime = Utils::MakeUTCDate($props[0]->Value());
+            if (strlen($props[0]->Value()) == 8) {
+                $output->meetingrequest->alldayevent = 1;
+            }
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/ORGANIZER');
+        if (count($props) == 1) {
+            $output->meetingrequest->organizer = str_ireplace("MAILTO:", "", $props[0]->Value());
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/LOCATION');
+        if (count($props) == 1) {
+            $output->meetingrequest->location = $props[0]->Value();
+        }
+        $props = $ical->GetPropertiesByPath('VEVENT/CLASS');
+        if (count($props) == 1) {
+            switch ($props[0]->Value()) {
+                case "PUBLIC":
+                    $output->meetingrequest->sensitivity = "0";
+                    break;
+                case "PRIVATE":
+                    $output->meetingrequest->sensitivity = "2";
+                    break;
+                case "CONFIDENTIAL":
+                    $output->meetingrequest->sensitivity = "3";
+                    break;
+                default:
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - No sensitivity class. Using 2"));
+                    $output->meetingrequest->sensitivity = "2";
+                    break;
+            }
+        }
+
+        // Get $tz from first timezone
+        $props = $ical->GetPropertiesByPath("VTIMEZONE/TZID");
+        if (count($props) > 0) {
+            $tzname = $props[0]->Value();
+            $tz = TimezoneUtil::GetFullTZFromTZName($tzname);
+        }
+        else {
+            $tz = TimezoneUtil::GetFullTZ();
+        }
+        $output->meetingrequest->timezone = base64_encode(TimezoneUtil::getSyncBlobFromTZ($tz));
+
+        // Fixed values
+        $output->meetingrequest->instancetype = 0;
+        $output->meetingrequest->responserequested = 1;
+        $output->meetingrequest->busystatus = 2;
+
+        // TODO: reminder
+        $output->meetingrequest->reminder = "";
     }
 
 

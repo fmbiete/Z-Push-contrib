@@ -1100,11 +1100,23 @@ class TimezoneUtil {
         ZLog::Write(LOGLEVEL_DEBUG, "TimezoneUtil::GetFullTZ() for ". $phptimezone);
 
         $servertzname = self::guessTZNameFromPHPName($phptimezone);
-        $offset = self::$tzonesoffsets[$servertzname];
+        return self::GetFullTZFromTZName($servertzname);
+    }
+
+    /**
+     * Returns a full timezone array
+     *
+     * @param string   $tzname     a TZID value
+     *
+     * @access public
+     * @return array
+     */
+    static public function GetFullTZFromTZName($tzname) {
+        $offset = self::$tzonesoffsets[$tzname];
 
         $tz = array(
             "bias" => $offset[0],
-            "tzname" => self::encodeTZName(self::getMSTZnameFromTZName($servertzname)),
+            "tzname" => self::encodeTZName(self::getMSTZnameFromTZName($tzname)),
             "dstendyear" => $offset[3],
             "dstendmonth" => $offset[4],
             "dstendday" => $offset[6],
@@ -1114,7 +1126,7 @@ class TimezoneUtil {
             "dstendsecond" => $offset[9],
             "dstendmillis" => $offset[10],
             "stdbias" => $offset[1],
-            "tznamedst" => self::encodeTZName(self::getMSTZnameFromTZName($servertzname)),
+            "tznamedst" => self::encodeTZName(self::getMSTZnameFromTZName($tzname)),
             "dststartyear" => $offset[11],
             "dststartmonth" => $offset[12],
             "dststartday" => $offset[14],
@@ -1266,7 +1278,7 @@ class TimezoneUtil {
      * @access private
      * @return string
      */
-    static public function getSyncBlobFromTZ($tz) {
+    static public function GetSyncBlobFromTZ($tz) {
         // set the correct TZ name (done using the Bias)
         if (!isset($tz["tzname"]) || !$tz["tzname"] || !isset($tz["tznamedst"]) || !$tz["tznamedst"])
             $tz = TimezoneUtil::FillTZNames($tz);

@@ -231,7 +231,7 @@ class MAPIProvider {
             // set server default timezone (correct timezone should be configured!)
             $tz = TimezoneUtil::GetFullTZ();
         }
-        $message->timezone = base64_encode(TimezoneUtil::getSyncBlobFromTZ($tz));
+        $message->timezone = base64_encode(TimezoneUtil::GetSyncBlobFromTZ($tz));
 
         if(isset($messageprops[$appointmentprops["isrecurring"]]) && $messageprops[$appointmentprops["isrecurring"]]) {
             // Process recurrence
@@ -544,7 +544,7 @@ class MAPIProvider {
             else
                 $tz = $this->getGMTTZ();
 
-            $message->meetingrequest->timezone = base64_encode(TimezoneUtil::getSyncBlobFromTZ($tz));
+            $message->meetingrequest->timezone = base64_encode(TimezoneUtil::GetSyncBlobFromTZ($tz));
 
             // send basedate if exception
             if(isset($props[$meetingrequestproperties["recReplTime"]]) ||

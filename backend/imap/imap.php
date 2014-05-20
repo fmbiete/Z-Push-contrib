@@ -1312,9 +1312,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         break;
                 }
                 // truncate body, if requested
-                if(strlen($output->asbody->data) > $truncsize) {
+                // TODO: Never truncate MIME messages, because I don't know how to truncate it correctly
+                if($bpReturnType !== SYNC_BODYPREFERENCE_MIME && strlen($output->asbody->data) > $truncsize) {
                     $output->asbody->data = Utils::Utf8_truncate($output->asbody->data, $truncsize);
                     $output->asbody->truncated = 1;
+                }
+                else {
+                    $output->asbody->truncated = 0;
                 }
 
                 $output->asbody->type = $bpReturnType;
@@ -1324,9 +1328,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $bpo = $contentparameters->BodyPreference($output->asbody->type);
                 if (Request::GetProtocolVersion() >= 14.0 && $bpo->GetPreview()) {
                     $output->asbody->preview = Utils::Utf8_truncate(Utils::ConvertHtmlToText($plainBody), $bpo->GetPreview());
-                }
-                else {
-                    $output->asbody->truncated = 0;
                 }
             }
             /* END fmbiete's contribution r1528, ZP-320 */

@@ -337,73 +337,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline)
             ZLog::Write(LOGLEVEL_WBXML, sprintf("Body: %s", $bodyline));
 
-        //http://pear.php.net/manual/en/package.mail.mail.factory.php
-        $sendingMethod = 'mail';
-        if (defined('IMAP_SMTP_METHOD')) {
-            $sendingMethod = IMAP_SMTP_METHOD;
-            if ($sendingMethod == 'smtp') {
-                if (isset($imap_smtp_params['username']) && $imap_smtp_params['username'] == 'imap_username') {
-                    $imap_smtp_params['username'] = $this->username;
-                }
-                if (isset($imap_smtp_params['password']) && $imap_smtp_params['password'] == 'imap_password') {
-                    $imap_smtp_params['password'] = $this->password;
-                }
-            }
-        }
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): SendingMail with %s", $sendingMethod));
-        $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
-        $send = $mail->send($toaddr, $finalHeaders, $finalBody);
-
-        if ($send !== true) {
-            throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
-        }
+        $send = $this->sendMessage($fromaddr, $toaddr, $finalHeaders, $finalBody);
 
         if (isset($sm->saveinsent)) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): saving message in Sent Items folder"));
-
-            $headers = "";
-            foreach ($finalHeaders as $k => $v) {
-                if (strlen($headers) > 0) {
-                    $headers .= "\n";
-                }
-                $headers .= "$k: $v";
-            }
-
-            $saved = false;
-            if ($this->sentID) {
-                $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
-            }
-            else if (IMAP_SENTFOLDER) {
-                // try to open the sentfolder
-                if (!$this->imap_reopen_folder(IMAP_SENTFOLDER, false)) {
-                    // if we cannot open it, it mustn't exist, we try to create it.
-                    $this->imap_create_folder($this->server . IMAP_SENTFOLDER);
-                }
-                $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
-            }
-            // No Sent folder set, try defaults
-            else {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): No Sent mailbox set");
-                if($this->addSentMessage("INBOX.Sent", $headers, $finalBody)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'INBOX.Sent'");
-                    $saved = true;
-                }
-                else if ($this->addSentMessage("Sent", $headers, $finalBody)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Outgoing mail saved in 'Sent'");
-                    $saved = true;
-                }
-                else if ($this->addSentMessage("Sent Items", $headers, $finalBody)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail():IMAP-SendMail: Outgoing mail saved in 'Sent Items'");
-                    $saved = true;
-                }
-            }
-
-            unset($headers);
-
-            if (!$saved) {
-                ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->SendMail(): The email could not be saved to Sent Items folder. Check your configuration.");
-            }
+            $this->saveSentMessage($finalHeaders, $finalBody);
         }
         else {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
@@ -1845,16 +1782,97 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @throws StatusException
      */
     public function MeetingResponse($requestid, $folderid, $response) {
-        throw new StatusException(sprintf("BackendDiff->MeetingResponse('%s','%s','%s'): Error, this functionality is not supported by the diff backend", $requestid, $folderid, $response), SYNC_MEETRESPSTATUS_MAILBOXERROR);
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse('%s','%s','%s')", $requestid, $folderid, $response));
 
-//         $requestid -> messageID
-//         $response 1 -> acept, 2 -> tentative, 3 -> decline, 1 -> default
-        // Get message
-        // get calendar part
-        // change method METHOD:REQUEST to METHOD:REPLY
-        //ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=fmbiete@renr.es:MAILTO:fmbiete@renr.es
-        // change ATTENDEE > PARTSTAT=NEEDS-ACTION to [PARTSTAT=DECLINED, PARTSTAT=TENTATIVE, PARTSTAT=ACCEPTED]
-        // ATTENDEE;CN=fmbiete@renr.es;PARTSTAT=TENTATIVE;ROLE=REQ-PARTICIPANT:mailto:fmbiete@renr.es
+        $folderImapid = $this->getImapIdFromFolderId($folderid);
+        $this->imap_reopen_folder($folderImapid);
+        $mail = @imap_fetchheader($this->mbox, $requestid, FT_UID) . @imap_body($this->mbox, $requestid, FT_PEEK | FT_UID);
+
+        if (empty($mail)) {
+            throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, message not found, maybe was moved"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+        }
+
+        $mobj = new Mail_mimeDecode($mail);
+        unset($mail);
+        $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+        unset($mobj);
+
+        $Mail_RFC822 = new Mail_RFC822();
+        $from_header = $this->getDefaultFromValue();
+        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($from_header));
+        $to_header = "";
+        if (isset($message->headers["from"])) {
+            $to_header = $message->headers["from"];
+        }
+        else {
+            if (isset($message->headers["return-path"])) {
+                $to_header = $message->headers["return-path"];
+            }
+            else {
+                throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, no reply address"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+            }
+        }
+        $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($to_header));
+        if (isset($message->headers["subject"])) {
+            $subject_header = $message->headers["subject"];
+        }
+        else {
+            $subject_header = "";
+        }
+
+        $body_part = null;
+        if(isset($message->parts)) {
+            $mparts = $message->parts;
+            for ($i=0; $i < count($mparts); $i++) {
+                $part = $mparts[$i];
+                //recursively add parts
+                if ((isset($part->ctype_primary) && $part->ctype_primary == "multipart") && (isset($part->ctype_secondary) && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related"))) {
+                    foreach($part->parts as $spart)
+                        $mparts[] = $spart;
+                    continue;
+                }
+
+                if (isset($part->ctype_primary) && $part->ctype_primary == "text" && isset($part->ctype_secondary) && $part->ctype_secondary == "calendar") {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - text/calendar part found, trying to reply"));
+                    $body_part = $this->replyMeetingCalendar($part, $response);
+                }
+            }
+            unset($mparts);
+        }
+        unset($message);
+
+        if ($body_part === null) {
+            throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, no calendar part modified"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+        }
+
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - Creating response message"));
+        $mail = new Mail_mimepart();
+        $headers = array("MIME-version" => "1.0",
+                "From" => $mail->encodeHeader("from", $from_header, "UTF-8"),
+                "To" => $mail->encodeHeader("to", $to_header, "UTF-8"),
+                "Date" => gmdate("D, d M Y H:i:s", time())." GMT",
+                "Subject" => $mail->encodeHeader("subject", $subject_header, "UTF-8"),
+                "Content-class" => "urn:content-classes:calendarmessage",
+                "Content-transfer-encoding" => "8BIT");
+        unset($mail);
+        $mail = new Mail_mimepart($body_part, array("content_type" => "text/calendar; method=REPLY; charset=UTF-8", "headers" => $headers));
+
+        $encoded_mail = $mail->encode();
+        unset($mail);
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - Response message"));
+        foreach ($encoded_mail["headers"] as $k => $v) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("%s: %s", $k, $v));
+        }
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("%s", $encoded_mail["body"]));
+
+        $send = $this->sendMessage($fromaddr, $toaddr, $encoded_mail["headers"], $encoded_mail["body"]);
+
+        if ($send) {
+            $this->saveSentMessage($encoded_mail["headers"], $encoded_mail["body"]);
+        }
+        unset($encoded_mail);
+
+        return $send;
     }
 
 
@@ -2595,12 +2613,43 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
-     * Converts a text/calendar part into SyncMeetingRequest
-     *
-     * @params $part    MIME part
-     * @params $output  SyncMail object
+     * Modify a text/calendar part to transform it in a reply
      *
      * @access private
+     * @param $part             MIME part
+     * @param $response         Response numeric value
+     * @return string MIME text/calendar
+     */
+    private function replyMeetingCalendar($part, $response) {
+        $response_text = "ACCEPTED"; // 1 or default is ACCEPTED
+        switch ($response) {
+            case 1:
+                $response_text = "ACCEPTED";
+                break;
+            case 2:
+                $response_text = "TENTATIVE";
+                break;
+            case 3:
+                $response_text = "DECLINED";
+                break;
+        }
+
+        $ical = new iCalComponent();
+        $ical->ParseFrom($part->body);
+
+        $ical->SetPValue("METHOD", "REPLY");
+        $ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", $response_text);
+
+        return $ical->Render();
+    }
+
+
+    /**
+     * Converts a text/calendar part into SyncMeetingRequest
+     *
+     * @access private
+     * @param $part    MIME part
+     * @param $output  SyncMail object
      */
     private function parseMeetingCalendar($part, &$output) {
         $ical = new iCalComponent();
@@ -2726,6 +2775,101 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         // TODO: reminder
         $output->meetingrequest->reminder = "";
+    }
+
+
+    /**
+     * Sends a message
+     *
+     * @access private
+     * @param $fromaddr     From address
+     * @param $toaddr       To address
+     * @param $headers      Headers array
+     * @param $body         Body array
+     * @return boolean      True if sent
+     * @throws StatusException
+     */
+    private function sendMessage($fromaddr, $toaddr, $headers, $body) {
+        $sendingMethod = 'mail';
+        if (defined('IMAP_SMTP_METHOD')) {
+            $sendingMethod = IMAP_SMTP_METHOD;
+            if ($sendingMethod == 'smtp') {
+                if (isset($imap_smtp_params['username']) && $imap_smtp_params['username'] == 'imap_username') {
+                    $imap_smtp_params['username'] = $this->username;
+                }
+                if (isset($imap_smtp_params['password']) && $imap_smtp_params['password'] == 'imap_password') {
+                    $imap_smtp_params['password'] = $this->password;
+                }
+            }
+        }
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): SendingMail with %s", $sendingMethod));
+        $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
+        $send = $mail->send($toaddr, $headers, $body);
+
+        if ($send !== true) {
+            throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
+        }
+
+        return $send;
+    }
+
+
+    /**
+     * Saves a copy of a message in the Sent folder
+     *
+     * @access public
+     * @param $finalHeaders     Array of headers
+     * @param $finalBody        Body part
+     * @return boolean          If the message is saved
+     */
+    private function saveSentMessage($finalHeaders, $finalBody) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): saving message in Sent Items folder"));
+
+        $headers = "";
+        foreach ($finalHeaders as $k => $v) {
+            if (strlen($headers) > 0) {
+                $headers .= "\n";
+            }
+            $headers .= "$k: $v";
+        }
+
+        $saved = false;
+        if ($this->sentID) {
+            $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
+        }
+        else if (IMAP_SENTFOLDER) {
+            // try to open the sentfolder
+            if (!$this->imap_reopen_folder(IMAP_SENTFOLDER, false)) {
+                // if we cannot open it, it mustn't exist, we try to create it.
+                $this->imap_create_folder($this->server . IMAP_SENTFOLDER);
+            }
+            $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
+        }
+        // No Sent folder set, try defaults
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): No Sent mailbox set");
+            if($this->addSentMessage("INBOX.Sent", $headers, $finalBody)) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'INBOX.Sent'");
+                $saved = true;
+            }
+            else if ($this->addSentMessage("Sent", $headers, $finalBody)) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent'");
+                $saved = true;
+            }
+            else if ($this->addSentMessage("Sent Items", $headers, $finalBody)) {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent Items'");
+                $saved = true;
+            }
+        }
+
+        unset($headers);
+
+        if (!$saved) {
+            ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->saveSentMessage(): The email could not be saved to Sent Items folder. Check your configuration.");
+        }
+
+        return $saved;
     }
 
 

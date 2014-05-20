@@ -1833,6 +1833,31 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
+     * Processes a response to a meeting request.
+     *
+     * @param string        $requestid      id of the object containing the request
+     * @param string        $folderid       id of the parent folder of $requestid
+     * @param string        $response
+     *
+     * @access public
+     * @return string       id of the created/updated calendar obj
+     * @throws StatusException
+     */
+    public function MeetingResponse($requestid, $folderid, $response) {
+        throw new StatusException(sprintf("BackendDiff->MeetingResponse('%s','%s','%s'): Error, this functionality is not supported by the diff backend", $requestid, $folderid, $response), SYNC_MEETRESPSTATUS_MAILBOXERROR);
+
+//         $requestid -> messageID
+//         $response 1 -> acept, 2 -> tentative, 3 -> decline, 1 -> default
+        // Get message
+        // get calendar part
+        // change method METHOD:REQUEST to METHOD:REPLY
+        //ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=fmbiete@renr.es:MAILTO:fmbiete@renr.es
+        // change ATTENDEE > PARTSTAT=NEEDS-ACTION to [PARTSTAT=DECLINED, PARTSTAT=TENTATIVE, PARTSTAT=ACCEPTED]
+        // ATTENDEE;CN=fmbiete@renr.es;PARTSTAT=TENTATIVE;ROLE=REQ-PARTICIPANT:mailto:fmbiete@renr.es
+    }
+
+
+    /**
      * Returns the BackendIMAP as it implements the ISearchProvider interface
      * This could be overwritten by the global configuration
      *

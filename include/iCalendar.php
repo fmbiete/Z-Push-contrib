@@ -122,7 +122,7 @@ class iCalProp {
     $this->rendered = (strlen($propstring) < 72 ? $propstring : null);  // Only pre-rendered if we didn't unescape it
 
     $unescaped = preg_replace( '{\\\\[nN]}', "\n", $propstring);
- 
+
     // Split into two parts on : which is not preceded by a \
     list( $start, $values) = preg_split( '{(?<!\\\\):}', $unescaped, 2);
     $this->content = preg_replace( "/\\\\([,;:\"\\\\])/", '$1', $values);
@@ -201,7 +201,7 @@ class iCalProp {
    */
   function TextMatch( $search ) {
     if ( isset($this->content) ) {
-      return (stristr( $this->content, $search ) !== false);      
+      return (stristr( $this->content, $search ) !== false);
     }
     return false;
   }
@@ -540,6 +540,44 @@ class iCalComponent {
       if ( $v->Name() == $type ) return $v->Value();
     }
     return null;
+  }
+
+
+  /**
+  * Set the value of all properties matching the name.
+  *
+  * @param string $type The type/name of property we are after
+  * @param string $value The value of the property
+  */
+  function SetPValue( $type, $value )  {
+    for ( $i = 0; $i < count($this->properties); $i++ ) {
+      if ( $this->properties[$i]->Name() == $type ) {
+        if ( isset($this->rendered) ) unset($this->rendered);
+        $this->properties[$i]->Value($value);
+      }
+    }
+  }
+
+
+  /**
+  * Set the value of all the parameters matching the name. Component -> Property -> Parameter
+  *
+  * @param string $component_type Type of the component
+  * @param string $property_name Type/Name of the property
+  * @param string $parameter_name Type/Name of the parameter
+  * @param string $value New value of the parameter
+  */
+  function SetCPParameterValue( $component_type, $property_name, $parameter_name, $value ) {
+    for ( $j = 0; $j < count($this->components); $j++ ) {
+      if ( $this->components[$j]->GetType() == $component_type ) {
+        for ( $i = 0; $i < count($this->components[$j]->properties); $i++ ) {
+          if ( $this->components[$j]->properties[$i]->Name() == $property_name ) {
+            if ( isset($this->components[$j]->rendered) ) unset($this->components[$j]->rendered);
+            $this->components[$j]->properties[$i]->SetParameterValue($parameter_name, $value);
+          }
+        }
+      }
+    }
   }
 
 
@@ -1617,7 +1655,7 @@ class iCalendar {  // DEPRECATED
               }
             }
             else {
-              $match = (stristr( $value, $search ) !== false);      
+              $match = (stristr( $value, $search ) !== false);
             }
             $negate = $v->GetAttribute("negate-condition");
             if ( isset($negate) && strtolower($negate) == "yes" ) $match = !$match;

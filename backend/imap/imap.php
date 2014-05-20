@@ -2602,8 +2602,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 if(count($parts) == 1)
                     continue;
                 $type = array_shift($parts);
-                foreach($parts as $part)
-                    $out[$type] = $part;
+                foreach($parts as $part) {
+                    if (!isset($out[$type])) {
+                        $out[$type] = $part;
+                    }
+                }
             }
             fclose($file);
         }

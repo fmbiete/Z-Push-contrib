@@ -13,8 +13,11 @@ function SystemExtensionMimeTypes() {
             if(count($parts) == 1)
                 continue;
             $type = array_shift($parts);
-            foreach($parts as $part)
-                $out[$type] = $part;
+            foreach($parts as $part) {
+                if (!isset($out[$type])) {
+                    $out[$type] = $part;
+                }
+            }
         }
         fclose($file);
     }
@@ -26,6 +29,7 @@ $list = SystemExtensionMimeTypes();
 //print_r($list);
 
 $mime_type = 'image/png';
+$mime_type = 'image/jpeg';
 if (isset($list[$mime_type])) {
     echo "Found $list[$mime_type]\n";
 }

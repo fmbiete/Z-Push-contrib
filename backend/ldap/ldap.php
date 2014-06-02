@@ -191,6 +191,7 @@ class BackendLDAP extends BackendDiff {
             switch ($name) {
                 //person
                 case "cn":
+                case "fileAs":
                     $contact->fileas = $value;
                     break;
                 case "sn":
@@ -205,6 +206,9 @@ class BackendLDAP extends BackendDiff {
                     break;
                 case "homePhone":
                     $contact->homephonenumber = $value;
+                    if ($values[$name]["count"] >= 2) {
+                        $contact->home2phonenumber = $values[$name][1];
+                    }
                     break;
                 case "jpegPhoto":
                     $contact->picture = base64_encode($value);
@@ -231,6 +235,7 @@ class BackendLDAP extends BackendDiff {
                     $contact->pagernumber = $value;
                     break;
                 case "secretary":
+                case "assistantName":
                     $contact->assistantname = $value;
                     break;
                 //organizationalPerson
@@ -240,7 +245,7 @@ class BackendLDAP extends BackendDiff {
                 case "ou":
                     $contact->department = $value;
                     break;
-                case "physicalDeliveryOfficeName":
+                case "physicalDeliveryOfficeName": //TODO: quitar este
                     $contact->officelocation = $value;
                     break;
                 case "postalCode":
@@ -262,9 +267,40 @@ class BackendLDAP extends BackendDiff {
                     $contact->title = $value;
                     break;
                 case "description":
+                case "note":
                     $contact->body = $value;
                     $contact->bodysize = strlen($value);
                     $contact->bodytruncated = "0";
+                    break;
+                case "assistantPhone":
+                    $contact->assistnamephonenumber = $value;
+                    break;
+                case "birthDate":
+                    $contact->birthday = $value;
+                    break;
+                case "anniversary":
+                    $contact->anniversary = $value;
+                    break;
+                case "businessRole":
+                    $contact->jobtitle = $value;
+                    break;
+                case "carPhone":
+                    $contact->carphonenumber = $value;
+                    break;
+                case "facsimileTelephoneNumber":
+                    $contact->businessfaxnumber = $value;
+                    break;
+                case "homeFacsimileTelephoneNumber":
+                    $contact->homefaxnumber = $value;
+                    break;
+                case "spouseName":
+                    $contact->spouse = $value;
+                    break;
+                case "managerName":
+                    $contact->managername = $value;
+                    break;
+                case "radio":
+                    $contact->radiophonenumber = $value;
                     break;
             }
         }
@@ -307,6 +343,12 @@ class BackendLDAP extends BackendDiff {
                     $entry_id = ldap_first_entry($this->ldap_link, $result_id);
                     if ($entry_id) {
                         $dn = ldap_get_dn($this->ldap_link, $entry_id);
+
+                        // We cannot ldap_modify objectClass, but we can use ldap_mod_replace
+                        $ldap_classes = array();
+                        $ldap_classes['objectclass'] = Array("top", "person", "inetOrgPerson", "organizationalPerson", "evolutionPerson");
+                        $mode = ldap_mod_replace($this->ldap_link, $dn, $ldap_classes);
+
                         $mod = ldap_modify($this->ldap_link, $dn, $ldap_attributes);
                         if (!$mod) {
                             return false;
@@ -335,10 +377,12 @@ class BackendLDAP extends BackendDiff {
     private function _GenerateLDAPArray($message) {
         $ldap = array();
         //Set the Object Class
-        $ldap["objectClass"] = "inetOrgPerson";
+        $ldap["objectClass"] = Array("top", "person", "inetOrgPerson", "organizationalPerson", "evolutionPerson");
+
         //Parse Data
         if ($message->fileas) {
             $ldap["cn"] = $message->fileas;
+            $ldap["fileAs"] = $message->fileas;
         }
         if ($message->lastname) {
             $ldap["sn"] = $message->lastname;
@@ -350,7 +394,10 @@ class BackendLDAP extends BackendDiff {
             $ldap["givenName"] = $message->firstname;
         }
         if ($message->homephonenumber) {
-            $ldap["homePhone"] = $message->homephonenumber;
+            $ldap["homePhone"][0] = $message->homephonenumber;
+        }
+        if ($message->home2phonenumber) {
+            $ldap["homePhone"][1] = $message->home2phonenumber;
         }
         if ($message->picture) {
             $ldap["jpegPhoto"] = base64_decode($message->picture);
@@ -378,6 +425,7 @@ class BackendLDAP extends BackendDiff {
         }
         if ($message->assistantname) {
             $ldap["secretary"] = $message->assistantname;
+            $ldap["assistantName"] = $message->assistantname;
         }
         if ($message->businesscity) {
             $ldap["l"] = $message->businesscity;
@@ -409,6 +457,37 @@ class BackendLDAP extends BackendDiff {
         if ($message->body) {
             $ldap["description"] = $message->body;
         }
+        if ($message->assistnamephonenumber) {
+            $ldap["assistantPhone"] = $message->assistnamephonenumber;
+        }
+        if ($message->birthday) {
+            $ldap["birthDate"] = $message->birthday;
+        }
+        if ($message->anniversary) {
+            $ldap["anniversary"] = $message->anniversary;
+        }
+        if ($message->jobtitle) {
+            $ldap["businessRole"] = $message->jobtitle;
+        }
+        if ($message->carphonenumber) {
+            $ldap["carPhone"] = $message->carphonenumber;
+        }
+        if ($message->businessfaxnumber) {
+            $ldap["facsimileTelephoneNumber"] = $message->businessfaxnumber;
+        }
+        if ($message->homefaxnumber) {
+            $ldap["homeFacsimileTelephoneNumber"] = $message->homefaxnumber;
+        }
+        if ($message->spouse) {
+            $ldap["spouseName"] = $message->spouse;
+        }
+        if ($message->managername) {
+            $ldap["managerName"] = $message->managername;
+        }
+        if ($message->radiophonenumber) {
+            $ldap["radio"] = $message->radiophonenumber;
+        }
+
         return $ldap;
     }
 

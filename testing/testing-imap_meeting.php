@@ -8,6 +8,13 @@ $ical = new iCalComponent();
 $ical->ParseFrom($body);
 
 
+$props = $ical->GetPropertiesByPath('!VTIMEZONE/ATTENDEE');
+if (count($props) == 1) {
+    if (isset($props[0]->Parameters()["PARTSTAT"])) {
+        printf("DOES THIS CAUSE ERROR? %s\n", $props[0]->Parameters()["PARTSTAT"]);
+    }
+}
+
 // MODIFICATIONS
     // METHOD
 $ical->SetPValue("METHOD", "REPLY");

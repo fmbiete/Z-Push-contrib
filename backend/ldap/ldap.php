@@ -245,7 +245,7 @@ class BackendLDAP extends BackendDiff {
                 case "ou":
                     $contact->department = $value;
                     break;
-                case "physicalDeliveryOfficeName": //TODO: quitar este
+                case "physicalDeliveryOfficeName":
                     $contact->officelocation = $value;
                     break;
                 case "postalCode":

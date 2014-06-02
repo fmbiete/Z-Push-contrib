@@ -76,7 +76,7 @@ define('IMAP_FROM_SQL_DSN', '');
 define('IMAP_FROM_SQL_USER', '');
 define('IMAP_FROM_SQL_PASSWORD', '');
 define('IMAP_FROM_SQL_OPTIONS', serialize(array(PDO::ATTR_PERSISTENT => true)));
-define('IMAP_FROM_SQL_QUERY', 'select first_name, last_name, mail_address from users where mail_address = "#username@#domain"');
+define('IMAP_FROM_SQL_QUERY', "select first_name, last_name, mail_address from users where mail_address = '#username@#domain'");
 define('IMAP_FROM_SQL_FIELDS', serialize(array('first_name', 'last_name', 'mail_address')));
 define('IMAP_FROM_SQL_FROM', '#first_name #last_name <#mail_address>');
 

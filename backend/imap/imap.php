@@ -182,8 +182,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @throws StatusException
      */
     public function SendMail($sm) {
-        global $imap_smtp_params;
-
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): RFC822: %d bytes  forward-id: '%s' reply-id: '%s' parent-id: '%s' SaveInSent: '%s' ReplaceMIME: '%s'",
                                             strlen($sm->mime),
                                             Utils::PrintAsString($sm->forwardflag ? (isset($sm->source->itemid) ? $sm->source->itemid : "error no itemid") : false),
@@ -2793,6 +2791,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @throws StatusException
      */
     private function sendMessage($fromaddr, $toaddr, $headers, $body) {
+        global $imap_smtp_params;
+        
         $sendingMethod = 'mail';
         if (defined('IMAP_SMTP_METHOD')) {
             $sendingMethod = IMAP_SMTP_METHOD;

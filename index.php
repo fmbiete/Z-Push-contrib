@@ -152,9 +152,6 @@ include_once('version.php');
         if(Request::IsMethodPOST() && (Request::GetCommandCode() === false || !Request::GetDeviceID() || !Request::GetDeviceType()))
             throw new FatalException("Requested the Z-Push URL without the required GET parameters");
 
-        // Load the backend
-        $backend = ZPush::GetBackend();
-
         // always request the authorization header
         if (! Request::AuthenticationInfo() || !Request::GetGETUser())
             throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
@@ -221,7 +218,7 @@ include_once('version.php');
         print $data;
 
         // destruct backend after all data is on the stream
-        $backend->Logoff();
+        ZPush::GetBackend()->Logoff();
     }
 
     catch (NoPostRequestException $nopostex) {

@@ -638,16 +638,27 @@ class BackendCalDAV extends BackendDiff {
                     }
                     break;
 
+                // SYNC_POOMCAL_MEETINGSTATUS
+                // Meetingstatus values
+                //  0 = is not a meeting
+                //  1 = is a meeting
+                //  3 = Meeting received
+                //  5 = Meeting is canceled
+                //  7 = Meeting is canceled and received
+                //  9 = as 1
+                // 11 = as 3
+                // 13 = as 5
+                // 15 = as 7
                 case "STATUS":
                     switch ($property->Value()) {
                         case "TENTATIVE":
-                            $message->meetingstatus = "1";
+                            $message->meetingstatus = "3"; // was 1
                             break;
                         case "CONFIRMED":
-                            $message->meetingstatus = "3";
+                            $message->meetingstatus = "1"; // was 3
                             break;
                         case "CANCELLED":
-                            $message->meetingstatus = "5";
+                            $message->meetingstatus = "5"; // could also be 7
                             break;
                     }
                     break;

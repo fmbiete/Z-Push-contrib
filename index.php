@@ -327,4 +327,4 @@ include_once('version.php');
         ZPush::GetDeviceManager()->Save();
 
     // end gracefully
-    ZLog::Write(LOGLEVEL_DEBUG, '-------- End');
+    ZLog::Write(LOGLEVEL_DEBUG, '-------- End - max mem: '.memory_get_peak_usage(false).'/'.memory_get_peak_usage(true) .' - time: '.(time()-$_SERVER["REQUEST_TIME"]).' - code: '.http_response_code());

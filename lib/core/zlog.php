@@ -111,7 +111,10 @@ class ZLog {
         $data = self::buildLogString($loglevel) . $message . "\n";
 
         if ($loglevel <= LOGLEVEL) {
-            @file_put_contents(LOGFILE, $data, FILE_APPEND);
+            if(@file_put_contents(LOGFILE, $data, FILE_APPEND) === false) {
+                error_log("Unable to write in ".LOGFILE);
+                error_log($data);
+            }
         }
 
         // should we write this into the user log?
@@ -123,11 +126,17 @@ class ZLog {
             if (self::logToUserFile()) {
                 // something was logged before the user was authenticated, write this to the log
                 if (!empty(self::$unAuthCache)) {
-                    @file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", implode('', self::$unAuthCache), FILE_APPEND);
+                    if(@file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", implode('', self::$unAuthCache), FILE_APPEND) === false) {
+                        error_log("Unable to write in ".LOGFILEDIR . self::logToUserFile() . ".log");
+                        error_log($data);
+                    }
                     self::$unAuthCache = array();
                 }
                 // only use plain old a-z characters for the generic log file
-                @file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", $data, FILE_APPEND);
+                if(@file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", $data, FILE_APPEND) === false) {
+                    error_log("Unable to write in ".LOGFILEDIR . self::logToUserFile() . ".log");
+                    error_log($data);
+                }
             }
             // the user is not authenticated yet, we save the log into memory for now
             else {
@@ -136,7 +145,10 @@ class ZLog {
         }
 
         if (($loglevel & LOGLEVEL_FATAL) || ($loglevel & LOGLEVEL_ERROR)) {
-            @file_put_contents(LOGERRORFILE, $data, FILE_APPEND);
+            if(@file_put_contents(LOGERRORFILE, $data, FILE_APPEND) === false) {
+                error_log("Unable to write in ".LOGERRORFILE);
+                error_log($data);
+            }
         }
 
         if ($loglevel & LOGLEVEL_WBXMLSTACK) {

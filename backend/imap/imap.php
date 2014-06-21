@@ -2667,8 +2667,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 case "reply":
                     $props = $ical->GetPropertiesByPath('!VTIMEZONE/ATTENDEE');
                     if (count($props) == 1) {
-                        if (isset($props[0]->Parameters()["PARTSTAT"])) {
-                            switch (strtolower($props[0]->Parameters()["PARTSTAT"])) {
+                        $props_params = $props[0]->Parameters();
+                        if (isset($props_params["PARTSTAT"])) {
+                            switch (strtolower($props_params["PARTSTAT"])) {
                                 case "accepted":
                                     $output->messageclass = "IPM.Schedule.Meeting.Resp.Pos";
                                     break;
@@ -2680,7 +2681,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                     $output->messageclass = "IPM.Schedule.Meeting.Resp.Neg";
                                     break;
                                 default:
-                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - Unknown reply status %s", strtolower($props[0]->Parameters()["PARTSTAT"])));
+                                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parseMeetingCalendar() - Unknown reply status %s", strtolower($props_params["PARTSTAT"])));
                                     $output->messageclass = "IPM.Appointment";
                                     break;
                             }
@@ -2792,7 +2793,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function sendMessage($fromaddr, $toaddr, $headers, $body) {
         global $imap_smtp_params;
-        
+
         $sendingMethod = 'mail';
         if (defined('IMAP_SMTP_METHOD')) {
             $sendingMethod = IMAP_SMTP_METHOD;

@@ -164,6 +164,8 @@ class BackendLDAP extends BackendDiff {
 
     public function GetMessage($folderid, $id, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->GetMessage('%s','%s')", $folderid, $id));
+
+        $truncsize = Utils::GetTruncSize($contentparameters->GetTruncation());
         $base_dns = explode("|", LDAP_BASE_DNS);
         foreach ($base_dns as $base_dn) {
             $folder = explode(":", $base_dn);
@@ -173,14 +175,14 @@ class BackendLDAP extends BackendDiff {
                 if ($result_id) {
                     $entry_id = ldap_first_entry($this->ldap_link, $result_id);
                     if ($entry_id) {
-                        return $this->_ParseLDAPMessage($result_id, $entry_id);
+                        return $this->_ParseLDAPMessage($result_id, $entry_id, $truncsize);
                     }
                 }
             }
         }
     }
 
-    private function _ParseLDAPMessage($result_id, $entry_id) {
+    private function _ParseLDAPMessage($result_id, $entry_id, $truncsize = -1) {
         $contact = new SyncContact();
 
         $values = ldap_get_attributes($this->ldap_link, $entry_id);
@@ -268,9 +270,30 @@ class BackendLDAP extends BackendDiff {
                     break;
                 case "description":
                 case "note":
-                    $contact->body = $value;
-                    $contact->bodysize = strlen($value);
-                    $contact->bodytruncated = "0";
+                    if (Request::GetProtocolVersion() >= 12.0) {
+                        $contact->asbody = new SyncBaseBody();
+                        $contact->asbody->type = SYNC_BODYPREFERENCE_PLAIN;
+                        $contact->asbody->data = $value;
+                        if ($truncsize > 0 && $truncsize < strlen($contact->asbody->data)) {
+                            $contact->asbody->truncated = 1;
+                            $contact->asbody->data = Utils::Utf8_truncate($contact->asbody->data, $truncsize);
+                        }
+                        else {
+                            $contact->asbody->truncated = 0;
+                        }
+                        $contact->asbody->estimatedDataSize = strlen($contact->asbody->data);
+                    }
+                    else {
+                        $contact->body = $value;
+                        if ($truncsize > 0 && $truncsize < strlen($contact->body)) {
+                            $contact->bodytruncated = 1;
+                            $contact->body = Utils::Utf8_truncate($contact->body, $truncsize);
+                        }
+                        else {
+                            $contact->bodytruncated = 0;
+                        }
+                        $contact->bodysize = strlen($contact->body);
+                    }
                     break;
                 case "assistantPhone":
                     $contact->assistnamephonenumber = $value;
@@ -457,6 +480,9 @@ class BackendLDAP extends BackendDiff {
         if ($message->body) {
             $ldap["description"] = $message->body;
         }
+        if ($message->asbody) {
+            $ldap["description"] = $message->asbody->data;
+        }
         if ($message->assistnamephonenumber) {
             $ldap["assistantPhone"] = $message->assistnamephonenumber;
         }
@@ -543,6 +569,16 @@ class BackendLDAP extends BackendDiff {
             }
         }
         return false;
+    }
+
+    /**
+     * Indicates which AS version is supported by the backend.
+     *
+     * @access public
+     * @return string       AS version constant
+     */
+    public function GetSupportedASVersion() {
+        return ZPush::ASV_14;
     }
 }
 ?>

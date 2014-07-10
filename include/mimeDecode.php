@@ -736,15 +736,11 @@ class Mail_mimeDecode
                     break;
             }
 
-//             $input = str_replace($encoded, $this->_fromCharset($charset, $text), $input);
             $input = str_replace($encoded, \ForceUTF8\Encoding::toUTF8($text), $input);
         }
 
         if (!$encodedwords) {
             $input = \ForceUTF8\Encoding::toUTF8($input);
-//             if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-//                 $input = $this->_fromCharset($charset, $input);
-//             }
         }
 
         return $input;
@@ -765,27 +761,22 @@ class Mail_mimeDecode
     {
         switch (strtolower($encoding)) {
             case '7bit':
-//                 return $this->_fromCharset($charset, $input, $detectCharset);
                 return \ForceUTF8\Encoding::toUTF8($input);
                 break;
 
             case '8bit':
-//                 return $this->_fromCharset($charset, $input, $detectCharset);
                 return \ForceUTF8\Encoding::toUTF8($input);
                 break;
 
             case 'quoted-printable':
-//                 return $this->_fromCharset($charset, $this->_quotedPrintableDecode($input), $detectCharset);
                 return \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input));
                 break;
 
             case 'base64':
-//                 return $this->_fromCharset($charset, base64_decode($input), $detectCharset);
                 return \ForceUTF8\Encoding::toUTF8(base64_decode($input));
                 break;
 
             default:
-//                 return $this->_fromCharset($charset, $input, $detectCharset);
                 return \ForceUTF8\Encoding::toUTF8($input);
                 break;
         }
@@ -1044,31 +1035,6 @@ class Mail_mimeDecode
                   str_repeat($htab, $indent) . '</header>' . $crlf;
 
         return $return;
-    }
-
-    /**
-     * Z-Push helper to decode text
-     *
-     * @param  string  current charset of input
-     * @param  string  input
-     * @param  boolean We must to autodetect the real encoding used
-     * @return string  Encoded copy of input
-     * @access private
-     */
-    function _fromCharset($charset, $input, $detectCharset = true) {
-        if (($detectCharset == false || (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT == false)) && ($charset == '' || (strtolower($charset) == $this->_charset)))
-            return $input;
-
-        // all ISO-8859-1 are converted as if they were Windows-1252 - see Mantis #456
-        if (strtolower($charset) == 'iso-8859-1')
-            $charset = 'Windows-1252';
-
-        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-            return mb_convert_encoding($input, $this->_charset, $charset . "," . IMAP_MBCONVERT);
-        }
-        else {
-            return @iconv($charset, $this->_charset. "//TRANSLIT", $input);
-        }
     }
 
     /**

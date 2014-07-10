@@ -142,10 +142,4 @@ $imap_smtp_params = array();
 //   BUT, it doesn't with RFC 2822 and will break if using smp method
 define('MAIL_MIMEPART_CRLF', "\r\n");
 
-
-// convert messages content with mb_string functions
-// options: false -> Don't convert at all
-//          string -> Encoding preferences, example: "UTF-16, UTF-8, ISO-8859-15, ISO-8859-1, Windows-1252"
-define('IMAP_MBCONVERT', false);
-
 ?>

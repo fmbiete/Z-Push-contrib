@@ -9,7 +9,7 @@
  * @access private
  * @return void
  */
-private function add_extra_sub_parts(&$email, $parts) {
+function add_extra_sub_parts(&$email, $parts) {
     if (isset($parts)) {
         foreach ($parts as $part) {
             $new_part = null;

@@ -82,9 +82,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
 
-        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-            if (!function_exists("mb_convert_encoding"))
-                throw new FatalException("BackendIMAP(): php-mbstring module is not installed", 0, null, LOGLEVEL_FATAL);
+        if (!function_exists("mb_convert_encoding")) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP(): php-mbstring module is not installed, you should install it to better encoding conversions"));
         }
     }
 
@@ -110,11 +109,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
-
-        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-            if (!function_exists("mb_convert_encoding"))
-                throw new FatalException("BackendIMAP(): php-mbstring module is not installed", 0, null, LOGLEVEL_FATAL);
-        }
 
         /* BEGIN fmbiete's contribution r1527, ZP-319 */
         $this->excludedFolders = array();
@@ -1143,7 +1137,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+                        // TODO: if not SMIME
+                        if (true) {
                             $finalEmail = new Mail_mimePart(isset($message->body) ? $message->body : "", array('headers' => $message->headers));
                             if (isset($message->parts)) {
                                 foreach ($message->parts as $part) {
@@ -1271,14 +1266,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $output->bodytruncated = 0;
                 /* BEGIN fmbiete's contribution r1528, ZP-320 */
                 if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
-                    if (strlen($mail) > $truncsize) {
-                        $output->mimedata = Utils::Utf8_truncate($mail, $truncsize);
-                        $output->mimetruncated = 1;
-                    }
-                    else {
-                        $output->mimetruncated = 0;
-                        $output->mimedata = $mail;
-                    }
+                    // TODO: Never truncate MIME messages, because I don't know how to truncate it correctly
+                    $output->mimetruncated = 0;
+                    $output->mimedata = $mail;
                     $output->mimesize = strlen($output->mimedata);
                 }
                 else {

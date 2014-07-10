@@ -761,23 +761,23 @@ class Mail_mimeDecode
     {
         switch (strtolower($encoding)) {
             case '7bit':
-                return \ForceUTF8\Encoding::toUTF8($input);
+                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
                 break;
 
             case '8bit':
-                return \ForceUTF8\Encoding::toUTF8($input);
+                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
                 break;
 
             case 'quoted-printable':
-                return \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input));
+                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input)) : $this->_quotedPrintableDecode($input);
                 break;
 
             case 'base64':
-                return \ForceUTF8\Encoding::toUTF8(base64_decode($input));
+                return $detectCharset ? \ForceUTF8\Encoding::toUTF8(base64_decode($input)) : base64_decode($input);
                 break;
 
             default:
-                return \ForceUTF8\Encoding::toUTF8($input);
+                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
                 break;
         }
     }

@@ -24,8 +24,8 @@
  * - Redistributions in binary form must reproduce the above copyright
  *   notice, this list of conditions and the following disclaimer in the
  *   documentation and/or other materials provided with the distribution.
- * - Neither the name of the authors, nor the names of its contributors 
- *   may be used to endorse or promote products derived from this 
+ * - Neither the name of the authors, nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -59,7 +59,7 @@
  * removed PEAR dependency by implementing own raiseError()
  *
  * Reference implementation used:
- * http://download.pear.php.net/package/Mail_Mime-1.8.8.tgz
+ * http://download.pear.php.net/package/Mail_Mime-1.8.9.tgz
  *
  *
  */

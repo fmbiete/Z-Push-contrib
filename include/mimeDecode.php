@@ -736,13 +736,15 @@ class Mail_mimeDecode
                     break;
             }
 
-            $input = str_replace($encoded, $this->_fromCharset($charset, $text), $input);
+//             $input = str_replace($encoded, $this->_fromCharset($charset, $text), $input);
+            $input = str_replace($encoded, \ForceUTF8\Encoding::toUTF8($text), $input);
         }
 
         if (!$encodedwords) {
-            if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
-                $input = $this->_fromCharset($charset, $input);
-            }
+            $input = \ForceUTF8\Encoding::toUTF8($input);
+//             if (defined('IMAP_MBCONVERT') && IMAP_MBCONVERT !== false) {
+//                 $input = $this->_fromCharset($charset, $input);
+//             }
         }
 
         return $input;
@@ -763,23 +765,29 @@ class Mail_mimeDecode
     {
         switch (strtolower($encoding)) {
             case '7bit':
-                return $this->_fromCharset($charset, $input, $detectCharset);;
+//                 return $this->_fromCharset($charset, $input, $detectCharset);
+                return \ForceUTF8\Encoding::toUTF8($input);
                 break;
 
             case '8bit':
-                return $this->_fromCharset($charset, $input, $detectCharset);
+//                 return $this->_fromCharset($charset, $input, $detectCharset);
+                return \ForceUTF8\Encoding::toUTF8($input);
                 break;
 
             case 'quoted-printable':
-                return $this->_fromCharset($charset, $this->_quotedPrintableDecode($input), $detectCharset);
+//                 return $this->_fromCharset($charset, $this->_quotedPrintableDecode($input), $detectCharset);
+                return \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input));
                 break;
 
             case 'base64':
-                return $this->_fromCharset($charset, base64_decode($input), $detectCharset);
+//                 return $this->_fromCharset($charset, base64_decode($input), $detectCharset);
+                return \ForceUTF8\Encoding::toUTF8(base64_decode($input));
                 break;
 
             default:
-                return $this->_fromCharset($charset, $input, $detectCharset);
+//                 return $this->_fromCharset($charset, $input, $detectCharset);
+                return \ForceUTF8\Encoding::toUTF8($input);
+                break;
         }
     }
 

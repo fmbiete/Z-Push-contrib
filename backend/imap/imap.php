@@ -2223,7 +2223,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
             foreach($message->parts as $part) {
-                if(!isset($part->disposition) || strcasecmp($part->disposition,"attachment"))  {
+                // Check testing/samples/m1009.txt
+                // Content-Type: text/plain; charset=us-ascii; name="hareandtoroise.txt" Content-Transfer-Encoding: 7bit Content-Disposition: inline; filename="hareandtoroise.txt"
+                // We don't want to show that file text (outlook doesn't show it), so if we have content-disposition we don't apply recursivity
+                if(!isset($part->disposition))  {
                     $this->getBodyRecursive($part, $subtype, $body);
                 }
             }

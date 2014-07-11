@@ -1174,7 +1174,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             $mparts[] = $spart;
                         continue;
                     }
-                    if (isset($part->ctype_primary) && $part->ctype_primary == "text" && isset($part->ctype_secondary) && $part->ctype_secondary == "calendar") {
+                    if (is_calendar($part)) {
                         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - text/calendar part found, trying to convert"));
                         $output->meetingrequest = new SyncMeetingRequest();
                         $this->parseMeetingCalendar($part, $output);
@@ -1597,7 +1597,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     continue;
                 }
 
-                if (isset($part->ctype_primary) && $part->ctype_primary == "text" && isset($part->ctype_secondary) && $part->ctype_secondary == "calendar") {
+                if (is_calendar($part)) {
                     ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - text/calendar part found, trying to reply"));
                     $body_part = $this->replyMeetingCalendar($part, $response);
                 }

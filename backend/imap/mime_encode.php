@@ -251,3 +251,24 @@ function build_mime_message($message) {
 
     return $built_message;
 }
+
+/**
+ * Detect if the message is SMIME
+ * Content-Type: multipart/signed;
+ * Content-Type: application/pkcs7-mime;
+ *
+ * @param Mail_mimeDecode $message
+ * @return boolean
+ * @access public
+ */
+function is_smime($message) {
+    $res = false;
+
+    if (isset($message->ctype_primary) && isset($message->ctype_secondary)) {
+        if (($message->ctype_primary == "multipart" && $message->ctype_secondary == "signed") || ($message->ctype_primary == "application" && $message->ctype_secondary == "pkcs7-mime")) {
+            $res = true;
+        }
+    }
+
+    return $res;
+}

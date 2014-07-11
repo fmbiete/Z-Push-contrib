@@ -975,6 +975,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - getBodyPreferenceBestMatch: %d", $bpReturnType));
 
+            if (is_smime($message)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Message is SMIME, forcing to work with MIME"));
+                $bpReturnType = SYNC_BODYPREFERENCE_MIME;
+            }
+
             //Get body data
             Mail_mimeDecode::getBodyRecursive($message, "plain", $plainBody);
             Mail_mimeDecode::getBodyRecursive($message, "html", $htmlBody);
@@ -1001,13 +1006,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        // TODO: if not SMIME
-                        if (true) {
-                            $output->asbody->data = build_mime_message($message);
+                        if (is_mime($message)) {
+                            $output->asbody->data = $mail;
                         }
                         else {
-                            // WARNING: Message text could be showed as broken, if it's not UTF-8.
-                            $output->asbody->data = $mail;
+                            $output->asbody->data = build_mime_message($message);
                         }
                         break;
                     case SYNC_BODYPREFERENCE_RTF:
@@ -1015,8 +1018,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->asbody->data = base64_encode($plainBody);
                         break;
                 }
-                // truncate body, if requested
-                // TODO: Never truncate MIME messages, because I don't know how to truncate it correctly
+                // truncate body, if requested, but never truncate MIME messages
                 if($bpReturnType !== SYNC_BODYPREFERENCE_MIME && strlen($output->asbody->data) > $truncsize) {
                     $output->asbody->data = Utils::Utf8_truncate($output->asbody->data, $truncsize);
                     $output->asbody->truncated = 1;
@@ -1039,7 +1041,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $output->bodytruncated = 0;
                 /* BEGIN fmbiete's contribution r1528, ZP-320 */
                 if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
-                    // TODO: Never truncate MIME messages, because I don't know how to truncate it correctly
+                    // truncate body, if requested, but never truncate MIME messages
                     $output->mimetruncated = 0;
                     $output->mimedata = $mail;
                     $output->mimesize = strlen($output->mimedata);

@@ -1152,11 +1152,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 //AS 0 - low, 1 - normal, 2 - important
                 if ($mimeImportance > 3)
                     $output->importance = 0;
-                if ($mimeImportance == 3)
+                elseif ($mimeImportance == 3)
                     $output->importance = 1;
-                if ($mimeImportance < 3)
+                elseif ($mimeImportance < 3)
                     $output->importance = 2;
-            } else { /* fmbiete's contribution r1528, ZP-320 */
+            }
+            else { /* fmbiete's contribution r1528, ZP-320 */
                 $output->importance = 1;
             }
 

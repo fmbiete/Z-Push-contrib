@@ -359,11 +359,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function addTextParts(&$email, &$message, &$sourceMessage, $isReply = true) {
         $htmlBody = $plainBody = '';
-        $this->getBodyRecursive($message, "html", $htmlBody);
-        $this->getBodyRecursive($message, "plain", $plainBody);
+        Mail_mimeDecode::getBodyRecursive($message, "html", $htmlBody);
+        Mail_mimeDecode::getBodyRecursive($message, "plain", $plainBody);
         $htmlSource = $plainSource = '';
-        $this->getBodyRecursive($sourceMessage, "html", $htmlSource);
-        $this->getBodyRecursive($sourceMessage, "plain", $plainSource);
+        Mail_mimeDecode::getBodyRecursive($sourceMessage, "html", $htmlSource);
+        Mail_mimeDecode::getBodyRecursive($sourceMessage, "plain", $plainSource);
 
         $separator = '';
         if ($isReply) {
@@ -426,8 +426,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function addTextPartsMessage(&$email, &$message) {
         $htmlBody = $plainBody = '';
-        $this->getBodyRecursive($message, "html", $htmlBody);
-        $this->getBodyRecursive($message, "plain", $plainBody);
+        Mail_mimeDecode::getBodyRecursive($message, "html", $htmlBody);
+        Mail_mimeDecode::getBodyRecursive($message, "plain", $plainBody);
 
         $altEmail = new Mail_mimePart('', array('content_type' => 'multipart/alternative'));
 
@@ -976,8 +976,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - getBodyPreferenceBestMatch: %d", $bpReturnType));
 
             //Get body data
-            $this->getBodyRecursive($message, "plain", $plainBody);
-            $this->getBodyRecursive($message, "html", $htmlBody);
+            Mail_mimeDecode::getBodyRecursive($message, "plain", $plainBody);
+            Mail_mimeDecode::getBodyRecursive($message, "html", $htmlBody);
             if ($plainBody == "") {
                 $plainBody = Utils::ConvertHtmlToText($htmlBody);
             }
@@ -1967,34 +1967,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->convertImapId('%s') = %s", $imapid, $folderid));
 
         return $folderid;
-    }
-
-    /**
-     * Get all parts in the message with specified type and concatenate them together, unless the
-     * Content-Disposition is 'attachment', in which case the text is apparently an attachment
-     *
-     * @param string        $message        mimedecode message(part)
-     * @param string        $message        message subtype
-     * @param string        &$body          body reference
-     *
-     * @access protected
-     * @return
-     */
-    protected function getBodyRecursive($message, $subtype, &$body) {
-        if(!isset($message->ctype_primary)) return;
-        if(strcasecmp($message->ctype_primary,"text")==0 && strcasecmp($message->ctype_secondary,$subtype)==0 && isset($message->body))
-            $body .= $message->body;
-
-        if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
-            foreach($message->parts as $part) {
-                // Check testing/samples/m1009.txt
-                // Content-Type: text/plain; charset=us-ascii; name="hareandtoroise.txt" Content-Transfer-Encoding: 7bit Content-Disposition: inline; filename="hareandtoroise.txt"
-                // We don't want to show that file text (outlook doesn't show it), so if we have content-disposition we don't apply recursivity
-                if(!isset($part->disposition))  {
-                    $this->getBodyRecursive($part, $subtype, $body);
-                }
-            }
-        }
     }
 
     /**

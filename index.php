@@ -133,15 +133,18 @@ include_once('version.php');
         Request::Initialize();
         ZLog::Initialize();
 
+        $autenticationInfo = Request::AuthenticationInfo();
+        $GETUser = Request::GetGETUser();
+
         ZLog::Write(LOGLEVEL_DEBUG,"-------- Start");
         ZLog::Write(LOGLEVEL_INFO,
                     sprintf("Version='%s' method='%s' from='%s' cmd='%s' getUser='%s' devId='%s' devType='%s'",
                                     @constant('ZPUSH_VERSION'), Request::GetMethod(), Request::GetRemoteAddr(),
-                                    Request::GetCommand(), Request::GetGETUser(), Request::GetDeviceID(), Request::GetDeviceType()));
+                                    Request::GetCommand(), $GETUser, Request::GetDeviceID(), Request::GetDeviceType()));
 
         // Stop here if this is an OPTIONS request
         if (Request::IsMethodOPTIONS()) {
-            if (!Request::AuthenticationInfo() || !Request::GetGETUser()) {
+            if (!$autenticationInfo || !$GETUser) {
                 throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
             }
             else {
@@ -163,7 +166,7 @@ include_once('version.php');
         if (defined('PRE_AUTHORIZE_USERS') && PRE_AUTHORIZE_USERS === true) {
             if (!Request::IsMethodGET()) {
                 // Check if User/Device are authorized
-                if (ZPush::GetDeviceManager()->GetUserDevicePermission(Request::GetGETUser(), Request::GetDeviceID()) != SYNC_COMMONSTATUS_SUCCESS) {
+                if (ZPush::GetDeviceManager()->GetUserDevicePermission($GETUser, Request::GetDeviceID()) != SYNC_COMMONSTATUS_SUCCESS) {
                     throw new AuthenticationRequiredException("Access denied. Username and Device not authorized");
                 }
             }
@@ -173,7 +176,7 @@ include_once('version.php');
         $backend = ZPush::GetBackend();
 
         // always request the authorization header
-        if (! Request::AuthenticationInfo() || !Request::GetGETUser())
+        if (!$autenticationInfo || !$GETUser)
             throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
 
         // check the provisioning information

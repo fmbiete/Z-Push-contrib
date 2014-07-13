@@ -31,38 +31,38 @@ You can find some configuration guidelines in the Wiki https://github.com/fmbiet
 
 Requisites
 ==========
-PHP 5.5 (5.3 should also work, 5.4 it's fine, but 5.5 is better)
-NGINX or APACHE
-PHP-FPM or MOD_PHP
+- PHP 5.5 (5.3 should also work, 5.4 it's fine, but 5.5 is better)
+- NGINX or APACHE
+- PHP-FPM or MOD_PHP
 
 Configuration
 =============
 
 NGINX, 1.4 at least or you will need to enable chunkin mode (Use google for Apache configuration)
 
-server {
-    listen 443;
-    server_name zpush.domain.com;
+    server {
+        listen 443;
+        server_name zpush.domain.com;
 
-    ssl on;
-    ssl_certificate         /etc/ssl/certs/zpush.pem;
-    ssl_certificate_key     /etc/ssl/private/zpush.key;
+        ssl on;
+        ssl_certificate         /etc/ssl/certs/zpush.pem;
+        ssl_certificate_key     /etc/ssl/private/zpush.key;
 
-    root    /usr/share/www/z-push-contrib;
-    index   index.php;
+        root    /usr/share/www/z-push-contrib;
+        index   index.php;
 
-    error_log /var/log/nginx/zpush-error.log;
-    access_log /var/log/nginx/zpush-access.log;
+        error_log /var/log/nginx/zpush-error.log;
+        access_log /var/log/nginx/zpush-access.log;
 
-    location / {
+        location / {
             try_files $uri $uri/ index.php;
-    }
+        }
 
-    location /Microsoft-Server-ActiveSync {
+        location /Microsoft-Server-ActiveSync {
             rewrite ^(.*)$  /index.php last;
-    }
+        }
 
-    location ~ .php$ {
+        location ~ .php$ {
             include /etc/nginx/fastcgi_params;
             fastcgi_index index.php;
             fastcgi_param HTTPS on;
@@ -70,14 +70,15 @@ server {
             fastcgi_pass unix:/var/run/php5-fpm.sock;
             # Z-Push Ping command will be alive for 470s, but be safe
             fastcgi_read_timeout 630;
+        }
     }
-}
 
 PHP-FPM
-max_execution_time=600
-short_open_tag=On
 
-And configure enough php-fpm processes, you will need 1.5 x number users
+    max_execution_time=600
+    short_open_tag=On
+
+And configure enough php-fpm processes, as a rough estimation you will need 1.5 x number users.
 
 
 Backends

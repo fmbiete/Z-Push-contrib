@@ -887,7 +887,7 @@ class Mail_mimeDecode
      * @return void
      * @access public
      */
-    function getBodyRecursive($message, $subtype, &$body) {
+    static function getBodyRecursive($message, $subtype, &$body) {
         if(!isset($message->ctype_primary)) return;
         if(strcasecmp($message->ctype_primary,"text")==0 && strcasecmp($message->ctype_secondary,$subtype)==0 && isset($message->body))
             $body .= $message->body;

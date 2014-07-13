@@ -53,6 +53,7 @@ require_once('include/ForceUTF8/Encoding.php');
 include_once('include/mimeDecode.php');
 include_once('include/mimePart.php');
 include_once('include/z_RFC822.php');
+include_once('include/iCalendar.php');
 
 
 class BackendIMAP extends BackendDiff implements ISearchProvider {

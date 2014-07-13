@@ -1011,7 +1011,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        if (is_mime($message)) {
+                        if (is_smime($message)) {
                             $output->asbody->data = $mail;
                         }
                         else {

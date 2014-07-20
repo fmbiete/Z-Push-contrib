@@ -40,7 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 namespace ForceUTF8;
 
 class Encoding {
-    
+
   protected static $win1252ToUtf8 = array(
         128 => "\xe2\x82\xac",
 
@@ -75,10 +75,10 @@ class Encoding {
         158 => "\xc5\xbe",
         159 => "\xc5\xb8"
   );
-  
+
     protected static $brokenUtf8ToUtf8 = array(
         "\xc2\x80" => "\xe2\x82\xac",
-        
+
         "\xc2\x82" => "\xe2\x80\x9a",
         "\xc2\x83" => "\xc6\x92",
         "\xc2\x84" => "\xe2\x80\x9e",
@@ -90,10 +90,10 @@ class Encoding {
         "\xc2\x8a" => "\xc5\xa0",
         "\xc2\x8b" => "\xe2\x80\xb9",
         "\xc2\x8c" => "\xc5\x92",
-        
+
         "\xc2\x8e" => "\xc5\xbd",
-        
-        
+
+
         "\xc2\x91" => "\xe2\x80\x98",
         "\xc2\x92" => "\xe2\x80\x99",
         "\xc2\x93" => "\xe2\x80\x9c",
@@ -106,14 +106,14 @@ class Encoding {
         "\xc2\x9a" => "\xc5\xa1",
         "\xc2\x9b" => "\xe2\x80\xba",
         "\xc2\x9c" => "\xc5\x93",
-        
+
         "\xc2\x9e" => "\xc5\xbe",
         "\xc2\x9f" => "\xc5\xb8"
   );
-    
+
   protected static $utf8ToWin1252 = array(
        "\xe2\x82\xac" => "\x80",
-       
+
        "\xe2\x80\x9a" => "\x82",
        "\xc6\x92"     => "\x83",
        "\xe2\x80\x9e" => "\x84",
@@ -125,10 +125,10 @@ class Encoding {
        "\xc5\xa0"     => "\x8a",
        "\xe2\x80\xb9" => "\x8b",
        "\xc5\x92"     => "\x8c",
-       
+
        "\xc5\xbd"     => "\x8e",
-       
-       
+
+
        "\xe2\x80\x98" => "\x91",
        "\xe2\x80\x99" => "\x92",
        "\xe2\x80\x9c" => "\x93",
@@ -141,7 +141,7 @@ class Encoding {
        "\xc5\xa1"     => "\x9a",
        "\xe2\x80\xba" => "\x9b",
        "\xc5\x93"     => "\x9c",
-       
+
        "\xc5\xbe"     => "\x9e",
        "\xc5\xb8"     => "\x9f"
     );
@@ -151,7 +151,7 @@ class Encoding {
    * Function Encoding::toUTF8
    *
    * This function leaves UTF8 characters alone, while converting almost all non-UTF8 to UTF8.
-   * 
+   *
    * It assumes that the encoding of the original string is either Windows-1252 or ISO 8859-1.
    *
    * It may fail to convert characters to UTF-8 if they fall into one of these scenarios:
@@ -160,7 +160,7 @@ class Encoding {
    *    are followed by any of these:  ("group B")
    *                                    ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶•¸¹º»¼½¾¿
    * For example:   %ABREPRESENT%C9%BB. «REPRESENTÉ»
-   * The "«" (%AB) character will be converted, but the "É" followed by "»" (%C9%BB) 
+   * The "«" (%AB) character will be converted, but the "É" followed by "»" (%C9%BB)
    * is also a valid unicode character, and will be left unchanged.
    *
    * 2) when any of these: àáâãäåæçèéêëìíîï  are followed by TWO chars from group B,
@@ -180,13 +180,13 @@ class Encoding {
       }
       return $text;
     } elseif(is_string($text)) {
-       
+
       if ( function_exists('mb_strlen') && ((int) ini_get('mbstring.func_overload')) & 2) {
          $max = mb_strlen($text,'8bit');
       } else {
          $max = strlen($text);
       }
-    
+
       $buf = "";
       for($i = 0; $i < $max; $i++){
           $c1 = $text{$i};
@@ -281,22 +281,22 @@ class Encoding {
     $text = self::toUTF8(utf8_decode(str_replace(array_keys(self::$utf8ToWin1252), array_values(self::$utf8ToWin1252), $text)));
     return $text;
   }
-  
+
   static function UTF8FixWin1252Chars($text){
-    // If you received an UTF-8 string that was converted from Windows-1252 as it was ISO8859-1 
+    // If you received an UTF-8 string that was converted from Windows-1252 as it was ISO8859-1
     // (ignoring Windows-1252 chars from 80 to 9F) use this function to fix it.
     // See: http://en.wikipedia.org/wiki/Windows-1252
-    
+
     return str_replace(array_keys(self::$brokenUtf8ToUtf8), array_values(self::$brokenUtf8ToUtf8), $text);
   }
-  
+
   static function removeBOM($str=""){
     if(substr($str, 0,3) == pack("CCC",0xef,0xbb,0xbf)) {
       $str=substr($str, 3);
     }
     return $str;
   }
-  
+
   public static function normalizeEncoding($encodingLabel)
   {
     $encoding = strtoupper($encodingLabel);
@@ -312,11 +312,11 @@ class Encoding {
         'WIN1252'  => 'ISO-8859-1',
         'WINDOWS1252' => 'ISO-8859-1'
     );
-    
+
     if(empty($equivalences[$encoding])){
       return 'UTF-8';
     }
-   
+
     return $equivalences[$encoding];
   }
 

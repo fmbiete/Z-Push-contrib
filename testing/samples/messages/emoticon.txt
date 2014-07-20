@@ -1,0 +1,28 @@
+Return-Path: <xxxx.xxxx@xxxx.xxx>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on xxxxx
+X-Spam-Level:
+X-Spam-Status: No, score=-1.0 required=5.0 tests=ALL_TRUSTED autolearn=ham
+        autolearn_force=no version=3.4.0
+Delivered-To: xxxx@xxxxxxxxxxxx
+Received: from localhost (xxxx.xxxxxxxxx.xx [127.0.0.1])
+        by xxxx.xxxxxxxxxxx.xx (Postfix) with ESMTP id D8AB65001D6
+        for <xxxxx@xxxxxxxx.xx>; Sun, 20 Jul 2014 15:30:58 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at xxxx.xxxxxxxxx.xx
+Received: from xxxx.xxxxxxxxx.xxx ([127.0.0.1])
+        by localhost (xxxx.xxxxxxxxxx.xx [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id vI3uJWoUh-Pz for <xxxx@xxxxxxxxx.xx>;
+        Sun, 20 Jul 2014 15:30:58 +0200 (CEST)
+Received-SPF: none (xxxx.xxx: No applicable sender policy available) receiver=xxxx.xxxxxxxxxx.xx; identity=mailfrom; envelope-from="xxxx.xxxxx@xxxx.xxxx"; helo=$
+From: xxxxxxxxxx <xxxx.xxxx@xxxx.xxx>
+Content-Type: text/plain;
+        charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+Mime-Version: 1.0 (1.0)
+Subject: Testing
+Message-Id: <BB54ADE1-199F-4920-863C-357EE09AE735@xxxx.xxx>
+Date: Sun, 20 Jul 2014 15:31:09 +0200
+To: xxxx xxxxx<xxxx@xxxxxxxx.xx>
+
+Testing emojis =F0=9F=98=84
+
+Sendt fra min iPad=

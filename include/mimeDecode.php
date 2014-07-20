@@ -769,7 +769,13 @@ class Mail_mimeDecode
                 break;
 
             case 'quoted-printable':
-                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input)) : $this->_quotedPrintableDecode($input);
+                if ($charset == $this->_charset) {
+                    // if we are told it's utf-8 and quoted-printable, we don't try to fix the encoding, there will be 4bytes chars
+                    return $this->_quotedPrintableDecode($input);
+                }
+                else {
+                    return $detectCharset ? \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input)) : $this->_quotedPrintableDecode($input);
+                }
                 break;
 
             case 'base64':

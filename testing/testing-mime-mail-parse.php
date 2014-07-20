@@ -21,23 +21,6 @@ if ($handle = opendir($dir)) {
     closedir($handle);
 }
 
-function getBodyRecursive($message, $subtype, &$body) {
-    if(!isset($message->ctype_primary)) return;
-    if(strcasecmp($message->ctype_primary,"text")==0 && strcasecmp($message->ctype_secondary,$subtype)==0 && isset($message->body))
-        $body .= $message->body;
-
-    if(strcasecmp($message->ctype_primary,"multipart")==0 && isset($message->parts) && is_array($message->parts)) {
-        foreach($message->parts as $part) {
-            // Content-Type: text/plain; charset=us-ascii; name="hareandtoroise.txt" Content-Transfer-Encoding: 7bit Content-Disposition: inline; filename="hareandtoroise.txt"
-            // We don't want to show that file, so if we have content-disposition not apply recursive
-            if(!isset($part->disposition))  {
-                getBodyRecursive($part, $subtype, $body);
-            }
-        }
-    }
-}
-
-
 function testMimeDecode($file, $new_file) {
     require_once('include/ForceUTF8/Encoding.php');
     require_once('include/mimeDecode.php');
@@ -56,8 +39,8 @@ function testMimeDecode($file, $new_file) {
     }
 
     $text = $html = "";
-    getBodyRecursive($message, "plain", $text);
-    getBodyRecursive($message, "html", $html);
+    Mail_mimeDecode::getBodyRecursive($message, "plain", $text);
+    Mail_mimeDecode::getBodyRecursive($message, "html", $html);
 
     printf("TEXT Body <%s>\n", $text);
 

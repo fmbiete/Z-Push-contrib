@@ -78,7 +78,6 @@ abstract class InterProcessData {
             self::$devid = Request::GetDeviceID();
             self::$pid = @getmypid();
             self::$user = Request::GetAuthUser();
-            ZLog::Write(LOGLEVEL_INFO, sprintf("%s(): user %s and Request:GetAuthUser %s.", get_class($this), self::$user, Request::GetAuthUser()));
             self::$start = time();
         }
         return true;

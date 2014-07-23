@@ -49,7 +49,6 @@ require_once("backend/imap/mime_encode.php");
 
 include_once('lib/default/diffbackend/diffbackend.php');
 include_once('include/Mail.php');
-require_once('include/ForceUTF8/Encoding.php');
 include_once('include/mimeDecode.php');
 include_once('include/mimePart.php');
 include_once('include/z_RFC822.php');

@@ -22,10 +22,15 @@ if ($handle = opendir($dir)) {
 }
 
 function testMimeDecode($file, $new_file) {
-    require_once('include/ForceUTF8/Encoding.php');
+    require_once('lib/utils/utils.php');
+    require_once('lib/core/zpushdefs.php');
+    require_once('lib/core/zlog.php');
     require_once('include/mimeDecode.php');
     require_once('include/mimePart.php');
     require_once('backend/imap/mime_encode.php');
+
+    define('LOGLEVEL', LOGLEVEL_DEBUG);
+    define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 
     printf("TEST MIME DECODE\n");
     $mobj = new Mail_mimeDecode(file_get_contents($file));

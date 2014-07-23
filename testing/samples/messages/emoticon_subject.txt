@@ -1,0 +1,20 @@
+Mime-Version: 1.0
+From: xxxx@xxxxxxx.xxx
+Subject: =?utf-8?B?8J+YhA==?=
+Message-id: EC08EA2B-1439-423D-AA69-843776D5C39C@xxxxxxxx.xx
+Date: Wed, 23 Jul 2014 19:50:36 +0200
+To: test2014@xxxxxxxxxxx.xx
+Content-Type: multipart/mixed; boundary="=_72ced2dca575896ff9586958e1bb6592"
+
+This is a multi-part message in MIME format.
+--=_72ced2dca575896ff9586958e1bb6592
+Content-Type: multipart/alternative; boundary="=_9818f474f7be6252ec285590ed281857"
+
+--=_9818f474f7be6252ec285590ed281857
+Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset=utf-8
+
+8J+Y4oCeDQoNClNlbmR0IGZyYSBtaW4gaVBob25l
+--=_9818f474f7be6252ec285590ed281857--
+
+--=_72ced2dca575896ff9586958e1bb6592--

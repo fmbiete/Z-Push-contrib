@@ -736,11 +736,11 @@ class Mail_mimeDecode
                     break;
             }
 
-            $input = str_replace($encoded, iconv(mb_detect_encoding($text, mb_detect_order(), true), $this->_charset, $text), $input);
+            $input = str_replace($encoded, $this->_autoconvert_encoding($text), $input);
         }
 
         if (!$encodedwords) {
-            $input = iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input);
+            $input = $this->_autoconvert_encoding($input);
         }
 
         return $input;
@@ -762,20 +762,55 @@ class Mail_mimeDecode
         switch (strtolower($encoding)) {
             case 'quoted-printable':
                 $input_decoded = $this->_quotedPrintableDecode($input);
-                return $detectCharset ? iconv(mb_detect_encoding($input_decoded, mb_detect_order(), true), $this->_charset, $input_decoded) : $input_decoded;
+                return $detectCharset ? $this->_autoconvert_encoding($input_decoded) : $input_decoded;
                 break;
 
             case 'base64':
                 $input_decoded = base64_decode($input);
-                return $detectCharset ? iconv(mb_detect_encoding($input_decoded, mb_detect_order(), true), $this->_charset, $input_decoded) : $input_decoded;
+                return $detectCharset ? $this->_autoconvert_encoding($input_decoded) : $input_decoded;
                 break;
 
             case '7bit':
             case '8bit':
             default:
-                return $detectCharset ? iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input) : $input;
+                return $detectCharset ? $this->_autoconvert_encoding($input) : $input;
                 break;
         }
+    }
+
+    /**
+     * Error handler dummy for _autoconvert_encoding
+     *
+     * @param integer $errno
+     * @param string $errstr
+     * @return boolean true
+     * @access public static
+     */
+    static function _iconv_notice_handler($errno, $errstr) {
+        return true;
+    }
+
+    /**
+     * Autoconvert the text from any encoding. THIS WILL NEVER WORK 100%.
+     * Will ignore the E_NOTICE for iconv when detecting ilegal charsets
+     *
+     * @param string $input Input string to convert
+     * @return string Converted string
+     * @access private
+     */
+    function _autoconvert_encoding($input) {
+        $input_converted = $input;
+
+        set_error_handler('Mail_mimeDecode::_iconv_notice_handler');
+        try {
+            $input_converted = iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input);
+        }
+        catch(Exception $ex) {
+            $this->raiseError($ex->getMessage());
+        }
+        restore_error_handler();
+
+        return $input_converted;
     }
 
     /**

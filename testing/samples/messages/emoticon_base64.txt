@@ -1,0 +1,39 @@
+Return-Path: xxxxxx@xxxxxxxx.xxx
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on mail.xxxxxxxxx.xx
+X-Spam-Level:
+X-Spam-Status: No, score=-1.0 required=5.0 tests=ALL_TRUSTED, HEADER_FROM_DIFFERENT_DOMAINS autolearn=unavailable autolearn_force=no version=3.4.0
+Delivered-To: xxxxxxx@xxxxxxxxxxx.xx
+Received: from localhost (xxxxx.xxxxxx.xx [127.0.0.1]) by xxxxx.xxxxxxxxxx.xx (Postfix) with ESMTP id 1982C500AD4; Fri, 11 Jul 2014 21:20:53 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at xxxxx.xxxxxxx.xx
+Received: from xxxxx.xxxxxxxxxx.xx ([127.0.0.1]) by localhost (xxxx.xxxxxxxx.xx [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id 2nP27OZ1CUzN; Fri, 11 Jul 2014 21:20:52 +0200 (CEST)
+Resent-From: xxxxx@xxxxxxx.xx
+DMARC-Filter: OpenDMARC Filter v1.2.0 xxxx.xxxxxx.xxx 9Dxxx7500A9D
+X-Virus-Scanned: Debian amavisd-new at xxxxx.xxxxxxxxxx.xx
+MIME-Version: 1.0
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=xxxxxxxx.xx; s=mail; t=1405106446; bh=ufc8aM3vMmQISb8aKXpA3Rk8t/+ce6kFhZUr1x6DwtU=; h=From:Subject:Date:To:From; b=uQb7eWfRZdkUF+didgfmgJTWW78GdyHJlEqhz+WFl2Ouqkt7iXZPwljR4OIoFvumK1IJqsXWRW74Py+Mq2CWkxeuML/9kTrWBXJDMichOqll666EgG8/DyyYH6RPIhje9ygILX85E4VO0zO1N4uh0Tc/D0Ow93hUWS51D1cX7gA=
+From: xxxxx@xxxxxxxx.xx
+Subject: Kontroll
+Message-ID: 28EF0B82-61D9-4BA3-B534-CE4FB6101D1A@xxxxxx.xxx
+Date: Fri, 11 Jul 2014 21:21:03 +0200
+To: stxxx xxxxx@xxxxxxxxx.xx
+Content-Type: multipart/mixed; boundary="=_83c3cde24966264fd2b3537156aaaba6"
+Received-SPF: Pass (xxxx.xxxxxxxx.loc: domain of xxxxxx@xxxxxx.xx designates xxx.xxx.x.xx as permitted sender) receiver=xxxx.xxxxxxxx.xxx; client-ip=xxx.xxx.x.xx; helo=xxxxx.xxxxxxx.xx;
+X-Auto-Response-Suppress: DR, OOF, AutoReply
+Resent-Message-Id: 20140711192053.1982C500AD4@xxxxxx.xxxxxx.xx
+Resent-Date: Fri, 11 Jul 2014 21:20:53 +0200 (CEST)
+
+--=_83c3cde24966264fd2b3537156aaaba6
+Content-Type: multipart/alternative; boundary="=_3eaa2d9769aa280737bc3e5268efb2ad"
+
+--=_3eaa2d9769aa280737bc3e5268efb2ad
+Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="utf-8"
+
+RGV0IGVyIHDDpSB0aWRlIGF0dCB2aSBwbGFubGVnZ2VyIHVuaWZvcm1zIGtvbnRyb2xsIA0KS3Zh
+ciBoZWxnIG5vZW4gc29tIGlra2plIGhhcg0KQWxsZSBtw6Uga3VubmUgZ2rDuHIgZW4gaW5uc2F0
+cyBldHRlciBmZXJpZW4gMiAgcGVycyB4IDQgaGVsZ2VyIHPDpSB0cm9yIGVnIG15ZSBhdiBwcm9i
+bGVtbWV0IGVyIHZla2tlDQpHb2Qgc29tbWVyIG9nIGZlcmllIPCfmI4NClZpYmVrZQ0KDQpTZW5k
+dCBmcmEgbWluIGlQaG9uZQ==
+--=_3eaa2d9769aa280737bc3e5268efb2ad--
+
+--=_83c3cde24966264fd2b3537156aaaba6--

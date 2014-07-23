@@ -29,8 +29,10 @@ function testMimeDecode($file, $new_file) {
     require_once('include/mimePart.php');
     require_once('backend/imap/mime_encode.php');
 
-    define('LOGLEVEL', LOGLEVEL_DEBUG);
-    define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
+    if (!defined('LOGLEVEL'))
+        define('LOGLEVEL', LOGLEVEL_DEBUG);
+    if (!defined('LOGUSERLEVEL'))
+        define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 
     printf("TEST MIME DECODE\n");
     $mobj = new Mail_mimeDecode(file_get_contents($file));
@@ -40,7 +42,14 @@ function testMimeDecode($file, $new_file) {
     fclose($handle);
 
     foreach ($message->headers as $k => $v) {
-        printf("Header <%s> <%s>\n", $k, $v);
+        if (is_array($v)) {
+            foreach ($v as $vk => $vv) {
+                printf("Header <%s> <%s> <%s>\n", $k, $vk, $vv);
+            }
+        }
+        else {
+            printf("Header <%s> <%s>\n", $k, $v);
+        }
     }
 
     $text = $html = "";

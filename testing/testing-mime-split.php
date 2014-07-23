@@ -1,6 +1,5 @@
 <?php
 
-require_once('include/ForceUTF8/Encoding.php');
 require_once('include/mimeDecode.php');
 
 $mailtext = file_get_contents("testing/samples/messages/smime001.txt");

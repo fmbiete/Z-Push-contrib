@@ -736,11 +736,11 @@ class Mail_mimeDecode
                     break;
             }
 
-            $input = str_replace($encoded, \ForceUTF8\Encoding::toUTF8($text), $input);
+            $input = str_replace($encoded, iconv(mb_detect_encoding($text, mb_detect_order(), true), $this->_charset, $text), $input);
         }
 
         if (!$encodedwords) {
-            $input = \ForceUTF8\Encoding::toUTF8($input);
+            $input = iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input);
         }
 
         return $input;
@@ -760,30 +760,20 @@ class Mail_mimeDecode
     function _decodeBody($input, $encoding = '7bit', $charset = '', $detectCharset =  true)
     {
         switch (strtolower($encoding)) {
-            case '7bit':
-                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
-                break;
-
-            case '8bit':
-                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
-                break;
-
             case 'quoted-printable':
-                if ($charset == $this->_charset) {
-                    // if we are told it's utf-8 and quoted-printable, we don't try to fix the encoding, there will be 4bytes chars
-                    return $this->_quotedPrintableDecode($input);
-                }
-                else {
-                    return $detectCharset ? \ForceUTF8\Encoding::toUTF8($this->_quotedPrintableDecode($input)) : $this->_quotedPrintableDecode($input);
-                }
+                $input_decoded = $this->_quotedPrintableDecode($input);
+                return $detectCharset ? iconv(mb_detect_encoding($input_decoded, mb_detect_order(), true), $this->_charset, $input_decoded) : $input_decoded;
                 break;
 
             case 'base64':
-                return $detectCharset ? \ForceUTF8\Encoding::toUTF8(base64_decode($input)) : base64_decode($input);
+                $input_decoded = base64_decode($input);
+                return $detectCharset ? iconv(mb_detect_encoding($input_decoded, mb_detect_order(), true), $this->_charset, $input_decoded) : $input_decoded;
                 break;
 
+            case '7bit':
+            case '8bit':
             default:
-                return $detectCharset ? \ForceUTF8\Encoding::toUTF8($input) : $input;
+                return $detectCharset ? iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input) : $input;
                 break;
         }
     }

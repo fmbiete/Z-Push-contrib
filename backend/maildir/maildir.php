@@ -58,7 +58,6 @@ require_once("backend/maildir/config.php");
 
 include_once('lib/default/diffbackend/diffbackend.php');
 
-require_once('include/ForceUTF8/Encoding.php');
 include_once('include/mimeDecode.php');
 require_once('include/z_RFC822.php');
 

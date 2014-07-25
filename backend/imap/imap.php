@@ -83,8 +83,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
 
-        if (!function_exists("mb_convert_encoding")) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP(): php-mbstring module is not installed, you should install it to better encoding conversions"));
+        if (!function_exists("mb_detect_order")) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP(): php-mbstring module is not installed, you should install it for better encoding conversions"));
         }
     }
 

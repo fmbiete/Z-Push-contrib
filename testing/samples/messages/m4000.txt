@@ -1,0 +1,629 @@
+Return-Path: <xxxxxx>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on xxxxxxx
+X-Spam-Level: 
+X-Spam-Status: No, score=0.1 required=5.0 tests=ALL_TRUSTED,HTML_MESSAGE,
+	MIME_HTML_ONLY autolearn=no autolearn_force=no version=3.4.0
+Delivered-To: xxxxx
+Received: from localhost (xxxxxxxx [127.0.0.1])
+	by xxxxxxxx (Postfix) with ESMTP id 128C9500AAB
+	for <xxxxxxxxxx>; Thu, 24 Jul 2014 14:39:01 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at xxxxxxxxxx
+Received: from xxxxxxx ([127.0.0.1])
+	by localhost (xxxxxxxxxxxxx [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Q0uBkN509meP for <xxxxxxxxxx>;
+	Thu, 24 Jul 2014 14:39:00 +0200 (CEST)
+Received: from xxxxxxxxx (xxxxxxxxxx [192.168.1.21])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(Client CN "xxxxxxxxxxxxx", Issuer "Go Daddy Secure Certificate Authority - G2" (verified OK))
+	by xxxxxxxxxxxxx (Postfix) with ESMTPS id B5372500AA0
+	for <xxxxxxxxxxxx>; Thu, 24 Jul 2014 14:39:00 +0200 (CEST)
+Received: from xxxxxxxxxxx ([192.168.1.21]) by post ([192.168.1.21])
+ with mapi id 14.03.0195.001; Thu, 24 Jul 2014 14:39:03 +0200
+From: xxxxxxxxxxx <xxxxxxxxxxxxx>
+To: xxxxxxxx <xxxxxxxxxxxxx>
+Subject: Fwd: test
+Thread-Topic: test
+Thread-Index: Ac+nKMy+QShsqrH0RSe5w7IViN06kAAE3Mrp
+Date: Thu, 24 Jul 2014 12:39:03 +0000
+Message-ID: <620D4BDC-9F59-4476-A07C-1AC7A065375E@xxxxxxxxxx>
+References: <35DB5704EA64874BACB0731D6103030C4EB26D@post>
+In-Reply-To: <35DB5704EA64874BACB0731D6103030C4EB26D@post>
+Accept-Language: nb-NO, en-US
+Content-Language: nb-NO
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+Content-Type: text/html; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html>
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Diso-8859-=
+1">
+</head>
+<body dir=3D"auto">
+<div><br>
+<br>
+Sendt fra min iPhone</div>
+<div><br>
+Videresendt melding:<br>
+<br>
+</div>
+<blockquote type=3D"cite">
+<div><b>Fra:</b> xxxxxxxxxxxx &lt;<a href=3D"mailto:xxxxxxxxxxx@xx=
+xxxxxxxx">xxxxxxx@xxxxxxxxxx</a>&gt;<br>
+<b>Dato:</b> 24. juli 2014 12:19:49 CEST<br>
+<b>Til:</b> xxxxxxxxxx &lt;<a href=3D"mailto:xxxxxxxxxxxxx">xxxx.=
+xxxxxxxxxxxxxx</a>&gt;<br>
+<b>Emne:</b> <b>test</b><br>
+<br>
+</div>
+</blockquote>
+<blockquote type=3D"cite">
+<div>
+<meta name=3D"Generator" content=3D"Microsoft Word 12 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0cm;
+	margin-bottom:.0001pt;
+	font-size:11.0pt;
+	font-family:"Calibri","sans-serif";}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:purple;
+	text-decoration:underline;}
+span.EpostStil17
+	{mso-style-type:personal-compose;
+	font-family:"Calibri","sans-serif";
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;}
+@page WordSection1
+	{size:612.0pt 792.0pt;
+	margin:70.85pt 70.85pt 70.85pt 70.85pt;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+<div class=3D"WordSection1">
+<table class=3D"MsoNormalTable" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0" width=3D"607" style=3D"width:455.1pt;margin-left:-.75pt;border-colla=
+pse:collapse">
+<tbody>
+<tr style=3D"height:18.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:14.0pt;font-family:&quot=
+;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxxxxxxxxx<o:p></o:p><=
+/span></b></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-size:10.0pt;font-family:&quot;Ar=
+ial&quot;,&quot;sans-serif&quot;">Tlf dagsenter: xxxxxxxx<o:p></o:p></span>=
+</p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,&quot;sans-serif&quot;;color:black">Rute 5243<o:p></o:p></span=
+></b></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">L=F8yve<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">L=F8yve<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:18.0pt">
+</td>
+</tr>
+<tr style=3D"height:15.75pt">
+<td width=3D"535" nowrap=3D"" colspan=3D"5" valign=3D"bottom" style=3D"widt=
+h:401.2pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:12.0pt;font-family:&quot=
+;Arial&quot;,&quot;sans-serif&quot;;color:red">Dere m=E5 gi beskjed til dag=
+senter hvis noen ikke vil bli med i dag<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+</td>
+</tr>
+<tr style=3D"height:15.75pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:12.0pt;font-family:&quot=
+;Arial&quot;,&quot;sans-serif&quot;">Fredag<o:p></o:p></span></b></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-family:&quot;Arial&quot;,&quo=
+t;sans-serif&quot;">Uke 30<o:p></o:p></span></b></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><span style=3D"color:black">Mrk<o:p></o:p></span></p=
+>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">08:15<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">14:30<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;;color:black">Telefon<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"435" nowrap=3D"" colspan=3D"3" valign=3D"bottom" style=3D"widt=
+h:326.45pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><b><span style=3D"color:black">Vi setter av ved dags=
+enteret mellom klokken 08:40 og 09:00<o:p></o:p></span></b></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+</tr>
+<tr style=3D"height:15.75pt">
+<td width=3D"338" nowrap=3D"" colspan=3D"2" valign=3D"bottom" style=3D"widt=
+h:253.25pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:12.0pt;font-family:&quot=
+;Arial&quot;,&quot;sans-serif&quot;;color:black">Kj=F8reliste for S=F8rsia/=
+ Krossen<o:p></o:p></span></b></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.75pt">
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx, leil 304<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;;color:black">rlt<o:p></o:p></span></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxx
+54139<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx 16<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxxx=
+54410<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;">xxxxxxxx<o:p></=
+o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;;color:black">rlt<o:p></o:p></span></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxxx
+54220<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;">5xxxxxx7<o:p></=
+o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxx
+50392<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx, inng. A<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxx=
+96170<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx. B<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-size:9.0pt;font-family:&quot;Ari=
+al&quot;,&quot;sans-serif&quot;;color:black">rl</span><span style=3D"font-f=
+amily:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">t. ring 5min f=
+=F8r<o:p></o:p></span></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxxx
+50976<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">R=E5dxxxxxx, leil 401<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxx
+57776<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"176" nowrap=3D"" valign=3D"bottom" style=3D"width:132.3pt;padd=
+ing:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">R=E5dhxxxxxxx28, leil 302<o:p></o:p></span></p>
+</td>
+<td width=3D"161" nowrap=3D"" valign=3D"bottom" style=3D"width:120.95pt;pad=
+ding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxx<o:p></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;;color:black">rlt<o:p></o:p></span></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"center" style=3D"text-align:center"><b><spa=
+n style=3D"font-size:10.0pt;font-family:&quot;Arial&quot;,&quot;sans-serif&=
+quot;;color:black">T-2267<o:p></o:p></span></b></p>
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal" align=3D"right" style=3D"text-align:right"><span sty=
+le=3D"font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;color:black">xxxx
+50894<o:p></o:p></span></p>
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"435" nowrap=3D"" colspan=3D"3" valign=3D"bottom" style=3D"widt=
+h:326.45pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">xxxxxxxxx m=E5 f=F8lges helt inn. Leilighetsn=
+r 304.<o:p></o:p></span></p>
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"338" nowrap=3D"" colspan=3D"2" valign=3D"bottom" style=3D"widt=
+h:253.25pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;;color:black">xxxxxxxxringes det til 5 min f=F8r<o:p=
+></o:p></span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+</tr>
+<tr style=3D"height:15.0pt">
+<td width=3D"338" nowrap=3D"" colspan=3D"2" valign=3D"bottom" style=3D"widt=
+h:253.25pt;padding:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Arial&quot;,&quot;s=
+ans-serif&quot;">Husk at vi kan xxxxx.<o:p></o:p>=
+</span></p>
+</td>
+<td width=3D"98" nowrap=3D"" valign=3D"bottom" style=3D"width:73.2pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"52" nowrap=3D"" valign=3D"bottom" style=3D"width:38.8pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"48" nowrap=3D"" valign=3D"bottom" style=3D"width:35.95pt;paddi=
+ng:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+<td width=3D"72" nowrap=3D"" valign=3D"bottom" style=3D"width:53.9pt;paddin=
+g:0cm 3.5pt 0cm 3.5pt;height:15.0pt">
+</td>
+</tr>
+</tbody>
+</table>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</div>
+</blockquote>
+</body>
+</html>

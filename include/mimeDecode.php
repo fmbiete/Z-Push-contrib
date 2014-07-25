@@ -762,18 +762,18 @@ class Mail_mimeDecode
         switch (strtolower($encoding)) {
             case 'quoted-printable':
                 $input_decoded = $this->_quotedPrintableDecode($input);
-                return $detectCharset ? $this->_autoconvert_encoding($input_decoded) : $input_decoded;
+                return $detectCharset ? $this->_autoconvert_encoding($input_decoded, $charset) : $input_decoded;
                 break;
 
             case 'base64':
                 $input_decoded = base64_decode($input);
-                return $detectCharset ? $this->_autoconvert_encoding($input_decoded) : $input_decoded;
+                return $detectCharset ? $this->_autoconvert_encoding($input_decoded, $charset) : $input_decoded;
                 break;
 
             case '7bit':
             case '8bit':
             default:
-                return $detectCharset ? $this->_autoconvert_encoding($input) : $input;
+                return $detectCharset ? $this->_autoconvert_encoding($input, $charset) : $input;
                 break;
         }
     }
@@ -795,20 +795,29 @@ class Mail_mimeDecode
      * Will ignore the E_NOTICE for iconv when detecting ilegal charsets
      *
      * @param string $input Input string to convert
+     * @param string $supposed_encoding Encoding that the text is possibly using
      * @return string Converted string
      * @access private
      */
-    function _autoconvert_encoding($input) {
+    function _autoconvert_encoding($input, $supposed_encoding = "UTF-8") {
         $input_converted = $input;
 
-        set_error_handler('Mail_mimeDecode::_iconv_notice_handler');
-        try {
-            $input_converted = iconv(mb_detect_encoding($input, mb_detect_order(), true), $this->_charset, $input);
+        if (function_exists("mb_detect_order")) {
+            $mb_order = array_merge(array($supposed_encoding), mb_detect_order());
+            set_error_handler('Mail_mimeDecode::_iconv_notice_handler');
+            try {
+                $input_converted = iconv(mb_detect_encoding($input, $mb_order, true), $this->_charset, $input);
+            }
+            catch(Exception $ex) {
+                $this->raiseError($ex->getMessage());
+            }
+            restore_error_handler();
+
+            if (strlen($input_converted) == 0 && strlen($input) != 0) {
+                ZLog::Write(LOGLEVEL_INFO, "Mail_mimeDecode() - Text cannot be correctly decoded, using original text. Expect encoding errors");
+                $input_converted = mb_convert_encoding($input, 'UTF-8', 'UTF-8');
+            }
         }
-        catch(Exception $ex) {
-            $this->raiseError($ex->getMessage());
-        }
-        restore_error_handler();
 
         return $input_converted;
     }

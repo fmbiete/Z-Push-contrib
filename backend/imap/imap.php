@@ -1647,6 +1647,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
+     * Returns the display name of the user. Used by autodiscover.
+     *
+     * @param string        $username           The username
+     *
+     * @access public
+     * @return string
+     */
+    public function GetUserFullname($username) {
+        return $this->getDefaultFullNameValue($username);
+    }
+
+
+    /**
      * Returns the BackendIMAP as it implements the ISearchProvider interface
      * This could be overwritten by the global configuration
      *
@@ -2200,10 +2213,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $v = $this->domain;
                 break;
             case 'ldap':
-                $v = $this->getFromLdap($this->username, $this->domain);
+                $v = $this->getIdentityFromLdap($this->username, $this->domain, IMAP_FROM_LDAP_FROM, true);
                 break;
             case 'sql':
-                $v = $this->getFromSql($this->username, $this->domain);
+                $v = $this->getIdentityFromSql($this->username, $this->domain, IMAP_FROM_SQL_FROM, true);
                 break;
             default:
                 $v = $this->username . IMAP_DEFAULTFROM;
@@ -2213,61 +2226,85 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         return $v;
     }
 
+    /**
+     * Return the default value for "FullName"
+     *
+     * @access private
+     * @param string     $username          Username
+     * @return string
+     */
+    private function getDefaultFullNameValue($username) {
+        $v = $this->username;
+        switch (IMAP_DEFAULTFROM) {
+            case 'ldap':
+                $v = $this->getIdentityFromSql($username, $this->domain, IMAP_FROM_LDAP_FULLNAME, false);
+                break;
+            case 'sql':
+                $v = $this->getIdentityFromSql($username, $this->domain, IMAP_FROM_SQL_FULLNAME, false);
+                break;
+        }
+
+        return $v;
+    }
 
     /**
-     * Generate the "From" value stored in a LDAP server
+     * Generate the "From"/"FullName" value stored in a LDAP server
      *
      * @access private
      * @params string   $username    username value
      * @params string   $domain      domain value
+     * @params string   $identity    pattern to fill with ldap values
+     * @params boolean  $encode      if the result should be encoded as a header
      * @return string
      */
-    private function getFromLdap($username, $domain) {
-        $from = $username;
+    private function getIdentityFromLdap($username, $domain, $identity, $encode = true) {
+        $ret_value = $username;
 
         $ldap_conn = null;
         try {
             $ldap_conn = ldap_connect(IMAP_FROM_LDAP_SERVER, IMAP_FROM_LDAP_SERVER_PORT);
             if ($ldap_conn) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Connected to LDAP"));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Connected to LDAP"));
                 ldap_set_option($ldap_conn, LDAP_OPT_PROTOCOL_VERSION, 3);
                 ldap_set_option($ldap_conn, LDAP_OPT_REFERRALS, 0);
                 $ldap_bind = ldap_bind($ldap_conn, IMAP_FROM_LDAP_USER, IMAP_FROM_LDAP_PASSWORD);
 
                 if ($ldap_bind) {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Authenticated in LDAP"));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Authenticated in LDAP"));
                     $filter = str_replace('#username', $username, str_replace('#domain', $domain, IMAP_FROM_LDAP_QUERY));
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Searching From with filter: %s", $filter));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Searching From with filter: %s", $filter));
                     $search = ldap_search($ldap_conn, IMAP_FROM_LDAP_BASE, $filter, unserialize(IMAP_FROM_LDAP_FIELDS));
                     $items = ldap_get_entries($ldap_conn, $search);
                     if ($items['count'] > 0) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Found entry in LDAP. Generating From"));
-                        $from = IMAP_FROM_LDAP_FROM;
+                        $ret_value = $identity;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Found entry in LDAP. Generating From"));
                         // We get the first object. It's your responsability to make the query unique
                         foreach (unserialize(IMAP_FROM_LDAP_FIELDS) as $field) {
-                            $from = str_replace('#'.$field, $items[0][$field][0], $from);
+                            $ret_value = str_replace('#'.$field, $items[0][$field][0], $ret_value);
                         }
-                        $from = $this->encodeFrom($from);
+                        if ($encode) {
+                            $ret_value = $this->encodeFrom($ret_value);
+                        }
                     }
                     else {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - No entry found in LDAP"));
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - No entry found in LDAP"));
                     }
                 }
                 else {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Not authenticated in LDAP server"));
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Not authenticated in LDAP server"));
                 }
             }
             else {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromLdap() - Not connected to LDAP server"));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromLdap() - Not connected to LDAP server"));
             }
         }
         catch(Exception $ex) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getFromLdap() - Error getting From value from LDAP server: %s", $ex));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getIdentityFromLdap() - Error getting From value from LDAP server: %s", $ex));
         }
 
         ldap_close($ldap_conn);
 
-        return $from;
+        return $ret_value;
     }
 
 
@@ -2279,38 +2316,40 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @params string   $domain      domain value
      * @return string
      */
-    private function getFromSql($username, $domain) {
-        $from = $username;
+    private function getIdentityFromSql($username, $domain, $identity, $encode = true) {
+        $ret_value = $username;
 
         $dbh = $sth = $record = null;
         try {
             $dbh = new PDO(IMAP_FROM_SQL_DSN, IMAP_FROM_SQL_USER, IMAP_FROM_SQL_PASSWORD, unserialize(IMAP_FROM_SQL_OPTIONS));
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromSql() - Connected to SQL Database"));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromSql() - Connected to SQL Database"));
 
             $sql = str_replace('#username', $username, str_replace('#domain', $domain, IMAP_FROM_SQL_QUERY));
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromSql() - Searching From with filter: %s", $sql));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromSql() - Searching From with filter: %s", $sql));
             $sth = $dbh->prepare($sql);
             $sth->execute();
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if ($record) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromSql() - Found entry in SQL Database. Generating From"));
-                $from = IMAP_FROM_SQL_FROM;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromSql() - Found entry in SQL Database. Generating From"));
+                $ret_value = $identity;
                 foreach (unserialize(IMAP_FROM_SQL_FIELDS) as $field) {
-                    $from = str_replace('#'.$field, $record[$field], $from);
+                    $ret_value = str_replace('#'.$field, $record[$field], $ret_value);
                 }
-                $from = $this->encodeFrom($from);
+                if ($encode) {
+                    $ret_value = $this->encodeFrom($ret_value);
+                }
             }
             else {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromSql() - No entry found in SQL Database"));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromSql() - No entry found in SQL Database"));
             }
         }
         catch(PDOException $ex) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getFromSql() - Error getting From value from SQL Database: %s", $ex));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getIdentityFromSql() - Error getting From value from SQL Database: %s", $ex));
         }
 
         $dbh = $sth = $record = null;
 
-        return $from;
+        return $ret_value;
     }
 
 

@@ -1180,6 +1180,20 @@ class BackendZarafa implements IBackend, ISearchProvider {
         }
     }
 
+    /**
+     * Returns the display name of the user. Used by autodiscover.
+     *
+     * @param string        $username           The username
+     *
+     * @access public
+     * @return string
+     */
+    public function GetUserFullname($username) {
+        ZLog::Write(LOGLEVEL_WBXML, sprintf("ZarafaBackend->GetUserFullname for '%s'.", $username));
+        $zarafauserinfo = @mapi_zarafa_getuser_by_name($this->defaultstore, $username);
+        return (isset($zarafauserinfo['fullname']) && $zarafauserinfo['fullname']) ? $zarafauserinfo['fullname'] : $username;
+    }
+
 
     /**----------------------------------------------------------------------------------------------------------
      * Private methods
@@ -1549,8 +1563,11 @@ class BackendZarafa implements IBackend, ISearchProvider {
         $searchGreater = strtotime($cpo->GetSearchValueGreater());
         $searchLess = strtotime($cpo->GetSearchValueLess());
 
+        if (version_compare(phpversion(),'5.3.4') < 0) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("Your system's PHP version (%s) might not correctly process unicode strings. Search containing such characters might not return correct results. It is recommended to update to at least PHP 5.3.4. See ZP- for more information.", phpversion()));
+        }
         // split the search on whitespache and look for every word
-        $searchText = preg_split("/\W+/", $searchText);
+        $searchText = preg_split("/\W+/u", $searchText);
         $searchProps = array(PR_BODY, PR_SUBJECT, PR_DISPLAY_TO, PR_DISPLAY_CC, PR_SENDER_NAME, PR_SENDER_EMAIL_ADDRESS, PR_SENT_REPRESENTING_NAME, PR_SENT_REPRESENTING_EMAIL_ADDRESS);
         $resAnd = array();
         foreach($searchText as $term) {

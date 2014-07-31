@@ -919,6 +919,22 @@ class Utils {
     }
 
     /**
+     * Returns the local part from email address.
+     *
+     * @param string $email
+     *
+     * @access public
+     * @return string
+     */
+    public static function GetLocalPartFromEmail($email) {
+        $pos = strpos($email, '@');
+        if ($pos === false) {
+            return $email;
+        }
+        return substr($email, 0, $pos);
+    }
+
+    /**
      * Generate date object from string and timezone.
      *
      * @param string $value

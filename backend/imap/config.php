@@ -79,6 +79,7 @@ define('IMAP_FROM_SQL_OPTIONS', serialize(array(PDO::ATTR_PERSISTENT => true)));
 define('IMAP_FROM_SQL_QUERY', "select first_name, last_name, mail_address from users where mail_address = '#username@#domain'");
 define('IMAP_FROM_SQL_FIELDS', serialize(array('first_name', 'last_name', 'mail_address')));
 define('IMAP_FROM_SQL_FROM', '#first_name #last_name <#mail_address>');
+define('IMAP_FROM_SQL_FULLNAME', '#first_name #last_name');
 
 // SERVER: ldap server
 // SERVER_PORT: ldap port
@@ -95,6 +96,7 @@ define('IMAP_FROM_LDAP_BASE', 'dc=zpush,dc=org');
 define('IMAP_FROM_LDAP_QUERY', '(mail=#username@#domain)');
 define('IMAP_FROM_LDAP_FIELDS', serialize(array('givenname', 'sn', 'mail')));
 define('IMAP_FROM_LDAP_FROM', '#givenname #sn <#mail>');
+define('IMAP_FROM_LDAP_FULLNAME', '#givenname #sn');
 
 
 // copy outgoing mail to this folder. If not set z-push will try the default folders

@@ -2671,18 +2671,27 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access private
      */
     private function setFromHeaderValue(&$headers) {
-        // We get the vanilla from address
+        $from = $this->getDefaultFromValue();
+
+        // If the message is not s/mime
         if (isset($headers["from"])) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): From defined: %s", $headers["from"]));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): from defined: %s", $headers["from"]));
             if (strlen(IMAP_DEFAULTFROM) > 0) {
-                $from = $this->getDefaultFromValue();
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): Overwriting From: %s", $from));
                 $headers["from"] = $from;
             }
         }
+        elseif (isset($headers["From"])) {
+            // if the message is s/mime
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): From defined: %s", $headers["From"]));
+            if (strlen(IMAP_DEFAULTFROM) > 0) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): Overwriting From: %s", $from));
+                $headers["From"] = $from;
+            }
+        }
         else {
+            // not From header found
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): No From address defined, we try for a default one"));
-            $from = $this->getDefaultFromValue();
             $headers["from"] = $from;
         }
     }
@@ -2696,8 +2705,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access private
      */
     private function setReturnPathValue(&$headers, $fromaddr) {
-        // We set the return-path
-        if (!isset($headers["return-path"])) {
+        if (!(isset($headers["return-path"]) || isset($headers["Return-Path"]))) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->setReturnPathValue(): No Return-Path address defined, we use From"));
             $headers["return-path"] = $fromaddr;
         }

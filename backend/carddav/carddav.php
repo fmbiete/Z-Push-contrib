@@ -1282,7 +1282,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             }
         }
         if (!empty($message->categories))
-            $data .= 'CATEGORIES:'.implode(',', $this->escape($message->categories))."\n";
+            $data .= 'CATEGORIES:'.implode(',', $message->categories)."\n";
         if (!empty($message->picture))
             $data .= 'PHOTO;ENCODING=BASE64;TYPE=JPEG:'."\n\t".substr(chunk_split($message->picture, 50, "\n\t"), 0, -1);
         if (isset($message->birthday))

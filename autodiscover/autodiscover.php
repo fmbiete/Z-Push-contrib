@@ -110,9 +110,8 @@ class ZPushAutodiscover {
             $response = $this->createResponse($incomingXml->Request->EMailAddress, $userFullname);
             setcookie("membername", $username);
         }
-
         catch (AuthenticationRequiredException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover because login failed for user with email '%s'", $incomingXml->Request->EMailAddress));
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover because login failed for user. Error: %s", $ex->getMessage()));
             header('HTTP/1.1 401 Unauthorized');
             header('WWW-Authenticate: Basic realm="ZPush"');
             http_response_code(401);

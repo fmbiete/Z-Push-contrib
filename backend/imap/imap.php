@@ -739,7 +739,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == "sent" || $lid == "sent items" || $lid == IMAP_SENTFOLDER) {
+        else if($lid == "sent" || $lid == "sent items" || $lid == "sent messages" || $lid == IMAP_SENTFOLDER) {
             $folder->parentid = "0";
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
@@ -751,13 +751,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == "inbox.trash" || $lid == "inbox/trash") && ($this->wasteID === false || $this->wasteID == $id)) {
+        else if(($lid == "inbox.trash" || $lid == "inbox/trash" || $lid == "inbox.deleted messages" || $lid == "inbox/deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == "inbox.sent" || $lid == "inbox/sent") {
+        else if($lid == "inbox.sent" || $lid == "inbox/sent" || $lid == "inbox.sent messages" || $lid == "inbox/sent messages") {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;

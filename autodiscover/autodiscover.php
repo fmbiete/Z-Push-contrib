@@ -148,6 +148,9 @@ class ZPushAutodiscover {
 
         $input = @file_get_contents('php://input');
         $xml = simplexml_load_string($input);
+        if (LOGLEVEL >= LOGLEVEL_WBXML) {
+            ZLog::Write(LOGLEVEL_WBXML, sprintf("ZPushAutodiscover->getIncomingXml() incoming XML data:%s%s", PHP_EOL, $xml->asXML()));
+        }
 
         if (!isset($xml->Request->EMailAddress)) {
             throw new FatalException('Invalid input XML: no email address.');
@@ -160,9 +163,7 @@ class ZPushAutodiscover {
         if ($xml->Request->AcceptableResponseSchema != ZPushAutodiscover::ACCEPTABLERESPONSESCHEMA) {
             throw new FatalException('Invalid input XML: not a mobilesync responseschema.');
         }
-        if (LOGLEVEL >= LOGLEVEL_WBXML) {
-            ZLog::Write(LOGLEVEL_WBXML, sprintf("ZPushAutodiscover->getIncomingXml() incoming XML data:%s%s", PHP_EOL, $xml->asXML()));
-        }
+
         return $xml;
     }
 

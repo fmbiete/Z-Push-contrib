@@ -10,7 +10,3 @@ The others servers don't implement it, so the code will fallback to a slower met
 This is controlled with a flag in the config.php file.
 
 Also, it can autodetect multiple addressbooks and will present them to the mobile device as an unique addressbook (only iOS supports multiple addressbook).
-
-
-REQUISITES:
-php-curl php-xsl

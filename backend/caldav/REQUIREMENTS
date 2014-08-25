@@ -1,0 +1,5 @@
+REQUIREMENTS:
+php-curl
+libawl-php
+
+CalDAV server (DAViCal, Sabredav, Sogo, Owncloud...)

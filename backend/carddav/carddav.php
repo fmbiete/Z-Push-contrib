@@ -1040,7 +1040,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             switch ($type) {
                 case 'categories':
                     //case 'nickname':
-                    $val = preg_split('/(?<!\\\\)(\,)/i', $value);
+                    $val = preg_split('/(\s)*(\\\)?\,(\s)*/i', $value);
                     break;
                 default:
                     $val = preg_split('/(?<!\\\\)(\;)/i', $value);

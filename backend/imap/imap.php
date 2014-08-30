@@ -1091,6 +1091,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 */
             }
+            else {
+                $output->threadtopic = $output->subject;
+            }
 
             // Language Code Page ID: http://msdn.microsoft.com/en-us/library/windows/desktop/dd317756%28v=vs.85%29.aspx
             $output->internetcpid = INTERNET_CPID_UTF8;

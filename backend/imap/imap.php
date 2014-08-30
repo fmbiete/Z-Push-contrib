@@ -1033,7 +1033,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 $output->asbody->type = $bpReturnType;
-                $output->nativebodytype = $bpReturnType;
+                if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
+                    $output->nativebodytype = SYNC_BODYPREFERENCE_PLAIN;
+                    // http://msdn.microsoft.com/en-us/library/ee220018%28v=exchg.80%29.aspx
+                }
+                else {
+                    $output->nativebodytype = $bpReturnType;
+                }
                 $output->asbody->estimatedDataSize = strlen($output->asbody->data);
 
                 $bpo = $contentparameters->BodyPreference($output->asbody->type);

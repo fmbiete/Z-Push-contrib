@@ -232,6 +232,7 @@ class CalDAVClient {
 		$this->xmlResponse = '';
 
 		$response					= curl_exec($this->curl);
+		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("Reponse:\n%s\n", $response));
 		$header_size				= curl_getinfo($this->curl, CURLINFO_HEADER_SIZE);
 		$this->httpResponseCode		= curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
 		$this->httpResponseHeaders	= trim(substr($response, 0, $header_size));

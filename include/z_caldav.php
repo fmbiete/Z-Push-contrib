@@ -923,11 +923,10 @@ EOXML;
   <D:prop>
     <D:getetag/>
     <D:getlastmodified/>
-    <C:filter>
-        <C:comp-filter name="VCALENDAR">
-        </C:comp-filter>
-    </C:filter>
   </D:prop>
+  <C:filter>
+    <C:comp-filter name="VCALENDAR" />
+  </C:filter>
 </C:calendar-query>
 EOXML;
         }

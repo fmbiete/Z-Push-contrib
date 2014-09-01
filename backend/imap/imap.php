@@ -2604,6 +2604,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): SendingMail with %s", $sendingMethod));
         $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
         $send = $mail->send($toaddr, $headers, $body);
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): send return value %s", $send));
 
         if ($send !== true) {
             throw new StatusException(sprintf("BackendIMAP->SendMail(): The email could not be sent"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);

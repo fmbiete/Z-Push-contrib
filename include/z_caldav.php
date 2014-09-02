@@ -231,6 +231,7 @@ class CalDAVClient {
 
 		$this->xmlResponse = '';
 
+		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("Request:\n%s\n", $content));
 		$response					= curl_exec($this->curl);
 		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("Reponse:\n%s\n", $response));
 		$header_size				= curl_getinfo($this->curl, CURLINFO_HEADER_SIZE);
@@ -731,10 +732,12 @@ EOXML;
   <D:prop>
     <C:calendar-data/>
     <D:getetag/>
-  </D:prop>$filter
+  </D:prop>
+  $filter
 </C:calendar-query>
 EOXML;
 
+        $this->SetDepth(1);
 		$this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
 		$report = array();
@@ -931,6 +934,7 @@ EOXML;
 EOXML;
         }
 
+        $this->SetDepth(1);
         $this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
         $report = array();

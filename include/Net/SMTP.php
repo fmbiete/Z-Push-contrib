@@ -243,7 +243,7 @@ class Net_SMTP
                 call_user_func_array($this->_debug_handler,
                                      array(&$this, $message));
             } else {
-                echo "DEBUG: $message\n";
+                ZLog::Write(LOGLEVEL_DEBUG, "Net_SMTP DEBUG: ". $message);
             }
         }
     }

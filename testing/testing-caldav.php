@@ -19,6 +19,7 @@ define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 // define('CALDAV_PORT', '80');
 // define('CALDAV_PATH', '/SOGo/dav/%u/Calendar/');
 // define('CALDAV_PERSONAL', 'personal');
+// define('CALDAV_SUPPORTS_SYNC', true);
 
 $caldav_path = str_replace('%u', $username, CALDAV_PATH);
 $caldav = new CalDAVClient(CALDAV_SERVER . ":" . CALDAV_PORT . $caldav_path, $username, $password);
@@ -27,13 +28,25 @@ $caldav = new CalDAVClient(CALDAV_SERVER . ":" . CALDAV_PORT . $caldav_path, $us
 $options = $caldav->DoOptionsRequest();
 print_r($options);
 
+$calendars = $caldav->FindCalendars();
+print_r($calendars);
+
+$path = $caldav_path . "personal" . "/";
+$val = $caldav->GetCalendarDetails($path);
+print_r($val);
+
+$begin = gmdate("Ymd\THis\Z", time() - 24*7*60*60);
+$finish = gmdate("Ymd\THis\Z", 2147483647);
+$msgs = $caldav->GetEvents($begin, $finish, $path);
+print_r($msgs);
+
 // Initial sync
-$results = $caldav->GetSync('http://calendar.domain.com/caldav.php/username/calendar/', true, false);
+$results = $caldav->GetSync($path, true, CALDAV_SUPPORTS_SYNC);
 print_r($results);
 
-sleep(600);
+sleep(60);
 
-$results = $caldav->GetSync('http://calendar.domain.com/caldav.php/username/calendar/', false, false);
+$results = $caldav->GetSync($path, false, CALDAV_SUPPORTS_SYNC);
 print_r($results);
 
 ?>

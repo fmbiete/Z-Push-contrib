@@ -58,7 +58,7 @@ define('CALDAV_PATH', '/caldav.php/%u/');
 define('CALDAV_PERSONAL', 'home');
 
 // If the CalDAV server supports the sync-collection operation
-// DAViCal and SOGo support it
+// DAViCal, SOGo and Sabredav support it
 // Setting this to false will work with most servers, but it will be slower
 define('CALDAV_SUPPORTS_SYNC', false);
 

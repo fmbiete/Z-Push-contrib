@@ -1664,7 +1664,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return string
      */
     public function GetUserFullname($username) {
-        return $this->getDefaultFullNameValue($username);
+        // If the username it's not the email address, here we will have an error. We try creating a valid address
+        $email = $username;
+        if (strpos($username, "@") === false && strlen($this->domain) > 0) {
+            $email .= "@" . $this->domain;
+        }
+        return array('emailaddress' => $email, 'fullname' => $this->getDefaultFullNameValue($username));
     }
 
 

@@ -104,14 +104,20 @@ class ZPushAutodiscover {
         try {
             $incomingXml = $this->getIncomingXml();
             $backend = ZPush::GetBackend();
-            $username = $this->login($incomingXml, $backend);
-            $userFullname = $backend->GetUserFullname($username);
+            $username = $this->login($backend, $incomingXml);
+            $userDetails = $backend->GetUserDetails($username);
+            $email = ($this->getAttribFromUserDetails($userDetails, 'emailaddress')) ? $this->getAttribFromUserDetails($userDetails, 'emailaddress') : $incomingXml->Request->EMailAddress;
+            $userFullname = ($this->getAttribFromUserDetails($userDetails, 'fullname')) ? $this->getAttribFromUserDetails($userDetails, 'fullname') : $email;
             ZLog::Write(LOGLEVEL_WBXML, sprintf("Resolved user's '%s' fullname to '%s'", $username, $userFullname));
-            $response = $this->createResponse($incomingXml->Request->EMailAddress, $userFullname);
+            $response = $this->createResponse($email, $userFullname);
             setcookie("membername", $username);
         }
+
         catch (AuthenticationRequiredException $ex) {
-            ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover because login failed for user. Error: %s", $ex->getMessage()));
+            if (isset($incomingXml))
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover because login failed for user with email '%s'", $incomingXml->Request->EMailAddress));
+            else
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover incorrect request: '%s'", $ex->getMessage()));
             header('HTTP/1.1 401 Unauthorized');
             header('WWW-Authenticate: Basic realm="ZPush"');
             http_response_code(401);
@@ -148,12 +154,18 @@ class ZPushAutodiscover {
 
         $input = @file_get_contents('php://input');
         $xml = simplexml_load_string($input);
+
         if (LOGLEVEL >= LOGLEVEL_WBXML) {
             ZLog::Write(LOGLEVEL_WBXML, sprintf("ZPushAutodiscover->getIncomingXml() incoming XML data:%s%s", PHP_EOL, $xml->asXML()));
         }
 
         if (!isset($xml->Request->EMailAddress)) {
             throw new FatalException('Invalid input XML: no email address.');
+        }
+
+        if (Utils::GetLocalPartFromEmail($xml->Request->EMailAddress) != Utils::GetLocalPartFromEmail($_SERVER['PHP_AUTH_USER'])) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("The local part of the server auth user is different from the local part in the XML request ('%s' != '%s')",
+                Utils::GetLocalPartFromEmail($xml->Request->EMailAddress), Utils::GetLocalPartFromEmail($_SERVER['PHP_AUTH_USER'])));
         }
 
         if (!isset($xml->Request->AcceptableResponseSchema)) {
@@ -171,27 +183,22 @@ class ZPushAutodiscover {
      * Logins using the backend's Logon function.
      *
      * @param IBackend $backend
+     * @param String $incomingXml
      * @access private
      * @throws AuthenticationRequiredException if no login data was sent.
      *
      * @return string $username
      */
-    private function login($xml, $backend) {
+    private function login($backend, $incomingXml) {
         // Determine the login name depending on the configuration: complete email address or
         // the local part only.
         if (USE_FULLEMAIL_FOR_LOGIN) {
-            // We previously checked in getIncomingXml that $xml->Request->EMailAddress == $_SERVER['PHP_AUTH_USER']
-            // and so we would only get through here if both had the user's full email address.
-            //
-            // However, the mail client may not know the user's login details prior to autodiscovery. With the stock
-            // email app on Android the auth user is passed as the user part of the email address, and so the check
-            // mentioned above would fail. There's no need to fail though --- we still have the email address.
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("Using the complete email address for login."));
-            $username = $xml->Request->EMailAddress;
+            $username = $incomingXml->Request->EMailAddress;
         }
         else{
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("Using the username only for login."));
-            $username = Utils::GetLocalPartFromEmail($xml->Request->EMailAddress);
+            $username = Utils::GetLocalPartFromEmail($incomingXml->Request->EMailAddress);
         }
 
         if($backend->Logon($username, "", $_SERVER['PHP_AUTH_PW']) == false) {
@@ -236,6 +243,22 @@ class ZPushAutodiscover {
         fwrite($output, $response);
         fclose($output);
         ZLog::Write(LOGLEVEL_DEBUG, "ZPushAutodiscover->sendResponse() response sent.");
+    }
+
+    /**
+     * Gets an attribute from user details.
+     * @param Array $userDetails
+     * @param String $attrib
+     * @access private
+     *
+     * @return String or false on error.
+     */
+    private function getAttribFromUserDetails($userDetails, $attrib) {
+        if (isset($userDetails[$attrib]) && $userDetails[$attrib]) {
+            return $userDetails[$attrib];
+        }
+        ZLog::Write(LOGLEVEL_WARN, sprintf("The backend was not able to find attribute '%s' of the user. Fall back to the default value."));
+        return false;
     }
 }
 

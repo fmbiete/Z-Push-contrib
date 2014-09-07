@@ -683,6 +683,17 @@ END;
      */
     static public function GetSupportedProtocolVersions($valueOnly = false) {
         $versions = implode(',', array_slice(self::$supportedASVersions, 0, (array_search(self::GetSupportedASVersion(), self::$supportedASVersions)+1)));
+        // Begin Contribution - Outlook 2013 AS Connection - liverpoolfcfan
+        // If the client announces it supports an AS Protocol higher than AS2.5 then don't tell it we support 1.0, 2.0 & 2.1 as
+        // doing so prevents Outlook 2013 (as possibly other clients) from connecting to the server - just start from the 4th version
+        // and report the rest of them up as far as the backend supports.
+        if (Request::GetProtocolVersion() >= self::ASV_25) {
+            $versions = implode(',', array_slice(self::$supportedASVersions, 3, (array_search(self::GetSupportedASVersion(), self::$supportedASVersions)+1)));
+        }
+        else {
+            $versions = implode(',', array_slice(self::$supportedASVersions, 0, (array_search(self::GetSupportedASVersion(), self::$supportedASVersions)+1)));
+        }
+        // End Contribution - Outlook 2013 AS Connection - liverpoolfcfan
         ZLog::Write(LOGLEVEL_DEBUG, "ZPush::GetSupportedProtocolVersions(): " . $versions);
 
         if ($valueOnly === true)

@@ -1,0 +1,48 @@
+Return-Path: <edt@domain.com>
+Delivered-To: informatique@domain.com
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by domain.com (Postfix) with ESMTP id AB32E1000EA
+	for <informatique@domain.com>; Sun,  7 Sep 2014 09:50:21 +0200 (CEST)
+Authentication-Results: domain.com (amavisd-new);
+	dkim=pass (1024-bit key) reason="pass (just generated, assumed good)"
+	header.d=domain.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=
+	domain.com; h=content-transfer-encoding:content-type
+	:content-type:mime-version:from:from:subject:subject:date:date
+	:received; s=mail; t=1410076220; x=1411890621; bh=paEf4SYhXmrsFW
+	vtqTtrw7K9W9eprm8TMRs5JiO2p6o=; b=Dszu0yEi/ktiqQoFdLPKxkvdDB+sU+
+	3b+B2O0Jf2PzVahHvMj7bGJSoW0eVb1u6tot6q5NOjFH85Ab1MZdhoga+jMW3h8E
+	5GrVvA4NumMV/HMJ8M/1LpAc5nTaGxN+8KfGHxCM0DsjZEFwuLwL3xU6PgSrggcC
+	6DT6GcpnPTRxM=
+X-Virus-Scanned: Debian amavisd-new at domain.com
+X-Spam-Flag: NO
+X-Spam-Score: 0.138
+X-Spam-Level:
+X-Spam-Status: No, score=0.138 tagged_above=-999 required=4
+	tests=[MISSING_MID=0.14, NO_RECEIVED=-0.001, NO_RELAYS=-0.001]
+	autolearn=no
+Received: from domain.com ([127.0.0.1])
+	by localhost (domain.com [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id YDofG_pOTs47 for <informatique@domain.com>;
+	Sun,  7 Sep 2014 09:50:20 +0200 (CEST)
+Date: Sun, 07 Sep 2014 09:50:03 +0200
+Subject: =?ISO-8859-1?Q?Re:_[TC5_BAT]_Construction_g=E9n=E9rale_/_08:30?=
+From: =?ISO-8859-1?Q?Edt_Secr=E9tariat_ESITC_Cachan?=
+ <edt@domain.com>
+To: Informatique ESITC <informatique@domain.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+Message-Id: <20140907075021.AB32E1000EA@domain.com>
+
+Qydlc3QgcmVjdGlmacOpLgpCb25uZSBqb3VybsOpZS4KTGUgc2VjcsOpdGFyaWF0IGVkdMKgIGRl
+IGwnRVNJVEMKCkxlIDYgc2VwdC4gMjAxNCAyMzo0NCwgSW5mb3JtYXRpcXVlIEVTSVRDIDxpbmZv
+cm1hdGlxdWVAYWRtLmVzaXRjLWNhY2hhbi5mcj4gYSDDqWNyaXQgOgo+Cj4gQm9uam91ciwgCj4K
+PiBJbCBzZW1ibGVyYWl0IHF1J2lsIHkgYWl0IHVuZSBwZXRpdGUgZXJyZXVyIHN1ciBsJ2VtcGxv
+aSBkdSB0ZW1wcyBkZXMgCj4gVEM1IEJBVC4gCj4KPiBMZSBMdW5kaSAwNSBKYW52aWVyIDIwMTUg
+w6AgMDhIMzAuIExlIGNvdXJzIGRlIENHIGR1cmUgMWgzMCBhbG9ycyBxdSdpbCB5IAo+IGEgMiBz
+w6lhbmNlcy4gCj4gRG9uYyBzb2l0IGMnZXN0IAo+IFNvaXQgdW5lIHPDqWFuY2UgZGUgMUgzMCAK
+PiBTb2l0IDIgc8OpYW5jZXMgZGUgM0ggKGF1IHRvdGFsKSAKPiBNYWlzIHBhcyAyIHPDqWFuY2Vz
+IGRlIDFIMzAgKGF1IHRvdGFsKSAKPgo+IENvcmRpYWxlbWVudCwgCj4gSW5mb3JtYXRpcXVlIEVT
+SVRDIAo=
+

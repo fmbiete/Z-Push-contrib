@@ -1656,14 +1656,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
-     * Returns the display name of the user. Used by autodiscover.
+     * Returns the email address and the display name of the user. Used by autodiscover.
      *
      * @param string        $username           The username
      *
      * @access public
-     * @return string
+     * @return Array
      */
-    public function GetUserFullname($username) {
+    public function GetUserDetails($username) {
         // If the username it's not the email address, here we will have an error. We try creating a valid address
         $email = $username;
         if (strpos($username, "@") === false && strlen($this->domain) > 0) {

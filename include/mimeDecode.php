@@ -736,11 +736,11 @@ class Mail_mimeDecode
                     break;
             }
 
-            $input = str_replace($encoded, $this->_autoconvert_encoding($text), $input);
+            $input = str_replace($encoded, $this->_autoconvert_encoding($text, $charset), $input);
         }
 
         if (!$encodedwords) {
-            $input = $this->_autoconvert_encoding($input);
+            $input = $this->_autoconvert_encoding($input, $charset);
         }
 
         return $input;

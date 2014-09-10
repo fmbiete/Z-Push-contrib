@@ -216,6 +216,8 @@ include_once('version.php');
         if ($len == 0)
             header("Content-Type: application/vnd.ms-sync.wbxml");
 
+        ZLog::Write(LOGLEVEL_DEBUG, "Sending $len, headers already sent ? ".(headers_sent()?'true':'false'));
+
         print $data;
 
         // destruct backend after all data is on the stream
@@ -223,6 +225,12 @@ include_once('version.php');
     }
 
     catch (NoPostRequestException $nopostex) {
+        $len = ob_get_length();
+        if ($len) {
+            ZLog::Write(LOGLEVEL_WARN, 'Destroying '.$len.' octets of data');
+            ob_clean();
+        }
+
         if ($nopostex->getCode() == NoPostRequestException::OPTIONS_REQUEST) {
             header(ZPush::GetServerHeader());
             header(ZPush::GetSupportedProtocolVersions());
@@ -235,9 +243,26 @@ include_once('version.php');
             if (!headers_sent() && $nopostex->showLegalNotice())
                 ZPush::PrintZPushLegal('GET not supported', $nopostex->getMessage());
         }
+
+        $len = ob_get_length();
+        if ($len !== false) {
+            if (!headers_sent()) {
+                header("Content-Length: $len");
+                if ($len == 0)
+                    header("Content-Type:");
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, "Flushing $len, headers already sent ? ".(headers_sent()?'true':'false'));
+            ob_end_flush();
+        }
     }
 
     catch (Exception $ex) {
+        $len = ob_get_length();
+        if ($len) {
+            ZLog::Write(LOGLEVEL_WARN, 'Destroying '.$len.' octets of data');
+            ob_clean();
+        }
+
         if (Request::GetUserAgent())
             ZLog::Write(LOGLEVEL_INFO, sprintf("User-agent: '%s'", Request::GetUserAgent()));
         $exclass = get_class($ex);
@@ -284,6 +309,17 @@ include_once('version.php');
 
         // Announce exception if the TopCollector if available
         ZPush::GetTopCollector()->AnnounceInformation(get_class($ex), true);
+
+        $len = ob_get_length();
+        if ($len !== false) {
+            if (!headers_sent()) {
+                header("Content-Length: $len");
+                if ($len == 0)
+                    header("Content-Type:");
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, "Flushing $len, headers already sent ? ".(headers_sent()?'true':'false'));
+            ob_end_flush();
+        }
     }
 
     // save device data if the DeviceManager is available

@@ -56,9 +56,6 @@ class ZPush {
     const CLASS_OTHERTYPES = 4;
 
     // AS versions
-    const ASV_1 = "1.0";
-    const ASV_2 = "2.0";
-    const ASV_21 = "2.1";
     const ASV_25 = "2.5";
     const ASV_12 = "12.0";
     const ASV_121 = "12.1";
@@ -110,9 +107,6 @@ class ZPush {
                 );
 
     static private $supportedASVersions = array(
-                    self::ASV_1,
-                    self::ASV_2,
-                    self::ASV_21,
                     self::ASV_25,
                     self::ASV_12,
                     self::ASV_121,
@@ -121,28 +115,28 @@ class ZPush {
 
     static private $supportedCommands = array(
                     // COMMAND                             // AS VERSION   // REQUESTHANDLER                        // OTHER SETTINGS
-                    self::COMMAND_SYNC              => array(self::ASV_1,  self::REQUESTHANDLER => "Sync"),
-                    self::COMMAND_SENDMAIL          => array(self::ASV_1,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTFORWARD      => array(self::ASV_1,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTREPLY        => array(self::ASV_1,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_GETATTACHMENT     => array(self::ASV_1,  self::REQUESTHANDLER => "GetAttachment"),
-                    self::COMMAND_GETHIERARCHY      => array(self::ASV_1,  self::REQUESTHANDLER => "GetHierarchy",  self::HIERARCHYCOMMAND),            // deprecated but implemented
-                    self::COMMAND_CREATECOLLECTION  => array(self::ASV_1),                                                                              // deprecated & not implemented
-                    self::COMMAND_DELETECOLLECTION  => array(self::ASV_1),                                                                              // deprecated & not implemented
-                    self::COMMAND_MOVECOLLECTION    => array(self::ASV_1),                                                                              // deprecated & not implemented
-                    self::COMMAND_FOLDERSYNC        => array(self::ASV_2,  self::REQUESTHANDLER => "FolderSync",    self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERCREATE      => array(self::ASV_2,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERDELETE      => array(self::ASV_2,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERUPDATE      => array(self::ASV_2,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_MOVEITEMS         => array(self::ASV_1,  self::REQUESTHANDLER => "MoveItems"),
-                    self::COMMAND_GETITEMESTIMATE   => array(self::ASV_1,  self::REQUESTHANDLER => "GetItemEstimate"),
-                    self::COMMAND_MEETINGRESPONSE   => array(self::ASV_1,  self::REQUESTHANDLER => "MeetingResponse"),
-                    self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_1,  self::REQUESTHANDLER => "ResolveRecipients"),
-                    self::COMMAND_VALIDATECERT      => array(self::ASV_1,  self::REQUESTHANDLER => "ValidateCert"),
+                    self::COMMAND_SYNC              => array(self::ASV_25,  self::REQUESTHANDLER => "Sync"),
+                    self::COMMAND_SENDMAIL          => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
+                    self::COMMAND_SMARTFORWARD      => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
+                    self::COMMAND_SMARTREPLY        => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
+                    self::COMMAND_GETATTACHMENT     => array(self::ASV_25,  self::REQUESTHANDLER => "GetAttachment"),
+                    self::COMMAND_GETHIERARCHY      => array(self::ASV_25,  self::REQUESTHANDLER => "GetHierarchy",  self::HIERARCHYCOMMAND),            // deprecated but implemented
+                    self::COMMAND_CREATECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
+                    self::COMMAND_DELETECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
+                    self::COMMAND_MOVECOLLECTION    => array(self::ASV_25),                                                                              // deprecated & not implemented
+                    self::COMMAND_FOLDERSYNC        => array(self::ASV_25,  self::REQUESTHANDLER => "FolderSync",    self::HIERARCHYCOMMAND),
+                    self::COMMAND_FOLDERCREATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
+                    self::COMMAND_FOLDERDELETE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
+                    self::COMMAND_FOLDERUPDATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
+                    self::COMMAND_MOVEITEMS         => array(self::ASV_25,  self::REQUESTHANDLER => "MoveItems"),
+                    self::COMMAND_GETITEMESTIMATE   => array(self::ASV_25,  self::REQUESTHANDLER => "GetItemEstimate"),
+                    self::COMMAND_MEETINGRESPONSE   => array(self::ASV_25,  self::REQUESTHANDLER => "MeetingResponse"),
+                    self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_25,  self::REQUESTHANDLER => "ResolveRecipients"),
+                    self::COMMAND_VALIDATECERT      => array(self::ASV_25,  self::REQUESTHANDLER => "ValidateCert"),
                     self::COMMAND_PROVISION         => array(self::ASV_25, self::REQUESTHANDLER => "Provisioning",  self::UNAUTHENTICATED, self::UNPROVISIONED),
-                    self::COMMAND_SEARCH            => array(self::ASV_1,  self::REQUESTHANDLER => "Search"),
-                    self::COMMAND_PING              => array(self::ASV_2,  self::REQUESTHANDLER => "Ping",          self::UNPROVISIONED),
-                    self::COMMAND_NOTIFY            => array(self::ASV_1,  self::REQUESTHANDLER => "Notify"),                                           // deprecated & not implemented
+                    self::COMMAND_SEARCH            => array(self::ASV_25,  self::REQUESTHANDLER => "Search"),
+                    self::COMMAND_PING              => array(self::ASV_25,  self::REQUESTHANDLER => "Ping",          self::UNPROVISIONED),
+                    self::COMMAND_NOTIFY            => array(self::ASV_25,  self::REQUESTHANDLER => "Notify"),                                           // deprecated & not implemented
                     self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12, self::REQUESTHANDLER => "ItemOperations"),
                     self::COMMAND_SETTINGS          => array(self::ASV_12, self::REQUESTHANDLER => "Settings"),
 

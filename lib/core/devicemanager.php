@@ -427,6 +427,8 @@ class DeviceManager {
             return true;
         }
 
+        if (!is_object($message))
+            throw new Exception("DeviceManager->DoNotStreamMessage(): message isn't an object");
         // message is semantically incorrect
         if (!$message->Check(true)) {
             $this->AnnounceIgnoredMessage($folderid, $id, $message, self::MSG_BROKEN_SEMANTICERR);

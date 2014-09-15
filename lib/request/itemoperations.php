@@ -330,6 +330,9 @@ class ItemOperations extends RequestProcessor {
                     }
 
                     if (isset($data)) {
+                        if (!is_object($data))
+                            throw new StatusException("ItemOperations->Handle(): data isn't an object !!!");
+
                         self::$topCollector->AnnounceInformation("Streaming data");
 
                         self::$encoder->startTag(SYNC_ITEMOPERATIONS_PROPERTIES);

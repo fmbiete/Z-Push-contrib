@@ -1073,7 +1073,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
 
             $output->datereceived = isset($message->headers["date"]) ? $this->cleanupDate($message->headers["date"]) : null;
-            $output->messageclass = "IPM.Note";
+            if (is_smime($message)) {
+                $output->messageclass = "IPM.Note.SMIME.MultipartSigned";
+            }
+            else {
+                $output->messageclass = "IPM.Note";
+            }
             $output->subject = isset($message->headers["subject"]) ? $message->headers["subject"] : "";
             $output->read = $stat["flags"];
             $output->from = isset($message->headers["from"]) ? $message->headers["from"] : null;

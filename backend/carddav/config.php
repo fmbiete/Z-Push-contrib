@@ -90,7 +90,8 @@ define('CARDDAV_CONTACTS_FOLDER_NAME', '%u Addressbook');
 
 
 // If the CardDAV server supports the sync-collection operation
-// DAViCal supports it, but SabreDav, Owncloud, SOGo don't
+// DAViCal and SabreDav support it, but Owncloud, SOGo don't
+// SabreDav version must be at least 1.9.0, otherwise set this to false
 // Setting this to false will work with most servers, but it will be slower: 1 petition for the href of vcards, and 1 petition for each vcard
 define('CARDDAV_SUPPORTS_SYNC', false);
 

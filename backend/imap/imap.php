@@ -310,15 +310,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $finalEmail = $finalEmail->encode($boundary);
 
             $finalHeaders = array('Mime-Version' => '1.0');
-            // We copy all the headers, minus content_type
+            // We copy all the non-existent headers, minus content_type
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Copying new headers"));
             foreach ($message->headers as $k => $v) {
                 if (strcasecmp($k, 'content-type') != 0 && strcasecmp($k, 'content-transfer-encoding') != 0 && strcasecmp($k, 'mime-version') != 0) {
-                    $finalHeaders[ucwords($k)] = $v;
+                    if (!isset($finalHeaders[$k]))
+                        $finalHeaders[ucwords($k)] = $v;
                 }
             }
             foreach ($finalEmail['headers'] as $k => $v) {
-                $finalHeaders[$k] = $v;
+                if (!isset($finalHeaders[$k]))
+                    $finalHeaders[$k] = $v;
             }
 
             $finalBody = "This is a multi-part message in MIME format.\n" . $finalEmail['body'];

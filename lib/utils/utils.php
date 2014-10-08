@@ -722,6 +722,22 @@ class Utils {
             return @strftime("%d/%m/%Y %H:%M:%S", $timestamp);
     }
 
+    /**
+     * Returns a formatted string output from an optional timestamp with microseconds.
+     * If no timestamp is sent, NOW is used.
+     *
+     * @param float $timestamp
+     *
+     * @access public
+     * @return string
+     */
+    public static function GetFormattedMicroTime($timestamp = false) {
+        if(!$timestamp)
+            $timestamp = microtime(true);
+
+        $t = explode('.',number_format($timestamp,6,'.',''),2);
+        return strftime("%Y-%m-%dT%H:%M:%S", $t[0]).'.'.$t[1];
+    }
 
    /**
     * Get charset name from a codepage

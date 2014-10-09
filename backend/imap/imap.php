@@ -2242,6 +2242,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             case 'sql':
                 $v = $this->getIdentityFromSql($this->username, $this->domain, IMAP_FROM_SQL_FROM, true);
                 break;
+            case 'passwd':
+                $v = $this->getIdentityFromPasswd($this->username, $this->domain, 'FROM', true);
+                break;
             default:
                 $v = $this->username . IMAP_DEFAULTFROM;
                 break;
@@ -2265,6 +2268,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 break;
             case 'sql':
                 $v = $this->getIdentityFromSql($username, $this->domain, IMAP_FROM_SQL_FULLNAME, false);
+                break;
+            case 'passwd':
+                $v = $this->getIdentityFromPasswd($username, $this->domain, 'FULLNAME', false);
                 break;
         }
 
@@ -2372,6 +2378,55 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $dbh = $sth = $record = null;
+
+        return $ret_value;
+    }
+
+    /**
+     * Generate the "From" value from the local posix passwd database
+     *
+     * @access private
+     * @params string   $username    username value
+     * @params string   $domain      domain value
+     * @return string
+     */
+    private function getIdentityFromPasswd($username, $domain, $identity, $encode = true) {
+        $ret_value = $username;
+
+        try {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromPasswd() - Fetching info for user %s", $username));
+
+            $local_user = posix_getpwnam($username);
+            if ($local_user) {
+                $tmp = $local_user['gecos'];
+                $tmp = explode(',', $tmp);
+                $name = $tmp[0];
+                unset($tmp);
+
+                switch ($identity) {
+                    case 'FROM':
+                        if (strlen($domain) > 0) {
+                            $ret_value = sprintf("%s <%s@%s>", $name, $username, $domain);
+                        } else {
+                            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getIdentityFromPasswd() - No domain passed. Cannot construct From address."));
+                        }
+                        break;
+                    case 'FULLNAME':
+                        $ret_value = sprintf("%s", $name);
+                        break;
+                }
+                if ($encode) {
+                    $ret_value = $this->encodeFrom($ret_value);
+                }
+            } else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getIdentityFromPasswd() - No entry found in Password database"));
+
+            }
+
+        }
+        catch(Exception $ex) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getIdentityFromPasswd() - Error getting From value from passwd database: %s", $ex));
+        }
 
         return $ret_value;
     }

@@ -211,10 +211,10 @@ include_once('version.php');
         if(!headers_sent())
             header("Content-Length: $len");
 
-        // send vnd.ms-sync.wbxml content type header if there is no content
+        // unset content type header if there is no content
         // otherwise text/html content type is added which might break some devices
-        if ($len == 0)
-            header("Content-Type: application/vnd.ms-sync.wbxml");
+        if (!headers_sent() && $len === 0)
+            header("Content-Type:");
 
         ZLog::Write(LOGLEVEL_DEBUG, "Sending $len, headers already sent ? ".(headers_sent()?'true':'false'));
 

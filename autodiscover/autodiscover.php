@@ -114,10 +114,12 @@ class ZPushAutodiscover {
         }
 
         catch (AuthenticationRequiredException $ex) {
-            if (isset($incomingXml))
+            if (isset($incomingXml)) {
                 ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover because login failed for user with email '%s'", $incomingXml->Request->EMailAddress));
-            else
+            }
+            else {
                 ZLog::Write(LOGLEVEL_ERROR, sprintf("Unable to complete autodiscover incorrect request: '%s'", $ex->getMessage()));
+            }
             header('HTTP/1.1 401 Unauthorized');
             header('WWW-Authenticate: Basic realm="ZPush"');
             http_response_code(401);

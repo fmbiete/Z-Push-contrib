@@ -54,7 +54,7 @@ define('CALDAV_PORT', '80');
 // Path
 define('CALDAV_PATH', '/caldav.php/%u/');
 
-// Personal CalDAV folder (calendar folder/principal)
+// Default CalDAV folder (calendar folder/principal). This will be marked as the default calendar in the mobile
 define('CALDAV_PERSONAL', 'home');
 
 // If the CalDAV server supports the sync-collection operation

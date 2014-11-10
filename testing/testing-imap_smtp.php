@@ -20,9 +20,9 @@ define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 //          "debug"         - Whether to enable SMTP debug mode or not. Default is FALSE.
 //          "persist"       - Indicates whether or not the SMTP connection should persist over multiple calls to the send() method.
 //          "pipelining"    - Indicates whether or not the SMTP commands pipelining should be used.
-$imap_smtp_params = array('host' => 'smtp.domain.testing', 'port' => 25, 'auth' => true, "username" => "fmbiete", "password" => "secret_password", "debug" => true, "pipelining" => true);
-$toaddr = "fmbiete@domain.testing";
-$headers = array('Subject' => 'Testing SMTP', 'From' => 'fmbiete@domain.testing', 'Return-Path' => 'fmbiete@domain.testing', 'To' => 'fmbiete@domain.testing');
+$imap_smtp_params = array('host' => 'smtp.zpush.org', 'port' => 25, 'auth' => true, "username" => "fmbiete", "password" => "password_account", "debug" => true, "pipelining" => true);
+$toaddr = "fmbiete@zpush.org";
+$headers = array('Subject' => 'Testing SMTP', 'From' => 'fmbiete@zpush.org', 'Return-Path' => 'fmbiete@zpush.org', 'To' => 'fmbiete@zpush.org', 'Cc' => 'fmbiete@zpush.org,fmbiete@zpush.net');
 $body = "This is a test";
 
 

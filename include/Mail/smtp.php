@@ -36,7 +36,7 @@
  *
  * @category    HTTP
  * @package     HTTP_Request
- * @author      Jon Parise <jon@php.net> 
+ * @author      Jon Parise <jon@php.net>
  * @author      Chuck Hagenbuch <chuck@horde.org>
  * @copyright   2010 Chuck Hagenbuch
  * @license     http://opensource.org/licenses/bsd-license.php New BSD License
@@ -308,6 +308,22 @@ class Mail_smtp extends Mail {
             $this->_smtp->rset();
             return $recipients;
         }
+
+        // FIX: Cc and Bcc headers are sent, but we need to make sure that the recipient list contains them
+        foreach (array("CC", "cc", "Cc", "BCC", "Bcc", "bcc") as $key) {
+            if (!empty($headers[$key])) {
+                $extra_recipients = $this->parseRecipients($headers[$key]);
+                if ($extra_recipients === false) {
+                    $this->_smtp->rset();
+                    return $extra_recipients;
+                }
+                $recipients = array_merge($recipients, $extra_recipients);
+            }
+        }
+
+        // Remove repeated rcptTo
+        $recipients = array_unique($recipients);
+
 
         foreach ($recipients as $recipient) {
             $res = $this->_smtp->rcptTo($recipient);

@@ -99,6 +99,10 @@ define('IMAP_FROM_LDAP_FROM', '#givenname #sn <#mail>');
 define('IMAP_FROM_LDAP_FULLNAME', '#givenname #sn');
 
 
+// Root folder or prefix in your IMAP server (without the separator). For example, with courier it will be INBOX, and your folder will be INBOX.Sent
+//  Always in lowercase
+define('IMAP_ROOT_FOLDER', 'inbox');
+
 // copy outgoing mail to this folder. If not set z-push will try the default folders
 define('IMAP_SENTFOLDER', '');
 

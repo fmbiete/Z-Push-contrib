@@ -724,7 +724,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // compare on lowercase strings
         $lid = strtolower($imapid);
 // TODO WasteID or SentID could be saved for later ussage
-        if($lid == "inbox") {
+        if($lid == IMAP_ROOT_FOLDER) {
             $folder->parentid = "0"; // Root
             $folder->displayname = "Inbox";
             $folder->type = SYNC_FOLDER_TYPE_INBOX;
@@ -747,23 +747,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;
         }
-        // courier-imap outputs and cyrus-imapd outputs
-        else if($lid == "inbox.drafts" || $lid == "inbox/drafts") {
-//             $folder->parentid = $this->convertImapId($fhir[0]);
-            $folder->parentid = "0";
+        else if($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "drafts") {
+            $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == "inbox.trash" || $lid == "inbox/trash" || $lid == "inbox.deleted messages" || $lid == "inbox/deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
-//             $folder->parentid = $this->convertImapId($fhir[0]);
-            $folder->parentid = "0";
+        else if(($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "trash" || $lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
+            $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == "inbox.sent" || $lid == "inbox/sent" || $lid == "inbox.sent messages" || $lid == "inbox/sent messages" || $lid == IMAP_SENTFOLDER) {
-//             $folder->parentid = $this->convertImapId($fhir[0]);
-            $folder->parentid = "0";
+        else if($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "sent" || $lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "sent messages" || $lid == IMAP_SENTFOLDER) {
+            $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;

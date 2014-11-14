@@ -100,11 +100,20 @@ define('IMAP_FROM_LDAP_FULLNAME', '#givenname #sn');
 
 
 // Root folder or prefix in your IMAP server (without the separator). For example, with courier it will be INBOX, and your folder will be INBOX.Sent
-//  Always in lowercase
-define('IMAP_ROOT_FOLDER', 'inbox');
+//  You can use the real case
+define('IMAP_FOLDER_ROOT', 'INBOX');
 
 // copy outgoing mail to this folder. If not set z-push will try the default folders
-define('IMAP_SENTFOLDER', '');
+//  You can use the real case and the full path (INBOX.Sent)
+define('IMAP_FOLDER_SENT', '');
+
+// Draft folder
+//  You can use the real case and the full path (INBOX.Draft)
+define('IMAP_FOLDER_DRAFT', '');
+
+// Trash folder
+//  You can use the real case and the full path (INBOX.Trash)
+define('IMAP_FOLDER_TRASH', '');
 
 // forward messages inline (default true - inlined)
 define('IMAP_INLINE_FORWARD', true);

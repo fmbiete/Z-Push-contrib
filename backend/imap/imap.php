@@ -724,41 +724,41 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // compare on lowercase strings
         $lid = strtolower($imapid);
 // TODO WasteID or SentID could be saved for later ussage
-        if($lid == IMAP_ROOT_FOLDER) {
+        if($lid == strtolower(IMAP_FOLDER_ROOT)) {
             $folder->parentid = "0"; // Root
             $folder->displayname = "Inbox";
             $folder->type = SYNC_FOLDER_TYPE_INBOX;
         }
         // Zarafa IMAP-Gateway outputs
-        else if($lid == "drafts") {
+        else if($lid == "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
             $folder->parentid = "0";
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == "trash" || $lid == "deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
+        else if(($lid == "trash" || $lid == "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == "sent" || $lid == "sent items" || $lid == "sent messages" || $lid == IMAP_SENTFOLDER) {
+        else if($lid == "sent" || $lid == "sent items" || $lid == "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
             $folder->parentid = "0";
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;
         }
-        else if($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "drafts") {
+        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "trash" || $lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "deleted messages") && ($this->wasteID === false || $this->wasteID == $id)) {
+        else if(($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "trash" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "sent" || $lid == IMAP_ROOT_FOLDER . $this->serverdelimiter . "sent messages" || $lid == IMAP_SENTFOLDER) {
+        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "sent" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
@@ -2703,14 +2703,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if ($this->sentID) {
             $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
         }
-        else if (IMAP_SENTFOLDER) {
+        else if (strlen(IMAP_FOLDER_SENT) > 0) {
             // try to open the sentfolder
-            if (!$this->imap_reopen_folder(IMAP_SENTFOLDER, false)) {
+            if (!$this->imap_reopen_folder(IMAP_FOLDER_SENT, false)) {
                 // if we cannot open it, it mustn't exist, we try to create it.
-                $this->imap_create_folder($this->server . IMAP_SENTFOLDER);
+                $this->imap_create_folder($this->server . IMAP_FOLDER_SENT);
             }
-            $saved = $this->addSentMessage(IMAP_SENTFOLDER, $headers, $finalBody);
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_SENTFOLDER));
+            $saved = $this->addSentMessage(IMAP_FOLDER_SENT, $headers, $finalBody);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_FOLDER_SENT));
         }
         // No Sent folder set, try defaults
         else {

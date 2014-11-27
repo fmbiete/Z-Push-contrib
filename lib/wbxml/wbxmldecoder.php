@@ -529,15 +529,12 @@ class WBXMLDecoder extends WBXMLDefs {
     private function getTermStr() {
         $str = "";
         while(1) {
-            $in = $this->getByte();
-
-            if($in == 0)
-                break;
-            else
-                $str .= chr($in);
+            $in = fread($this->in, 1);
+            //this is faster than ord($in) == 0
+            if($in === "\0" || $in === false || $in === "")
+                return $str;
+            $str .= $in;
         }
-
-        return $str;
     }
 
     /**

@@ -261,7 +261,8 @@ class WBXMLDecoder extends WBXMLDefs {
         }
 
         $el = $this->_getToken();
-        $this->logToken($el);
+        if(WBXML_DEBUG)
+            $this->logToken($el);
 
         return $el;
     }
@@ -275,9 +276,6 @@ class WBXMLDecoder extends WBXMLDefs {
      * @return
      */
     private function logToken($el) {
-        if(!WBXML_DEBUG)
-            return;
-
         $spaces = str_repeat(" ", count($this->logStack));
 
         switch($el[EN_TYPE]) {

@@ -310,10 +310,10 @@ class WBXMLDecoder extends WBXMLDefs {
         $element = array();
 
         while(1) {
-            $byte = $this->getByte();
-
-            if(!isset($byte))
+            $byte = fread($this->in, 1);
+            if($byte === "" || $byte === false)
                 break;
+            $byte = ord($byte);
 
             switch($byte) {
                 case WBXML_SWITCH_PAGE:

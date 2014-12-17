@@ -106,6 +106,7 @@ include('version.php');
     set_include_path(get_include_path() . PATH_SEPARATOR . BASE_PATH_CLI);
     try {
         ZPush::CheckConfig();
+        ZLog::Initialize();
         ZPushAdminCLI::CheckEnv();
         ZPushAdminCLI::CheckOptions();
 

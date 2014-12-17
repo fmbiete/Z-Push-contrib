@@ -106,7 +106,7 @@ class LoopDetection extends InterProcessData {
      * @access public
      * @return string
      */
-    public static function GetProcessIdentifier() {
+    private static function GetProcessIdentifier() {
         if (!isset(self::$processident))
             self::$processident = sprintf('%04x%04', mt_rand(0, 0xffff), mt_rand(0, 0xffff));
 
@@ -119,7 +119,7 @@ class LoopDetection extends InterProcessData {
      * @access public
      * @return array
      */
-    public static function GetProcessEntry() {
+    private static function GetProcessEntry() {
         if (!isset(self::$processentry)) {
             self::$processentry = array();
             self::$processentry['id'] = self::GetProcessIdentifier();

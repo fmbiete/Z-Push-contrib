@@ -41,21 +41,6 @@
 * Consult LICENSE file for details
 ************************************************/
 
-if (!function_exists("quoted_printable_encode")) {
-    /**
-     * Process a string to fit the requirements of RFC2045 section 6.7. Note that
-     * this works, but replaces more characters than the minimum set. For readability
-     * the spaces and CRLF pairs aren't encoded though.
-     *
-     * @param string    $string     string to be encoded
-     *
-     * @see http://www.php.net/manual/en/function.quoted-printable-decode.php#89417
-     */
-    function quoted_printable_encode($string) {
-        return preg_replace('/[^\r\n]{73}[^=\r\n]{2}/', "$0=\n", str_replace(array('%20', '%0D%0A', '%'), array(' ', "\r\n", '='), rawurlencode($string)));
-    }
-}
-
 if (!function_exists("apache_request_headers")) {
     /**
       * When using other webservers or using php as cgi in apache

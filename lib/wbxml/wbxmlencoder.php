@@ -272,7 +272,7 @@ class WBXMLEncoder extends WBXMLDefs {
      */
     private function _content($content) {
         $this->logContent($content);
-        $this->outByte(WBXML_STR_I);
+        $this->outByte(self::WBXML_STR_I);
         $this->outTermStr($content);
     }
 
@@ -284,7 +284,7 @@ class WBXMLEncoder extends WBXMLDefs {
      */
     private function _endTag() {
         $this->logEndTag();
-        $this->outByte(WBXML_END);
+        $this->outByte(self::WBXML_END);
     }
 
     /**
@@ -344,7 +344,7 @@ class WBXMLEncoder extends WBXMLDefs {
      * @return
      */
     private function outAttributes() {
-        $this->outByte(WBXML_END);
+        $this->outByte(self::WBXML_END);
     }
 
     /**
@@ -356,7 +356,7 @@ class WBXMLEncoder extends WBXMLDefs {
      * @return
      */
     private function outSwitchPage($page) {
-        $this->outByte(WBXML_SWITCH_PAGE);
+        $this->outByte(self::WBXML_SWITCH_PAGE);
         $this->outByte($page);
     }
 

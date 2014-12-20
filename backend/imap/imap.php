@@ -2623,7 +2623,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // Get $tz from first timezone
         $props = $ical->GetPropertiesByPath("VTIMEZONE/TZID");
         if (count($props) > 0) {
-            $tzname = $props[0]->Value();
+            // TimeZones shouldn't have dots
+            $tzname = str_replace(".", "", $props[0]->Value());
             $tz = TimezoneUtil::GetFullTZFromTZName($tzname);
         }
         else {

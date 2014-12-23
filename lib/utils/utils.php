@@ -946,37 +946,3 @@ class Utils {
         return substr($email, 0, $pos);
     }
 }
-
-
-
-// TODO Win1252/UTF8 functions are deprecated and will be removed sometime
-//if the ICS backend is loaded in CombinedBackend and Zarafa > 7
-//STORE_SUPPORTS_UNICODE is true and the convertion will not be done
-//for other backends.
-function utf8_to_windows1252($string, $option = "", $force_convert = false) {
-    //if the store supports unicode return the string without converting it
-    if (!$force_convert && defined('STORE_SUPPORTS_UNICODE') && STORE_SUPPORTS_UNICODE == true) return $string;
-
-    if (function_exists("iconv")){
-        return @iconv("UTF-8", "Windows-1252" . $option, $string);
-    }else{
-        return utf8_decode($string); // no euro support here
-    }
-}
-
-function windows1252_to_utf8($string, $option = "", $force_convert = false) {
-    //if the store supports unicode return the string without converting it
-    if (!$force_convert && defined('STORE_SUPPORTS_UNICODE') && STORE_SUPPORTS_UNICODE == true) return $string;
-
-    if (function_exists("iconv")){
-        return @iconv("Windows-1252", "UTF-8" . $option, $string);
-    }else{
-        return utf8_encode($string); // no euro support here
-    }
-}
-
-function w2u($string) { return windows1252_to_utf8($string); }
-function u2w($string) { return utf8_to_windows1252($string); }
-
-function w2ui($string) { return windows1252_to_utf8($string, "//TRANSLIT"); }
-function u2wi($string) { return utf8_to_windows1252($string, "//TRANSLIT"); }

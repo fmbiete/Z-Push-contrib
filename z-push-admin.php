@@ -52,6 +52,7 @@ include('lib/core/bodypreference.php');
 include('lib/core/contentparameters.php');
 include('lib/core/synccollections.php');
 include('lib/core/zlog.php');
+include('lib/core/zpush-utils.php');
 include('lib/core/statemanager.php');
 include('lib/core/streamer.php');
 include('lib/core/asdevice.php');

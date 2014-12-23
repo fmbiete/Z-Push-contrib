@@ -46,6 +46,7 @@ include_once('../lib/exceptions/exceptions.php');
 include_once('../lib/utils/utils.php');
 include_once('../lib/core/zpush.php');
 include_once('../lib/core/zlog.php');
+include_once('../lib/core/zpush-utils.php');
 include_once('../lib/interface/ibackend.php');
 include_once('../lib/interface/ichanges.php');
 include_once('../lib/interface/iexportchanges.php');

@@ -63,6 +63,7 @@ include_once('lib/core/statemanager.php');
 include_once('lib/core/devicemanager.php');
 include_once('lib/core/zpush.php');
 include_once('lib/core/zlog.php');
+include_once('lib/core/zpush-utils.php');
 include_once('lib/core/paddingfilter.php');
 include_once('lib/interface/ibackend.php');
 include_once('lib/interface/ichanges.php');

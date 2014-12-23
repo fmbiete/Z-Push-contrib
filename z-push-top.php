@@ -48,6 +48,7 @@ include('lib/exceptions/exceptions.php');
 include('lib/core/zpushdefs.php');
 include('lib/core/zpush.php');
 include('lib/core/zlog.php');
+include('lib/core/zpush-utils.php');
 include('lib/core/interprocessdata.php');
 include('lib/core/topcollector.php');
 include('lib/utils/utils.php');

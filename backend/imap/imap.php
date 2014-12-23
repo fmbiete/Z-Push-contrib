@@ -46,11 +46,6 @@
 // config file
 require_once("backend/imap/config.php");
 
-include_once('lib/default/diffbackend/diffbackend.php');
-include_once('include/mimeDecode.php');
-require_once('include/z_RFC822.php');
-
-
 class BackendIMAP extends BackendDiff {
     protected $wasteID;
     protected $sentID;
@@ -593,7 +588,6 @@ class BackendIMAP extends BackendDiff {
         unset($mobj);
         unset($mail);
 
-        include_once('include/stringstreamwrapper.php');
         $attachment = new SyncItemOperationsAttachment();
         /* BEGIN fmbiete's contribution r1528, ZP-320 */
         $attachment->data = StringStreamWrapper::Open($mparts[$part]->body);

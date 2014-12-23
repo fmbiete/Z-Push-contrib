@@ -344,7 +344,6 @@ class ZPush {
             }
             else {
                 // Initialize the default StateMachine
-                include_once('lib/default/filestatemachine.php');
                 ZPush::$stateMachine = new FileStateMachine();
             }
 
@@ -714,13 +713,6 @@ END;
             throw new FatalNotImplementedException(sprintf("Command '%s' has no request handler or class", Utils::GetCommandFromCode($commandCode)));
 
         $class = self::$supportedCommands[$commandCode][self::REQUESTHANDLER];
-        if ($class == "Webservice")
-            $handlerclass = REAL_BASE_PATH . "lib/webservice/webservice.php";
-        else
-            $handlerclass = REAL_BASE_PATH . "lib/request/" . strtolower($class) . ".php";
-
-        if (is_file($handlerclass))
-            include($handlerclass);
 
         if (class_exists($class))
             return new $class();

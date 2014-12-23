@@ -44,18 +44,8 @@
 * Consult LICENSE file for details
 ************************************************/
 
-include('lib/exceptions/exceptions.php');
-include('lib/core/zpushdefs.php');
-include('lib/core/zpush.php');
-include('lib/core/zlog.php');
-include('lib/core/zpush-utils.php');
-include('lib/core/interprocessdata.php');
-include('lib/core/topcollector.php');
-include('lib/utils/utils.php');
-include('lib/request/request.php');
-include('lib/request/requestprocessor.php');
-include('config.php');
-include('version.php');
+require_once 'vendor/autoload.php';
+require_once 'config.php';
 
 /************************************************
  * MAIN

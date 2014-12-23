@@ -41,6 +41,17 @@
 * Consult LICENSE file for details
 ************************************************/
 
+const EN_TYPE = 1;
+const EN_TAG = 2;
+const EN_CONTENT = 3;
+const EN_FLAGS = 4;
+const EN_ATTRIBUTES = 5;
+const EN_TYPE_STARTTAG = 1;
+const EN_TYPE_ENDTAG = 2;
+const EN_TYPE_CONTENT = 3;
+const EN_FLAGS_CONTENT = 1;
+const EN_FLAGS_ATTRIBUTES = 2;
+
 const SYNC_SYNCHRONIZE = "Synchronize";
 const SYNC_REPLIES = "Replies";
 const SYNC_ADD = "Add";

@@ -388,10 +388,33 @@ class ZPush {
      * @return object TopCollector
      */
     static public function GetTopCollector() {
-        if (!isset(ZPush::$topCollector))
-            ZPush::$topCollector = new TopCollector();
+        if (!isset(self::$topCollector)) {
+            $class = defined('TOP_COLLECTOR_BACKEND')?TOP_COLLECTOR_BACKEND:'TopCollector';
+            self::$topCollector = new $class();
+        }
+        return self::$topCollector;
+    }
 
-        return ZPush::$topCollector;
+    /**
+     * Returns an instance of PingTracking
+     *
+     * @access public
+     * @return object IPingTracking
+     */
+    static public function GetPingTracking() {
+        $class = defined('PING_TRACKING_BACKEND')?PING_TRACKING_BACKEND:'PingTracking';
+        return new $class();
+    }
+
+    /**
+     * Returns an instance of LoopDetection
+     *
+     * @access public
+     * @return object ILoopDetection
+     */
+    static public function GetLoopDetection() {
+        $class = defined('LOOP_DETECTION_BACKEND')?LOOP_DETECTION_BACKEND:'LoopDetection';
+        return new $class();
     }
 
     /**

@@ -91,7 +91,7 @@ class DeviceManager {
         else
             throw new FatalNotImplementedException("Can not proceed without a device id.");
 
-        $this->loopdetection = new LoopDetection();
+        $this->loopdetection = ZPush::GetLoopDetection();
         $this->loopdetection->ProcessLoopDetectionInit();
         $this->loopdetection->ProcessLoopDetectionPreviousConnectionFailed();
 

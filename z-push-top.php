@@ -140,7 +140,7 @@ class ZPushTop {
         $this->pingInterval = (defined('PING_INTERVAL') && PING_INTERVAL > 0) ? PING_INTERVAL : 12;
 
         // get a TopCollector
-        $this->topCollector = new TopCollector();
+        $this->topCollector = ZPush::GetTopCollector();
     }
 
     /**

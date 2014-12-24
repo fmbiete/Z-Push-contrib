@@ -419,7 +419,7 @@ class SyncCollections implements Iterator {
         else
             $checkClasses = implode(" ", array_keys($classes));
 
-        $pingTracking = new PingTracking();
+        $pingTracking = ZPush::GetPingTracking();
         $this->changes = array();
         $changesAvailable = false;
 

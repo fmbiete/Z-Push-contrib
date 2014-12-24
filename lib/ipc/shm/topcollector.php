@@ -44,7 +44,7 @@
 * Consult LICENSE file for details
 ************************************************/
 
-class TopCollector extends InterProcessData {
+class TopCollector extends InterProcessData implements ITopCollector {
     const ENABLEDAT = 2;
     const TOPDATA = 3;
 

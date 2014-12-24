@@ -41,7 +41,7 @@
 * Consult LICENSE file for details
 ************************************************/
 
-class PingTracking extends InterProcessData {
+class PingTracking extends InterProcessData implements IPingTracking {
 
     /**
      * Constructor

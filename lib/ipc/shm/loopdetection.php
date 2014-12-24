@@ -47,7 +47,7 @@
 ************************************************/
 
 
-class LoopDetection extends InterProcessData {
+class LoopDetection extends InterProcessData implements ILoopDetection {
     const INTERPROCESSLD = "ipldkey";
     const BROKENMSGS = "bromsgs";
     static private $processident;

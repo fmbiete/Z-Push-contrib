@@ -178,7 +178,7 @@ class SqlStateMachine implements IStateMachine {
                 }
             }
             else {
-                $data = unserialize($record["state_data"]);
+                $data = unserialize(stream_get_contents($record["state_data"]));
             }
         }
         catch(PDOException $ex) {
@@ -220,16 +220,13 @@ class SqlStateMachine implements IStateMachine {
             $sth = $this->dbh->prepare($sql);
             $sth->execute($params);
 
-            $params[":data"] = serialize($state);
-            $params[":updated_at"] = $this->getNow();
-
             $record = $sth->fetch(PDO::FETCH_ASSOC);
             if (!$record) {
                 // New record
                 $sql = "insert into zpush_states (device_id, state_type, uuid, counter, state_data, created_at, updated_at) values (:devid, :type, :key, :counter, :data, :created_at, :updated_at)";
-                $params[":created_at"] = $params[":updated_at"];
 
                 $sth = $this->dbh->prepare($sql);
+                $sth->bindParam(":created_at", $this->getNow(), PDO::PARAM_STR);
             }
             else {
                 // Existing record, we update it
@@ -238,12 +235,19 @@ class SqlStateMachine implements IStateMachine {
                 $sth = $this->dbh->prepare($sql);
             }
 
-            if (!$sth->execute($params) ) {
+            $sth->bindParam(":devid", $devid, PDO::PARAM_STR);
+            $sth->bindParam(":type", $type, PDO::PARAM_STR);
+            $sth->bindParam(":key", $key, PDO::PARAM_STR);
+            $sth->bindParam(":counter", ($counter === false ? -1 : $counter), PDO::PARAM_INT);
+            $sth->bindParam(":data", serialize($state), PDO::PARAM_LOB);
+            $sth->bindParam(":updated_at", $this->getNow(), PDO::PARAM_STR);
+
+            if (!$sth->execute() ) {
                 $this->clearConnection($this->dbh, $sth);
                 throw new FatalMisconfigurationException(sprintf("SqlStateMachine->SetState(): Could not write state"));
             }
             else {
-                $bytes = strlen($params[":data"]);
+                $bytes = strlen(serialize($state));
             }
         }
         catch(PDOException $ex) {

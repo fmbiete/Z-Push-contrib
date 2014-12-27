@@ -122,6 +122,10 @@ define('IMAP_INLINE_FORWARD', true);
 // example: dovecot.sieve|archive|spam
 define('IMAP_EXCLUDED_FOLDERS', '');
 
+// List of prefixes for shared folders (view dbmail wiki http://www.dbmail.org/dokuwiki/doku.php/shared-mbox)
+// example: #Users|#Public
+define('IMAP_PREFIX_SHARED_FOLDERS', '');
+
 
 // Method used for sending mail
 // mail => mail() php function

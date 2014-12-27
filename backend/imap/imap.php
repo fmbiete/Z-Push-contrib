@@ -69,6 +69,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $sinkstates = array();
     private $changessinkinit = false;
     private $excludedFolders;
+    private $prefixSharedFolders;
     private static $mimeTypes = false;
 
 
@@ -118,6 +119,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): Excluding Folders (%s)", IMAP_EXCLUDED_FOLDERS));
         }
         /* END fmbiete's contribution r1527, ZP-319 */
+
+        $this->prefixSharedFolders = array();
+        if (defined('IMAP_PREFIX_SHARED_FOLDERS') && strlen(IMAP_PREFIX_SHARED_FOLDERS) > 0) {
+            $this->prefixSharedFolders = explode("|", IMAP_PREFIX_SHARED_FOLDERS);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): Shared Folders Prefixes (%s)", IMAP_PREFIX_SHARED_FOLDERS));
+        }
+
 
         // open the IMAP-mailbox
         $this->mbox = @imap_open($this->server , $username, $password, OP_HALFOPEN);
@@ -2168,6 +2176,27 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return
      */
     protected function getModAndParentNames($fhir, &$displayname, &$parent) {
+        // Special case: dbmail shared folders have a prefix before the folder path
+        //  Ex: #Users/account@domain/INBOX
+        //  Ex: #Public/account@domain/INBOX/Folder Name
+        if (count($this->prefixSharedFolders) > 0) {
+            if (!isset($displayname) || strlen($displayname) == 0) {
+                if (count($fhir) > 1) {
+                    foreach($this->prefixSharedFolders as $prefix) {
+                        if (strcasecmp($fhir[0], $prefix) == 0) {
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Found shared prefix '%s'", $prefix));
+                            // Remove first element, it's the shared prefix
+                            array_shift($fhir);
+                            $displayname = "SHARED " . $fhir[count($fhir) - 1];
+                            $parent = implode($serverdelimiter, $fhir);
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Returning displayname '%s' parent '%s'", $displayname, $parent));
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         // if mod is already set add the previous part to it as it might be a folder which has
         // delimiter in its name
         $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->serverdelimiter.$displayname : array_pop($fhir);

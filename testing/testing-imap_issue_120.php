@@ -1,7 +1,9 @@
 <?php
 
-
+// CHANGE THIS TO YOUR FOLDER NAME
 $imapid = "#Users/user@domain.at/INBOX";
+
+
 $serverdelimiter = "/";
 
 $fhir = explode($serverdelimiter, $imapid);
@@ -28,7 +30,9 @@ function getModAndParentNames($fhir, &$displayname, &$parent) {
 }
 
 function getModAndParentNamesWithSharedSupport($fhir, &$displayname, &$parent) {
+    // PUT IN HERE YOUR SHARED FOLDER PREFIXES
     $shared_prefix = [ "#Users", "#Public" ];
+
     $serverdelimiter = "/";
 
     if (!isset($displayname) || strlen($displayname) == 0) {

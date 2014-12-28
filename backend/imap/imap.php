@@ -2188,7 +2188,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             // Remove first element, it's the shared prefix
                             array_shift($fhir);
                             $displayname = "SHARED " . $fhir[count($fhir) - 1];
-                            $parent = implode($serverdelimiter, $fhir);
+                            $parent = implode($this->serverdelimiter, $fhir);
                             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Returning displayname '%s' parent '%s'", $displayname, $parent));
                             return;
                         }

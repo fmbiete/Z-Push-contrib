@@ -70,6 +70,11 @@ class CalDAVClient {
 	protected $calendar_urls;
 
 	/**
+	* Construct URL
+	*/
+	protected $url;
+
+	/**
 	* The useragent which is send to the caldav server
 	*
 	* @var string
@@ -102,6 +107,7 @@ class CalDAVClient {
 	* @param string $pass        The password for that user
 	*/
 	function __construct( $caldav_url, $user, $pass ) {
+        $this->url = $caldav_url;
 		$this->user = $user;
 		$this->pass = $pass;
 		$this->auth = $user . ':' . $pass;
@@ -109,10 +115,11 @@ class CalDAVClient {
 
 		$parsed_url = parse_url($caldav_url);
 		if ($parsed_url == FALSE) {
-			ZLog::Write(LOGLEVEL_ERROR, sprintf('Couldn\'t parse URL: %s', $caldav_url));
+			ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCalDAV->caldav_backend(): Couldn't parse URL: %s", $caldav_url));
 		} else
 			$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
 			$this->base_url  = $parsed_url['path'];
+			//ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend(): base_url '%s'", $this->base_url));
 //			$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
 //			$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
 
@@ -120,6 +127,27 @@ class CalDAVClient {
 				$this->base_url = $this->base_url . '/';
 			}
 	}
+
+	/**
+     * Checks if the CalDAV server is reachable
+     *
+     * @return  boolean
+     */
+    public function CheckConnection() {
+//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend->check_connection"));
+        $result = $this->DoRequest($this->url, 'OPTIONS');
+
+        $status = false;
+        switch($this->httpResponseCode) {
+            case 200:
+            case 207:
+            case 401:
+                $status = true;
+                break;
+        }
+
+        return $status;
+    }
 
 
 	/**
@@ -253,7 +281,7 @@ class CalDAVClient {
 	* @return array The allowed options
 	*/
 	function DoOptionsRequest( $url = null ) {
-		$headers = $this->DoRequest($url, "OPTIONS");
+		$headers = $this->DoRequest($url === null ? $this->url : $url, "OPTIONS");
 		$options_header = preg_replace( '/^.*Allow: ([a-z, ]+)\r?\n.*/is', '$1', $headers );
 		$options = array_flip( preg_split( '/[, ]+/', $options_header ));
 		return $options;

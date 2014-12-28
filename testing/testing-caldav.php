@@ -24,6 +24,8 @@ define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 $caldav_path = str_replace('%u', $username, CALDAV_PATH);
 $caldav = new CalDAVClient(CALDAV_SERVER . ":" . CALDAV_PORT . $caldav_path, $username, $password);
 
+printf("Connected %d\n", $caldav->CheckConnection());
+
 // Show options supported by server
 $options = $caldav->DoOptionsRequest();
 print_r($options);

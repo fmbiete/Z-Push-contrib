@@ -692,7 +692,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $fhir = explode($val->delimiter, $imapid);
                     if (count($fhir) > 1) {
                         $this->getModAndParentNames($fhir, $box["mod"], $imapparent);
-                        $box["parent"] = $this->convertImapId($imapparent);
+                        if ($imapparent === null) {
+                            $box["parent"] = "0";
+                        }
+                        else {
+                            $box["parent"] = $this->convertImapId($imapparent);
+                        }
                     }
                     else {
                         $box["mod"] = $imapid;
@@ -777,8 +782,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             if (count($fhir) > 1) {
                 $this->getModAndParentNames($fhir, $folder->displayname, $imapparent);
-                $folder->parentid = $this->convertImapId($imapparent);
                 $folder->displayname = Utils::Utf7_to_utf8(Utils::Utf7_iconv_decode($folder->displayname));
+                if ($imapparent === null) {
+                    $folder->parentid = "0";
+                }
+                else {
+                    $folder->parentid = $this->convertImapId($imapparent);
+                }
             }
             else {
                 $folder->displayname = Utils::Utf7_to_utf8(Utils::Utf7_iconv_decode($imapid));
@@ -2177,19 +2187,18 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     protected function getModAndParentNames($fhir, &$displayname, &$parent) {
         // Special case: dbmail shared folders have a prefix before the folder path
-        //  Ex: #Users/account@domain/INBOX
-        //  Ex: #Public/account@domain/INBOX/Folder Name
+        //  Ex: #Users/owner-account@domain/Folder Name
+        //  Ex: #Public/owner-account@domain/Folder Name
         if (count($this->prefixSharedFolders) > 0) {
             if (!isset($displayname) || strlen($displayname) == 0) {
                 if (count($fhir) > 1) {
                     foreach($this->prefixSharedFolders as $prefix) {
                         if (strcasecmp($fhir[0], $prefix) == 0) {
                             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Found shared prefix '%s'", $prefix));
-                            // Remove first element, it's the shared prefix
-                            array_shift($fhir);
-                            $displayname = "SHARED " . $fhir[count($fhir) - 1];
-                            $parent = implode($this->serverdelimiter, $fhir);
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Returning displayname '%s' parent '%s'", $displayname, $parent));
+                            // Create the display name "Folder Name (owner-account@domain)"
+                            $displayname = array_pop($fhir) . "(" . array_pop($fhir) . ")";
+                            $parent = null;
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Returning displayname '%s' parent null", $displayname));
                             return;
                         }
                     }

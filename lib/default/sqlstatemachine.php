@@ -226,7 +226,7 @@ class SqlStateMachine implements IStateMachine {
                 $sql = "insert into zpush_states (device_id, state_type, uuid, counter, state_data, created_at, updated_at) values (:devid, :type, :key, :counter, :data, :created_at, :updated_at)";
 
                 $sth = $this->dbh->prepare($sql);
-                $sth->bindParam(":created_at", $this->getNow(), PDO::PARAM_STR);
+                $sth->bindValue(":created_at", $this->getNow(), PDO::PARAM_STR);
             }
             else {
                 // Existing record, we update it
@@ -238,9 +238,9 @@ class SqlStateMachine implements IStateMachine {
             $sth->bindParam(":devid", $devid, PDO::PARAM_STR);
             $sth->bindParam(":type", $type, PDO::PARAM_STR);
             $sth->bindParam(":key", $key, PDO::PARAM_STR);
-            $sth->bindParam(":counter", ($counter === false ? -1 : $counter), PDO::PARAM_INT);
-            $sth->bindParam(":data", serialize($state), PDO::PARAM_LOB);
-            $sth->bindParam(":updated_at", $this->getNow(), PDO::PARAM_STR);
+            $sth->bindValue(":counter", ($counter === false ? -1 : $counter), PDO::PARAM_INT);
+            $sth->bindValue(":data", serialize($state), PDO::PARAM_LOB);
+            $sth->bindValue(":updated_at", $this->getNow(), PDO::PARAM_STR);
 
             if (!$sth->execute() ) {
                 $this->clearConnection($this->dbh, $sth);

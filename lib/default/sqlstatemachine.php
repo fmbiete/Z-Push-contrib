@@ -178,7 +178,13 @@ class SqlStateMachine implements IStateMachine {
                 }
             }
             else {
-                $data = unserialize(stream_get_contents($record["state_data"]));
+                if (is_string($record["state_data"])) {
+                    // MySQL-PDO returns a string for LOB objects
+                    $data = unserialize($record["state_data"]);
+                }
+                else {
+                    $data = unserialize(stream_get_contents($record["state_data"]));
+                }
             }
         }
         catch(PDOException $ex) {

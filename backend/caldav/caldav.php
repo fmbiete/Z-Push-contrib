@@ -738,6 +738,12 @@ class BackendCalDAV extends BackendDiff {
             }
         }
 
+        // Workaround #127 - No organizeremail defined
+        if (!isset($message->organizeremail)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->_ParseVEventToSyncObject(): No organizeremail defined, using username"));
+            $message->organizeremail = $this->_username;
+        }
+
         $valarm = current($event->GetComponents("VALARM"));
         if ($valarm) {
             $properties = $valarm->GetProperties();

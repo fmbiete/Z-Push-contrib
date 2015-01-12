@@ -609,6 +609,19 @@ class SqlStateMachine implements IStateMachine {
             try {
                 $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
+                $sql = "select count(*) from zpush_preauth_users where username = :user and device_id != 'authorized' and authorized = 1";
+                $params = array(":user" => $user);
+
+                // Get number of authorized devices for user
+                $num_devid_user = 0;
+                $sth = $this->dbh->prepare($sql);
+                $sth->execute($params);
+                if ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
+                    $num_devid_user = $record[0];
+                }
+                $record = null;
+                $sth = null;
+
                 $sql = "select authorized from zpush_preauth_users where username = :user and device_id = :devid";
                 $params = array(":user" => $user, ":devid" => "authorized");
                 $paramsNewDevid = array();
@@ -658,7 +671,7 @@ class SqlStateMachine implements IStateMachine {
                             // Device not pre-authorized
 
                             if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
-                                if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                                if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES > $num_devid_user) {
                                     $paramsNewDevid[":auth"] = true;
                                     ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for user '%s'", $devid, $user));
                                 }
@@ -681,9 +694,13 @@ class SqlStateMachine implements IStateMachine {
                     if (defined('PRE_AUTHORIZE_NEW_USERS') && PRE_AUTHORIZE_NEW_USERS === true) {
                         $paramsNewUser[":auth"] = true;
                         if (defined('PRE_AUTHORIZE_NEW_DEVICES') && PRE_AUTHORIZE_NEW_DEVICES === true) {
-                            if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES >= count($userList[$user])) {
+                            if (defined('PRE_AUTHORIZE_MAX_DEVICES') && PRE_AUTHORIZE_MAX_DEVICES > $num_devid_user) {
                                 $paramsNewDevid[":auth"] = true;
                                 ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Pre-authorized new device '%s' for new user '%s'", $devid, $user));
+                            }
+                            else {
+                                $status = SYNC_COMMONSTATUS_MAXDEVICESREACHED;
+                                ZLog::Write(LOGLEVEL_INFO, sprintf("SqlStateMachine->GetUserDevicePermission(): Max number of devices reached for user '%s', tried '%s'", $user, $devid));
                             }
                         }
                         else {

@@ -350,7 +350,8 @@ class ZPush {
 
             if (ZPush::$stateMachine->GetStateVersion() !== ZPush::GetLatestStateVersion()) {
                 if (class_exists("TopCollector")) self::GetTopCollector()->AnnounceInformation("Run migration script!", true);
-                throw new HTTPReturnCodeException(sprintf("The state version available to the %s is not the latest version - please run the state upgrade script. See release notes for more information.", get_class(ZPush::$stateMachine), 503));
+                throw new HTTPReturnCodeException("The state version available to the ".get_class(ZPush::$stateMachine).
+                    " is not the latest version - please run the state upgrade script. See release notes for more information.", HTTP_CODE_500);
             }
         }
         return ZPush::$stateMachine;

@@ -462,7 +462,7 @@ class ZPushTop {
      * @return
      */
     private function readLineProcess() {
-        $ans = explode("^^", `bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"`);
+        $ans = explode("^^", shell_exec('bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"'));
 
         if ($ans[0] < 128) {
             if (isset($ans[1]) && bin2hex(trim($ans[1])) == "7f") {

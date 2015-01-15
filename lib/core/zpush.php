@@ -49,7 +49,6 @@ class ZPush {
     const WEBSERVICECOMMAND = 4;
     const HIERARCHYCOMMAND = 5;
     const PLAININPUT = 6;
-    const REQUESTHANDLER = 7;
     const CLASS_NAME = 1;
     const CLASS_REQUIRESPROTOCOLVERSION = 2;
     const CLASS_DEFAULTTYPE = 3;
@@ -84,12 +83,8 @@ class ZPush {
     const COMMAND_RESOLVERECIPIENTS = 21;
     const COMMAND_VALIDATECERT = 22;
 
-    // Deprecated commands
+    // Deprecated commands (AS >= 14)
     const COMMAND_GETHIERARCHY = -1;
-    const COMMAND_CREATECOLLECTION = -2;
-    const COMMAND_DELETECOLLECTION = -3;
-    const COMMAND_MOVECOLLECTION = -4;
-    const COMMAND_NOTIFY = -5;
 
     // Webservice commands
     const COMMAND_WEBSERVICE_DEVICE = -100;
@@ -114,37 +109,59 @@ class ZPush {
                 );
 
     static private $supportedCommands = array(
-                    // COMMAND                             // AS VERSION   // REQUESTHANDLER                        // OTHER SETTINGS
-                    self::COMMAND_SYNC              => array(self::ASV_25,  self::REQUESTHANDLER => "Sync"),
-                    self::COMMAND_SENDMAIL          => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTFORWARD      => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTREPLY        => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_GETATTACHMENT     => array(self::ASV_25,  self::REQUESTHANDLER => "GetAttachment"),
-                    self::COMMAND_GETHIERARCHY      => array(self::ASV_25,  self::REQUESTHANDLER => "GetHierarchy",  self::HIERARCHYCOMMAND),            // deprecated but implemented
-                    self::COMMAND_CREATECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_DELETECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_MOVECOLLECTION    => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_FOLDERSYNC        => array(self::ASV_25,  self::REQUESTHANDLER => "FolderSync",    self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERCREATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERDELETE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERUPDATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_MOVEITEMS         => array(self::ASV_25,  self::REQUESTHANDLER => "MoveItems"),
-                    self::COMMAND_GETITEMESTIMATE   => array(self::ASV_25,  self::REQUESTHANDLER => "GetItemEstimate"),
-                    self::COMMAND_MEETINGRESPONSE   => array(self::ASV_25,  self::REQUESTHANDLER => "MeetingResponse"),
-                    self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_25,  self::REQUESTHANDLER => "ResolveRecipients"),
-                    self::COMMAND_VALIDATECERT      => array(self::ASV_25,  self::REQUESTHANDLER => "ValidateCert"),
-                    self::COMMAND_PROVISION         => array(self::ASV_25, self::REQUESTHANDLER => "Provisioning",  self::UNAUTHENTICATED, self::UNPROVISIONED),
-                    self::COMMAND_SEARCH            => array(self::ASV_25,  self::REQUESTHANDLER => "Search"),
-                    self::COMMAND_PING              => array(self::ASV_25,  self::REQUESTHANDLER => "Ping",          self::UNPROVISIONED),
-                    self::COMMAND_NOTIFY            => array(self::ASV_25,  self::REQUESTHANDLER => "Notify"),                                           // deprecated & not implemented
-                    self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12, self::REQUESTHANDLER => "ItemOperations"),
-                    self::COMMAND_SETTINGS          => array(self::ASV_12, self::REQUESTHANDLER => "Settings"),
+        // COMMAND                             // AS VERSION   // OTHER SETTINGS
+        self::COMMAND_SYNC              => array(self::ASV_25),
+        self::COMMAND_SENDMAIL          => array(self::ASV_25),
+        self::COMMAND_SMARTFORWARD      => array(self::ASV_25),
+        self::COMMAND_SMARTREPLY        => array(self::ASV_25),
+        self::COMMAND_GETATTACHMENT     => array(self::ASV_25),
+        self::COMMAND_GETHIERARCHY      => array(self::ASV_25, self::HIERARCHYCOMMAND),  // deprecated (AS >= 14)
+        self::COMMAND_FOLDERSYNC        => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERCREATE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERDELETE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERUPDATE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_MOVEITEMS         => array(self::ASV_25),
+        self::COMMAND_GETITEMESTIMATE   => array(self::ASV_25),
+        self::COMMAND_MEETINGRESPONSE   => array(self::ASV_25),
+        self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_25),
+        self::COMMAND_VALIDATECERT      => array(self::ASV_25),
+        self::COMMAND_PROVISION         => array(self::ASV_25, self::UNAUTHENTICATED, self::UNPROVISIONED),
+        self::COMMAND_SEARCH            => array(self::ASV_25),
+        self::COMMAND_PING              => array(self::ASV_25, self::UNPROVISIONED),
+        self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12),
+        self::COMMAND_SETTINGS          => array(self::ASV_12),
 
-                    self::COMMAND_WEBSERVICE_DEVICE => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
-                    self::COMMAND_WEBSERVICE_USERS  => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
-            );
+        self::COMMAND_WEBSERVICE_DEVICE => array(self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
+        self::COMMAND_WEBSERVICE_USERS  => array(self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
+    );
 
 
+    static private $requestHandler = array(
+        // COMMAND                      // REQUESTHANDLER
+        self::COMMAND_SYNC              => "Sync",
+        self::COMMAND_SENDMAIL          => "SendMail",
+        self::COMMAND_SMARTFORWARD      => "SendMail",
+        self::COMMAND_SMARTREPLY        => "SendMail",
+        self::COMMAND_GETATTACHMENT     => "GetAttachment",
+        self::COMMAND_GETHIERARCHY      => "GetHierarchy",  // deprecated (AS >= 14)
+        self::COMMAND_FOLDERSYNC        => "FolderSync",
+        self::COMMAND_FOLDERCREATE      => "FolderChange",
+        self::COMMAND_FOLDERDELETE      => "FolderChange",
+        self::COMMAND_FOLDERUPDATE      => "FolderChange",
+        self::COMMAND_MOVEITEMS         => "MoveItems",
+        self::COMMAND_GETITEMESTIMATE   => "GetItemEstimate",
+        self::COMMAND_MEETINGRESPONSE   => "MeetingResponse",
+        self::COMMAND_RESOLVERECIPIENTS => "ResolveRecipients",
+        self::COMMAND_VALIDATECERT      => "ValidateCert",
+        self::COMMAND_PROVISION         => "Provisioning",
+        self::COMMAND_SEARCH            => "Search",
+        self::COMMAND_PING              => "Ping",
+        self::COMMAND_ITEMOPERATIONS    => "ItemOperations",
+        self::COMMAND_SETTINGS          => "Settings",
+
+        self::COMMAND_WEBSERVICE_DEVICE => "Webservice",
+        self::COMMAND_WEBSERVICE_USERS  => "Webservice",
+    );
 
     static private $classes = array(
                     "Email"     => array(
@@ -731,11 +748,10 @@ END;
      * @return RequestProcessor sub-class
      */
     static public function GetRequestHandlerForCommand($commandCode) {
-        if (!array_key_exists($commandCode, self::$supportedCommands) ||
-            !array_key_exists(self::REQUESTHANDLER, self::$supportedCommands[$commandCode]) )
+        if (!array_key_exists($commandCode, self::$requestHandler))
             throw new FatalNotImplementedException(sprintf("Command '%s' has no request handler or class", Utils::GetCommandFromCode($commandCode)));
 
-        $class = self::$supportedCommands[$commandCode][self::REQUESTHANDLER];
+        $class = self::$requestHandler[$commandCode];
 
         if (class_exists($class))
             return new $class();

@@ -632,12 +632,8 @@ class Utils {
             case ZPush::COMMAND_RESOLVERECIPIENTS:    return 'ResolveRecipients';
             case ZPush::COMMAND_VALIDATECERT:         return 'ValidateCert';
 
-            // Deprecated commands
+            // Deprecated commands (AS >= 14)
             case ZPush::COMMAND_GETHIERARCHY:         return 'GetHierarchy';
-            case ZPush::COMMAND_CREATECOLLECTION:     return 'CreateCollection';
-            case ZPush::COMMAND_DELETECOLLECTION:     return 'DeleteCollection';
-            case ZPush::COMMAND_MOVECOLLECTION:       return 'MoveCollection';
-            case ZPush::COMMAND_NOTIFY:               return 'Notify';
 
             // Webservice commands
             case ZPush::COMMAND_WEBSERVICE_DEVICE:    return 'WebserviceDevice';
@@ -676,12 +672,8 @@ class Utils {
             case 'ResolveRecipients':    return ZPush::COMMAND_RESOLVERECIPIENTS;
             case 'ValidateCert':         return ZPush::COMMAND_VALIDATECERT;
 
-            // Deprecated commands
+            // Deprecated commands (AS >= 14)
             case 'GetHierarchy':         return ZPush::COMMAND_GETHIERARCHY;
-            case 'CreateCollection':     return ZPush::COMMAND_CREATECOLLECTION;
-            case 'DeleteCollection':     return ZPush::COMMAND_DELETECOLLECTION;
-            case 'MoveCollection':       return ZPush::COMMAND_MOVECOLLECTION;
-            case 'Notify':               return ZPush::COMMAND_NOTIFY;
 
             // Webservice commands
             case 'WebserviceDevice':     return ZPush::COMMAND_WEBSERVICE_DEVICE;

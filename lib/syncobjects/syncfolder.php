@@ -51,6 +51,7 @@ class SyncFolder extends SyncObject {
     public $parentid;
     public $displayname;
     public $type;
+    public $NoBackendFolder;
     public $Store;
 
     function SyncFolder() {

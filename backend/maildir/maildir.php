@@ -719,5 +719,3 @@ class BackendMaildir extends BackendDiff {
         return MAILDIR_BASE . "/" . $this->store . "/" . MAILDIR_SUBDIR . "/cur";
     }
 }
-
-?>

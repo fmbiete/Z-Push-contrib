@@ -2629,5 +2629,3 @@ class MAPIProvider {
         return $this->addressbook;
     }
 }
-
-?>

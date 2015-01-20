@@ -292,4 +292,3 @@ include_once('version.php');
 
     // end gracefully
     ZLog::Write(LOGLEVEL_DEBUG, '-------- End');
-?>

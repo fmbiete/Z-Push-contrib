@@ -212,4 +212,3 @@ class Ping extends RequestProcessor {
         return true;
     }
 }
-?>

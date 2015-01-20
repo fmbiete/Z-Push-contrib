@@ -416,4 +416,3 @@ class BackendCombined extends Backend {
         return substr($folderid,0,$pos);
     }
 }
-?>

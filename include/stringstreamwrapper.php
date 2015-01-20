@@ -140,5 +140,3 @@ class StringStreamWrapper {
 }
 
 stream_wrapper_register(StringStreamWrapper::PROTOCOL, "StringStreamWrapper");
-
-?>

@@ -49,5 +49,3 @@ if (!defined("ZPUSH_VERSION")) {
     else
         define("ZPUSH_VERSION", "SVN checkout");
 }
-
-?>

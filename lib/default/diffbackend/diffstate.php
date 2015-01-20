@@ -292,5 +292,3 @@ class DiffState implements IChanges {
     }
 
 }
-
-?>

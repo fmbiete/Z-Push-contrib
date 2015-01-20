@@ -154,4 +154,3 @@ abstract class RequestProcessor {
      */
     abstract public function Handle($commandCode);
 }
-?>

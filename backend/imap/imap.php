@@ -704,7 +704,7 @@ class BackendIMAP extends BackendDiff {
         if (defined('IMAP_SENTFOLDER'))
             $this->createAndSubscribeMailbox(IMAP_SENTFOLDER);
 
-        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
+        $list = @imap_getsubscribed($this->mbox, $this->server, "*");
         if (is_array($list)) {
             // reverse list to obtain folders in right order
             $list = array_reverse($list);

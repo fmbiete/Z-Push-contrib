@@ -919,23 +919,26 @@ class BackendIMAP extends BackendDiff {
         if ($folderid == false)
             throw new StatusException("Folderid not found in cache", SYNC_STATUS_FOLDERHIERARCHYCHANGED);
 
-        $messages = array();
         $this->imap_reopenFolder($folderid, true);
 
         $sequence = "1:*";
         if ($cutoffdate > 0) {
             $search = @imap_search($this->mbox, "SINCE ". date("d-M-Y", $cutoffdate));
-            if ($search !== false)
-                $sequence = implode(",", $search);
+            if ($search === false) {
+                ZLog::Write(LOGLEVEL_INFO, sprintf("BackendIMAP->GetMessageList('%s','%s'): 0 result for the search or error: %s",$folderid, $cutoffdate, imap_last_error()));
+                return array();
+            }
+            $sequence = implode(",", $search);
         }
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessageList(): searching with sequence '%s'", $sequence));
         $overviews = @imap_fetch_overview($this->mbox, $sequence);
 
-        if (!$overviews || !is_array($overviews)) {
+        if (!is_array($overviews)) {
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->GetMessageList('%s','%s'): Failed to retrieve overview: %s",$folderid, $cutoffdate, imap_last_error()));
-            return $messages;
+            return array();
         }
 
+        $messages = array();
         foreach($overviews as $overview) {
             $date = "";
             $vars = get_object_vars($overview);
@@ -959,7 +962,7 @@ class BackendIMAP extends BackendDiff {
                 if(array_key_exists( "seen", $vars) && $overview->seen)
                     $message["flags"] = 1;
 
-                array_push($messages, $message);
+                $messages[]= $message;
             }
         }
         return $messages;

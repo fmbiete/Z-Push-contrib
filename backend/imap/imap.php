@@ -54,7 +54,6 @@ class BackendIMAP extends BackendDiff {
     protected $mboxFolder;
     protected $username;
     protected $domain;
-    protected $serverdelimiter;
     protected $sinkfolders;
     protected $sinkstates;
     protected $excludedFolders; /* fmbiete's contribution r1527, ZP-319 */
@@ -98,8 +97,6 @@ class BackendIMAP extends BackendDiff {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): User '%s' is authenticated on IMAP",$username));
             $this->username = $username;
             $this->domain = $domain;
-            // set serverdelimiter
-            $this->serverdelimiter = $this->getServerDelimiter();
             return true;
         }
         else {
@@ -762,7 +759,7 @@ class BackendIMAP extends BackendDiff {
         $imapid = $this->getImapIdFromFolderId($id);
 
         // explode hierarchy
-        $fhir = explode($this->serverdelimiter, $imapid);
+        $fhir = explode($this->getServerDelimiter(), $imapid);
 
         // compare on lowercase strings
         $lid = strtolower($imapid);
@@ -870,7 +867,7 @@ class BackendIMAP extends BackendDiff {
 
         // build name for new mailboxBackendMaildir
         $displayname = Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($displayname));
-        $newname = $this->server . $folderid . $this->serverdelimiter . $displayname;
+        $newname = $this->server . $folderid . $this->getServerDelimiter() . $displayname;
 
         $csts = false;
         // if $id is set => rename mailbox, otherwise create
@@ -878,13 +875,13 @@ class BackendIMAP extends BackendDiff {
             // rename doesn't work properly with IMAP
             // the activesync client doesn't support a 'changing ID'
             // TODO this would be solved by implementing hex ids (Mantis #459)
-            //$csts = imap_renamemailbox($this->mbox, $this->server . imap_utf7_encode(str_replace(".", $this->serverdelimiter, $oldid)), $newname);
+            //$csts = imap_renamemailbox($this->mbox, $this->server . imap_utf7_encode(str_replace(".", $this->getServerDelimiter(), $oldid)), $newname);
         }
         else {
             $csts = @imap_createmailbox($this->mbox, $newname);
         }
         if ($csts) {
-            return $this->StatFolder($folderid . $this->serverdelimiter . $displayname);
+            return $this->StatFolder($folderid . $this->getServerDelimiter() . $displayname);
         }
         else
             return false;
@@ -1778,8 +1775,8 @@ class BackendIMAP extends BackendDiff {
     protected function getModAndParentNames($fhir, &$displayname, &$parent) {
         // if mod is already set add the previous part to it as it might be a folder which has
         // delimiter in its name
-        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->serverdelimiter.$displayname : array_pop($fhir);
-        $parent = implode($this->serverdelimiter, $fhir);
+        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->getServerDelimiter().$displayname : array_pop($fhir);
+        $parent = implode($this->getServerDelimiter(), $fhir);
 
         if (count($fhir) == 1 || $this->checkIfIMAPFolder($parent)) {
             return;

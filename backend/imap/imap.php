@@ -697,6 +697,13 @@ class BackendIMAP extends BackendDiff {
     public function GetFolderList() {
         $folders = array();
 
+        if (defined('IMAP_DRAFTFOLDER'))
+            $this->createAndSubscribeMailbox(IMAP_DRAFTFOLDER);
+        if (defined('IMAP_TRASHFOLDER'))
+            $this->createAndSubscribeMailbox(IMAP_TRASHFOLDER);
+        if (defined('IMAP_SENTFOLDER'))
+            $this->createAndSubscribeMailbox(IMAP_SENTFOLDER);
+
         $list = @imap_getmailboxes($this->mbox, $this->server, "*");
         if (is_array($list)) {
             // reverse list to obtain folders in right order
@@ -742,6 +749,21 @@ class BackendIMAP extends BackendDiff {
         return $folders;
     }
 
+    private function createAndSubscribeMailbox($mailbox) {
+        $c = imap_createmailbox($this->mbox, imap_utf7_encode($this->server . $mailbox));
+        if (!$c) {
+            ZLog::Write(LOGLEVEL_DEBUG, "Creation of $mailbox failed (already exists?) :".imap_last_error());
+            //flush errors
+            imap_errors();
+        }
+        $s = imap_subscribe($this->mbox, imap_utf7_encode($this->server . $mailbox));
+        if (!$s) {
+            ZLog::Write(LOGLEVEL_DEBUG, "Subscription to $mailbox failed :".imap_last_error());
+            //flush errors
+            imap_errors();
+        }
+    }
+
     /**
      * Returns an actual SyncFolder object
      *
@@ -762,6 +784,11 @@ class BackendIMAP extends BackendDiff {
 
         // compare on lowercase strings
         $lid = strtolower($imapid);
+
+        $isDraft = defined('IMAP_DRAFTFOLDER') && ($lid == IMAP_DRAFTFOLDER);
+        $isTrash = defined('IMAP_TRASHFOLDER') && ($lid == IMAP_TRASHFOLDER);
+        $isSent = defined('IMAP_SENTFOLDER') && ($lid == IMAP_SENTFOLDER);
+
 // TODO WasteID or SentID could be saved for later ussage
         if($lid == "inbox") {
             $folder->parentid = "0"; // Root
@@ -769,18 +796,18 @@ class BackendIMAP extends BackendDiff {
             $folder->type = SYNC_FOLDER_TYPE_INBOX;
         }
         // Zarafa IMAP-Gateway outputs
-        else if($lid == "drafts") {
+        else if($lid == "drafts" || $isDraft) {
             $folder->parentid = "0";
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if($lid == "trash") {
+        else if($lid == "trash" || $isTrash) {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == "sent" || $lid == "sent items" || $lid == IMAP_SENTFOLDER) {
+        else if($lid == "sent" || $lid == "sent items" || $isSent) {
             $folder->parentid = "0";
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;

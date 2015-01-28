@@ -1442,7 +1442,7 @@ class BackendIMAP extends BackendDiff {
 
             // open new folder
             $stat = $this->imap_reopenFolder($newfolderImapid);
-            if (! $s1)
+            if (! $stat)
                 throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, openeing the destination folder: %s", $folderid, $id, $newfolderid, imap_last_error()), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
 
 
@@ -1636,15 +1636,16 @@ class BackendIMAP extends BackendDiff {
      */
     protected function imap_reopenFolder($folderid, $force = false) {
         // to see changes, the folder has to be reopened!
-           if ($this->mboxFolder != $folderid || $force) {
-               $s = @imap_reopen($this->mbox, $this->server . $folderid);
-               // TODO throw status exception
-               if (!$s) {
-                ZLog::Write(LOGLEVEL_WARN, "BackendIMAP->imap_reopenFolder('%s'): failed to change folder: ",$folderid, implode(", ", imap_errors()));
+        if ($this->mboxFolder != $folderid || $force) {
+            $s = @imap_reopen($this->mbox, $this->server . $folderid);
+            // TODO throw status exception
+            if (!$s) {
+                ZLog::Write(LOGLEVEL_WARN, "BackendIMAP->imap_reopenFolder($folderid): failed to change folder: ".implode(", ", imap_errors()));
                 return false;
-               }
+            }
             $this->mboxFolder = $folderid;
         }
+        return true;
     }
 
 

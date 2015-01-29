@@ -905,6 +905,7 @@ class BackendIMAP extends BackendDiff {
         }
         else {
             $csts = @imap_createmailbox($this->mbox, $newname);
+            imap_subscribe($this->mbox, $newname);
         }
         if ($csts) {
             return $this->StatFolder($folderid . $this->getServerDelimiter() . $displayname);

@@ -925,8 +925,10 @@ class BackendIMAP extends BackendDiff {
      *
      */
     public function DeleteFolder($id, $parentid){
-        // TODO implement
-        return false;
+        $imapid = $this->getImapIdFromFolderId($id);
+        if (!$imapid)
+            return false;
+        return imap_deletemailbox($this->mbox, $this->server.$imapid);
     }
 
     /**

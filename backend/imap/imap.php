@@ -888,30 +888,29 @@ class BackendIMAP extends BackendDiff {
     public function ChangeFolder($folderid, $oldid, $displayname, $type){
         ZLog::Write(LOGLEVEL_INFO, sprintf("BackendIMAP->ChangeFolder('%s','%s','%s','%s')", $folderid, $oldid, $displayname, $type));
 
-        // go to parent mailbox
-        $this->imap_reopenFolder($folderid);
-
-        // build name for new mailboxBackendMaildir
-        $displayname = Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($displayname));
-        $newname = $this->server . $folderid . $this->getServerDelimiter() . $displayname;
-
-        $csts = false;
-        // if $id is set => rename mailbox, otherwise create
         if ($oldid) {
-            // rename doesn't work properly with IMAP
-            // the activesync client doesn't support a 'changing ID'
-            // TODO this would be solved by implementing hex ids (Mantis #459)
-            //$csts = imap_renamemailbox($this->mbox, $this->server . imap_utf7_encode(str_replace(".", $this->getServerDelimiter(), $oldid)), $newname);
-        }
-        else {
-            $csts = @imap_createmailbox($this->mbox, $newname);
-            imap_subscribe($this->mbox, $newname);
-        }
-        if ($csts) {
-            return $this->StatFolder($folderid . $this->getServerDelimiter() . $displayname);
-        }
-        else
+            //TODO: implement rename
+            ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->ChangeFolder() : we do not support rename for now");
             return false;
+        }
+
+        $displayname = Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($displayname));
+        if ($folderid == "0") {
+            $newimapid = $displayname;
+        } else {
+            $imapid = $this->getImapIdFromFolderId($folderid);
+            $newimapid = $imapid . $this->getServerDelimiter() . $displayname;
+        }
+
+        $csts = imap_createmailbox($this->mbox, $this->server.$newimapid);
+        imap_subscribe($this->mbox, $this->server.$newimapid);
+        if ($csts) {
+            $newfolderid = $this->convertImapId($newimapid);
+            return $this->StatFolder($newfolderid);
+        } else {
+            ZLog::Write(LOGLEVEL_WARN, "BackendIMAP->ChangeFolder() : mailbox creation failed");
+            return false;
+        }
     }
 
     /**

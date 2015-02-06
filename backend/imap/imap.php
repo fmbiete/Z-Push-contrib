@@ -697,6 +697,8 @@ class BackendIMAP extends BackendDiff {
     public function GetFolderList() {
         $folders = array();
 
+        if (defined('IMAP_INBOXFOLDER'))
+            $this->subscribeMailbox(IMAP_INBOXFOLDER);
         if (defined('IMAP_DRAFTFOLDER'))
             $this->createAndSubscribeMailbox(IMAP_DRAFTFOLDER);
         if (defined('IMAP_TRASHFOLDER'))
@@ -756,6 +758,15 @@ class BackendIMAP extends BackendDiff {
             //flush errors
             imap_errors();
         }
+        $s = imap_subscribe($this->mbox, imap_utf7_encode($this->server . $mailbox));
+        if (!$s) {
+            ZLog::Write(LOGLEVEL_DEBUG, "Subscription to $mailbox failed :".imap_last_error());
+            //flush errors
+            imap_errors();
+        }
+    }
+
+    private function subscribeMailbox($mailbox) {
         $s = imap_subscribe($this->mbox, imap_utf7_encode($this->server . $mailbox));
         if (!$s) {
             ZLog::Write(LOGLEVEL_DEBUG, "Subscription to $mailbox failed :".imap_last_error());

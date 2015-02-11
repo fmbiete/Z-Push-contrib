@@ -118,10 +118,7 @@ require_once 'config.php';
         foreach (RequestProcessor::GetSpecialHeaders() as $header)
             header($header);
 
-        // stream the data
         $len = ob_get_length();
-        $data = ob_get_contents();
-        ob_end_clean();
 
         // log amount of data transferred
         // TODO check $len when streaming more data (e.g. Attachments), as the data will be send chunked
@@ -143,7 +140,8 @@ require_once 'config.php';
 
         ZLog::Write(LOGLEVEL_DEBUG, "Sending $len, headers already sent ? ".(headers_sent()?'true':'false'));
 
-        print $data;
+        if (!ob_end_flush())
+            ZLog::Write(LOGLEVEL_ERROR, "Unable to flush buffer!?");
 
         // destruct backend after all data is on the stream
         ZPush::GetBackend()->Logoff();

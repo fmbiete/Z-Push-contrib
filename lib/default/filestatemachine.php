@@ -449,7 +449,8 @@ class FileStateMachine implements IStateMachine {
             }
 
             // Android PROVISIONING initial step
-            if ($devid != "validate") {
+                // LG-D802 is sending an empty deviceid
+            if ($devid != "validate" && $devid != "") {
                 $changed = false;
 
                 if (array_key_exists($user, $userList)) {

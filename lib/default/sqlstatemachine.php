@@ -594,6 +594,8 @@ class SqlStateMachine implements IStateMachine {
      * @return integer
      */
     public function GetUserDevicePermission($user, $devid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetUserDevicePermission('%s', '%s')", $user, $devid));
+
         $status = SYNC_COMMONSTATUS_SUCCESS;
 
         $userExist = false;
@@ -602,14 +604,15 @@ class SqlStateMachine implements IStateMachine {
         $deviceBlocked = false;
 
         // Android PROVISIONING initial step
-        if ($devid != "validate") {
+            // LG-D802 is sending an empty deviceid
+        if ($devid != "validate" && $devid != "") {
 
             $sth = null;
             $record = null;
             try {
                 $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
 
-                $sql = "select count(*) from zpush_preauth_users where username = :user and device_id != 'authorized' and authorized = 1";
+                $sql = "select count(*) as pcount from zpush_preauth_users where username = :user and device_id != 'authorized' and authorized = 1";
                 $params = array(":user" => $user);
 
                 // Get number of authorized devices for user
@@ -617,7 +620,7 @@ class SqlStateMachine implements IStateMachine {
                 $sth = $this->dbh->prepare($sql);
                 $sth->execute($params);
                 if ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
-                    $num_devid_user = $record[0];
+                    $num_devid_user = $record["pcount"];
                 }
                 $record = null;
                 $sth = null;
@@ -637,7 +640,7 @@ class SqlStateMachine implements IStateMachine {
                 $sth = null;
 
                 if ($userExist) {
-                    // User already pre-authorized
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetUserDevicePermission(): User '%s', already pre-authorized", $user));
 
                     // User could be blocked if a "authorized" device exist and it's false
                     if ($userBlocked) {
@@ -689,7 +692,7 @@ class SqlStateMachine implements IStateMachine {
                     }
                 }
                 else {
-                    // User not pre-authorized
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetUserDevicePermission(): User '%s', not pre-authorized", $user));
 
                     if (defined('PRE_AUTHORIZE_NEW_USERS') && PRE_AUTHORIZE_NEW_USERS === true) {
                         $paramsNewUser[":auth"] = true;
@@ -718,6 +721,8 @@ class SqlStateMachine implements IStateMachine {
                 }
 
                 if (count($paramsNewUser) > 0) {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetUserDevicePermission(): Creating new user '%s'", $user));
+
                     $sql = "insert into zpush_preauth_users (username, device_id, authorized, created_at, updated_at) values (:user, :devid, :auth, :created_at, :updated_at)";
                     $paramsNewUser[":user"] = $user;
                     $paramsNewUser[":devid"] = "authorized";
@@ -731,6 +736,8 @@ class SqlStateMachine implements IStateMachine {
                 }
 
                 if (count($paramsNewDevid) > 0) {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetUserDevicePermission(): Creating new device '%s' for user '%s'", $devid, $user));
+
                     $sql = "insert into zpush_preauth_users (username, device_id, authorized, created_at, updated_at) values (:user, :devid, :auth, :created_at, :updated_at)";
                     $paramsNewDevid[":user"] = $user;
                     $paramsNewDevid[":devid"] = $devid;

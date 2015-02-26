@@ -120,8 +120,7 @@ class DiffState implements IChanges {
      * @return boolean
      */
     static public function RowCmp($a, $b) {
-        // TODO implement different comparing functions
-        return $a["id"] < $b["id"] ? 1 : -1;
+        return strcmp($b['id'], $a['id']);
     }
 
     /**
@@ -142,19 +141,21 @@ class DiffState implements IChanges {
 
         $inew = 0;
         $iold = 0;
+        $cntstate = count($this->syncstate);
+        $cntnew = count($new);
 
         // Get changes by comparing our list of messages with
         // our previous state
-        while(1) {
-            $change = array();
-
-            if($iold >= count($this->syncstate) || $inew >= count($new))
+        while(true) {
+            if($iold >= $cntstate || $inew >= $cntnew)
                 break;
 
-            if($this->syncstate[$iold]["id"] == $new[$inew]["id"]) {
+            $cmp = strcmp($this->syncstate[$iold]["id"], $new[$inew]["id"]);
+            if ($cmp == 0) {
                 // Both messages are still available, compare flags and mod
                 if(isset($this->syncstate[$iold]["flags"]) && isset($new[$inew]["flags"]) && $this->syncstate[$iold]["flags"] != $new[$inew]["flags"]) {
                     // Flags changed
+                    $change = array();
                     $change["type"] = "flags";
                     $change["id"] = $new[$inew]["id"];
                     $change["flags"] = $new[$inew]["flags"];
@@ -162,6 +163,7 @@ class DiffState implements IChanges {
                 }
 
                 if($this->syncstate[$iold]["mod"] != $new[$inew]["mod"]) {
+                    $change = array();
                     $change["type"] = "change";
                     $change["id"] = $new[$inew]["id"];
                     $changes[] = $change;
@@ -169,34 +171,36 @@ class DiffState implements IChanges {
 
                 $inew++;
                 $iold++;
+            } elseif ($cmp > 0) {
+                // Message in state seems to have disappeared (delete)
+                $change = array();
+                $change["type"] = "delete";
+                $change["id"] = $this->syncstate[$iold]["id"];
+                $changes[] = $change;
+                $iold++;
             } else {
-                if($this->syncstate[$iold]["id"] > $new[$inew]["id"]) {
-                    // Message in state seems to have disappeared (delete)
-                    $change["type"] = "delete";
-                    $change["id"] = $this->syncstate[$iold]["id"];
-                    $changes[] = $change;
-                    $iold++;
-                } else {
-                    // Message in new seems to be new (add)
-                    $change["type"] = "change";
-                    $change["flags"] = SYNC_NEWMESSAGE;
-                    $change["id"] = $new[$inew]["id"];
-                    $changes[] = $change;
-                    $inew++;
-                }
+                // Message in new seems to be new (add)
+                $change = array();
+                $change["type"] = "change";
+                $change["flags"] = SYNC_NEWMESSAGE;
+                $change["id"] = $new[$inew]["id"];
+                $changes[] = $change;
+                $inew++;
             }
         }
 
-        while($iold < count($this->syncstate)) {
+        while($iold < $cntstate) {
             // All data left in 'syncstate' have been deleted
+            $change = array();
             $change["type"] = "delete";
             $change["id"] = $this->syncstate[$iold]["id"];
             $changes[] = $change;
             $iold++;
         }
 
-        while($inew < count($new)) {
+        while($inew < $cntnew) {
             // All data left in new have been added
+            $change = array();
             $change["type"] = "change";
             $change["flags"] = SYNC_NEWMESSAGE;
             $change["id"] = $new[$inew]["id"];

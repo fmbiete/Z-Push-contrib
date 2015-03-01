@@ -546,7 +546,6 @@ EOFXMLGETXMLVCARD;
         switch($result['http_code']) {
             case 200:
             case 207:
-            case 401:
                 $status = true;
                 break;
         }

@@ -761,6 +761,86 @@ class SqlStateMachine implements IStateMachine {
         return $status;
     }
 
+    /**
+     * Retrieves the mapped username for a specific username and backend.
+     *
+     * @param string $username The username to lookup
+     * @param string $backend Name of the backend to lookup
+     *
+     * @return string The mapped username or null if none found
+     */
+    public function GetMappedUsername($username, $backend) {
+        $result = null;
+
+        $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
+
+        $sql = "SELECT `mappedname` FROM `zpush_combined_usermap` WHERE `username` = :user AND `backend` = :backend";
+        $params = array("user" => $username, "backend" => $backend);
+        $sth = $this->dbh->prepare($sql);
+        if ($sth->execute($params) === false) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetMappedUsername(): Failed to execute query"));
+        } else if ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
+            $result = $record["mappedname"];
+        }
+
+        $this->clearConnection($this->dbh, $sth, $record);
+
+        return $result;
+    }
+
+    /**
+     * Maps a username for a specific backend to another username.
+     *
+     * @param string $username The username to map
+     * @param string $backend Name of the backend
+     * @param string $mappedname The mappend username
+     *
+     * @return boolean
+     */
+    public function MapUsername($username, $backend, $mappedname) {
+        $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
+
+        $sql = "
+            INSERT INTO `zpush_combined_usermap` (`username`, `backend`, `mappedname`, `created_at`, `updated_at`)
+            VALUES (:user, :backend, :mappedname, NOW(), NOW())
+            ON DUPLICATE KEY UPDATE `mappedname` = :mappedname2, `updated_at` = NOW()
+        ";
+        $params = array("user" => $username, "backend" => $backend, "mappedname" => $mappedname, "mappedname2" => $mappedname);
+        $sth = $this->dbh->prepare($sql);
+        if ($sth->execute($params) === false) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->MapUsername(): Failed to execute query"));
+            return false;
+        }
+
+        $this->clearConnection($this->dbh, $sth);
+        return true;
+    }
+
+    /**
+     * Unmaps a username for a specific backend.
+     *
+     * @param string $username The username to unmap
+     * @param string $backend Name of the backend
+     *
+     * @return boolean
+     */
+    public function UnmapUsername($username, $backend) {
+        $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
+
+        $sql = "DELETE FROM `zpush_combined_usermap` WHERE `username` = :user AND `backend` = :backend";
+        $params = array("user" => $username, "backend" => $backend);
+        $sth = $this->dbh->prepare($sql);
+        if ($sth->execute($params) === false) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->UnmapUsername(): Failed to execute query"));
+            return false;
+        } else if ($sth->rowCount() !== 1) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->MapUsername(): Invalid mapping of username and backend"));
+            return false;
+        }
+
+        $this->clearConnection($this->dbh, $sth);
+        return true;
+    }
 
     /**----------------------------------------------------------------------------------------------------------
      * Private SqlStateMachine stuff

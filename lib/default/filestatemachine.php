@@ -51,6 +51,7 @@ class FileStateMachine implements IStateMachine {
 
     private $userfilename;
     private $settingsfilename;
+    private $usermapfilename;
 
     /**
      * Constructor
@@ -73,6 +74,7 @@ class FileStateMachine implements IStateMachine {
         $this->getDirectoryForDevice(Request::GetDeviceID());
         $this->userfilename = STATE_DIR . 'users';
         $this->settingsfilename = STATE_DIR . 'settings';
+        $this->usermapfilename = STATE_DIR . 'usermap';
 
         if ((!file_exists($this->userfilename) && !touch($this->userfilename)) || !is_writable($this->userfilename))
             throw new FatalMisconfigurationException("Not possible to write to the configured state directory.");
@@ -602,5 +604,116 @@ class FileStateMachine implements IStateMachine {
         return false;
     }
 
+    /**
+     * Retrieves the mapped username for a specific username and backend.
+     *
+     * @param string $username The username to lookup
+     * @param string $backend Name of the backend to lookup
+     *
+     * @return string The mapped username or null if none found
+     */
+    public function GetMappedUsername($username, $backend) {
+        include_once("simplemutex.php");
+        $mutex = new SimpleMutex();
+
+        // exclusive block
+        if ($mutex->Block()) {
+            // Read current mapping
+            $filecontents = @file_get_contents($this->usermapfilename);
+            if ($filecontents)
+                $mapping = unserialize($filecontents);
+            else
+                $mapping = array();
+            $mutex->Release();
+        }
+
+        // Find mapping
+        $key = $username . '/' . $backend;
+        if (isset($mapping[$key])) {
+            return $mapping[$key];
+        }
+        return null;
+    }
+
+    /**
+     * Maps a username for a specific backend to another username.
+     *
+     * @param string $username The username to map
+     * @param string $backend Name of the backend
+     * @param string $mappedname The mappend username
+     *
+     * @return boolean
+     */
+    public function MapUsername($username, $backend, $mappedname) {
+        include_once("simplemutex.php");
+        $mutex = new SimpleMutex();
+
+        // exclusive block
+        if ($mutex->Block()) {
+            // Read current mapping
+            $filecontents = @file_get_contents($this->usermapfilename);
+            if ($filecontents)
+                $mapping = unserialize($filecontents);
+            else
+                $mapping = array();
+
+            // Map username + backend to the mapped username
+            $key = $username . '/' . $backend;
+            $mapping[$key] = $mappedname;
+
+            // Write mapping file
+            $bytes = file_put_contents($this->usermapfilename, serialize($mapping));
+            if ($bytes === false) {
+                ZLog::Write(LOGLEVEL_ERROR, "Unable to write to mapping file");
+                return false;
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->MapUsername(): wrote %d bytes to mapping file", $bytes));
+
+            $mutex->Release();
+        }
+        return true;
+    }
+
+    /**
+     * Unmaps a username for a specific backend.
+     *
+     * @param string $username The username to unmap
+     * @param string $backend Name of the backend
+     *
+     * @return boolean
+     */
+    public function UnmapUsername($username, $backend) {
+        include_once("simplemutex.php");
+        $mutex = new SimpleMutex();
+
+        // exclusive block
+        if ($mutex->Block()) {
+            // Read current mapping
+            $filecontents = @file_get_contents($this->usermapfilename);
+            if ($filecontents)
+                $mapping = unserialize($filecontents);
+            else
+                $mapping = array();
+
+            // Unmap username + backend
+            $key = $username . '/' . $backend;
+            if (!isset($mapping[$key])) {
+                ZLog::Write(LOGLEVEL_INFO, "Username and backend not found in mapping file");
+                return false;
+            }
+            unset($mapping[$key]);
+
+            // Write mapping file
+            $bytes = file_put_contents($this->usermapfilename, serialize($mapping));
+            if ($bytes === false) {
+                ZLog::Write(LOGLEVEL_ERROR, "Unable to write to mapping file");
+                return false;
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->UnmapUsername(): wrote %d bytes to mapping file", $bytes));
+
+            $mutex->Release();
+        }
+        return true;
+    }
 }
 ?>

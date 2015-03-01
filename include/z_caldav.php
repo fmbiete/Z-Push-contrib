@@ -238,6 +238,7 @@ class CalDAVClient {
 
 		curl_setopt($this->curl, CURLOPT_URL, $url);
 		curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
+		curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 30); // 30 seconds it's already too big
 
 		if ($content !== null)
 		{

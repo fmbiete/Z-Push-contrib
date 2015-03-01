@@ -109,6 +109,8 @@ class BackendCombinedConfig {
             ),
             //creating a new folder in the root folder should create a folder in one backend
             'rootcreatefolderbackend' => 'i',
+            //enable to use username mapping for the different backends
+            'usemapping' => false,
         );
     }
 }

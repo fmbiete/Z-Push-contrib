@@ -100,6 +100,8 @@ class BackendCombined extends Backend implements ISearchProvider {
             $u = $username;
             $d = $domain;
             $p = $password;
+
+            // Apply mapping from configuration
             if(isset($this->config['backends'][$i]['users'])){
                 if(!isset($this->config['backends'][$i]['users'][$username])){
                     unset($this->backends[$i]);
@@ -112,6 +114,15 @@ class BackendCombined extends Backend implements ISearchProvider {
                 if(isset($this->config['backends'][$i]['users'][$username]['domain']))
                     $d = $this->config['backends'][$i]['users'][$username]['domain'];
             }
+
+            // Apply username mapping from state backend
+            if (isset($this->config['usemapping']) && $this->config['usemapping']) {
+                $mappedUsername = ZPush::GetStateMachine()->GetMappedUsername($u, strtolower($this->config['backends'][$i]['name']));
+                if ($mappedUsername !== null) {
+                    $u = $mappedUsername;
+                }
+            }
+
             if($this->backends[$i]->Logon($u, $d, $p) == false){
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("Combined->Logon() failed on %s ", $this->config['backends'][$i]['name']));
                 return false;

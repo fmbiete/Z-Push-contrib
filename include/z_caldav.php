@@ -343,7 +343,6 @@ class CalDAVClient {
 		}
 		if ( !isset($etag) || $etag == '' ) {
 			ZLog::Write(LOGLEVEL_DEBUG, sprintf("No etag in:\n%s\n", $this->httpResponseHeaders));
-			$save_request = $this->httpRequest;
 			$save_response_headers = $this->httpResponseHeaders;
 			$this->DoHEADRequest( $url );
 			if ( preg_match( '{^Etag:\s+"([^"]*)"\s*$}im', $this->httpResponseHeaders, $matches ) ) {
@@ -352,7 +351,6 @@ class CalDAVClient {
 			if ( !isset($etag) || $etag == '' ) {
 				ZLog::Write(LOGLEVEL_DEBUG, sprintf("Still No etag in:\n%s\n", $this->httpResponseHeaders));
 			}
-			$this->httpRequest = $save_request;
 			$this->httpResponseHeaders = $save_response_headers;
 		}
 		return $etag;

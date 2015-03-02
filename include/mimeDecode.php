@@ -806,7 +806,11 @@ class Mail_mimeDecode
             $mb_order = array_merge(array($supposed_encoding), mb_detect_order());
             set_error_handler('Mail_mimeDecode::_iconv_notice_handler');
             try {
-                $input_converted = iconv(mb_detect_encoding($input, $mb_order, true), $this->_charset, $input);
+                $detected_encoding = mb_detect_encoding($input, $mb_order, true);
+                if ($detected_encoding === false) {
+                    $detected_encoding = $supposed_encoding;
+                }
+                $input_converted = iconv($detected_encoding, $this->_charset, $input);
             }
             catch(Exception $ex) {
                 $this->raiseError($ex->getMessage());

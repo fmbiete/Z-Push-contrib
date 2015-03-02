@@ -123,10 +123,11 @@ class BackendCombined extends Backend implements ISearchProvider {
                 }
             }
 
-            if($this->backends[$i]->Logon($u, $d, $p) == false){
+            if ($this->backends[$i]->Logon($u, $d, $p) == false) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("Combined->Logon() failed on %s ", $this->config['backends'][$i]['name']));
                 return false;
             }
+            $this->backends[$i]->SetOriginalUsername($username);
         }
 
         ZLog::Write(LOGLEVEL_DEBUG, "Combined->Logon() success");

@@ -58,6 +58,7 @@
 abstract class Backend implements IBackend {
     protected $permanentStorage;
     protected $stateStorage;
+    protected $originalUsername;
 
     /**
      * Constructor
@@ -301,5 +302,18 @@ abstract class Backend implements IBackend {
         }
     }
 
+    /**
+     * Sets the username originally specified by the user to connect with Z-Push. This can be different from the
+     * username used for this backend; for example, BackendCombined could have applied a username mapping.
+     *
+     * This information can be used by backends to communicate the right username; for example, calendar events
+     * without an organizer need to supply the original username in order for the device to understand that the
+     * user owns the event.
+     *
+     * @param string $originalUsername The original username
+     */
+    public function SetOriginalUsername($originalUsername) {
+        $this->originalUsername = $originalUsername;
+    }
 }
 ?>

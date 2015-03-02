@@ -336,7 +336,7 @@ class ZPush {
      * @access public
      * @throws FatalNotImplementedException
      * @throws HTTPReturnCodeException
-     * @return object   implementation of IStateMachine
+     * @return IStateMachine
      */
     static public function GetStateMachine() {
         if (!isset(ZPush::$stateMachine)) {

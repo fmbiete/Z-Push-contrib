@@ -194,6 +194,37 @@ interface IStateMachine {
      * @return array(mixed)
      */
     public function GetAllStatesForDevice($devid);
+
+    /**
+     * Retrieves the mapped username for a specific username and backend.
+     *
+     * @param string $username The username to lookup
+     * @param string $backend Name of the backend to lookup
+     *
+     * @return string The mapped username or null if none found
+     */
+    public function GetMappedUsername($username, $backend);
+
+    /**
+     * Maps a username for a specific backend to another username.
+     *
+     * @param string $username The username to map
+     * @param string $backend Name of the backend
+     * @param string $mappedname The mappend username
+     *
+     * @return boolean
+     */
+    public function MapUsername($username, $backend, $mappedname);
+
+    /**
+     * Unmaps a username for a specific backend.
+     *
+     * @param string $username The username to unmap
+     * @param string $backend Name of the backend
+     *
+     * @return boolean
+     */
+    public function UnmapUsername($username, $backend);
 }
 
 ?>

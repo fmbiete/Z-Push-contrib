@@ -54,7 +54,7 @@ include_once('../lib/interface/iimportchanges.php');
 include_once('../lib/interface/isearchprovider.php');
 include_once('../lib/interface/istatemachine.php');
 include_once('../version.php');
-include_once('config.php');
+include_once('../config.php');
 
 class ZPushAutodiscover {
     const ACCEPTABLERESPONSESCHEMA = 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006';

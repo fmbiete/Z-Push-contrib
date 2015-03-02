@@ -60,6 +60,9 @@
     // This setting specifies the owner parameter in the certificate to look at.
     define("CERTIFICATE_OWNER_PARAMETER", "SSL_CLIENT_S_DN_CN");
 
+    // The Z-Push server location for the autodiscover response
+    define('SERVERURL', 'https://localhost/Microsoft-Server-ActiveSync');
+
     /*
      * Whether to use the complete email address as a login name
      * (e.g. user@company.com) or the username only (user).

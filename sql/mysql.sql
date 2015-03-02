@@ -17,3 +17,12 @@ create table zpush_preauth_users (id integer auto_increment, username varchar(50
             created_at datetime not null, updated_at datetime not null, primary key (id));
 
 create unique index index_zpush_preauth_users_on_username_and_device_id on zpush_preauth_users (username, device_id);
+
+create table zpush_combined_usermap (
+  username varchar(50) not null,
+  backend varchar(32) not null,
+  mappedname varchar(200) not null,
+  created_at datetime not null,
+  updated_at datetime not null,
+  primary key (username, backend)
+);

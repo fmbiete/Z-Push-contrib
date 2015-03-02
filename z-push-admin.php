@@ -139,11 +139,14 @@ class ZPushAdminCLI {
     const COMMAND_SHOWLASTSYNC = 8;
     const COMMAND_RESYNCFOLDER = 9;
     const COMMAND_FIXSTATES = 10;
+    const COMMAND_MAP = 11;
+    const COMMAND_UNMAP = 12;
 
     static private $command;
     static private $user = false;
     static private $device = false;
     static private $type = false;
+    static private $backend = false;
     static private $errormessage;
 
     /**
@@ -154,7 +157,10 @@ class ZPushAdminCLI {
      */
     static public function UsageInstructions() {
         return  "Usage:\n\tz-push-admin.php -a ACTION [options]\n\n" .
-                "Parameters:\n\t-a list/wipe/remove/resync/clearloop\n\t[-u] username\n\t[-d] deviceid\n\n" .
+                "Parameters:\n\t-a list/wipe/remove/resync/clearloop/fixstates/map/unmap\n" .
+                "\t[-u] username\n" .
+                "\t[-d] deviceid\n" .
+                "\t[-b] backend\n\n" .
                 "Actions:\n" .
                 "\tlist\t\t\t\t Lists all devices and synchronized users\n" .
                 "\tlist -u USER\t\t\t Lists all devices of user USER\n" .
@@ -174,6 +180,8 @@ class ZPushAdminCLI {
                 "\tclearloop\t\t\t Clears system wide loop detection data\n" .
                 "\tclearloop -d DEVICE -u USER\t Clears all loop detection data of a device DEVICE and an optional user USER\n" .
                 "\tfixstates\t\t\t Checks the states for integrity and fixes potential issues\n" .
+                "\tmap -u USER -b BACKEND -t USER2\t Maps USER for BACKEND to username USER2 (when using 'combined' backend)\n" .
+                "\tunmap -u USER -b BACKEND\t Removes the mapping for USER and BACKEND (when using 'combined' backend)\n" .
                 "\n";
     }
 
@@ -201,7 +209,7 @@ class ZPushAdminCLI {
         if (self::$errormessage)
             return;
 
-        $options = getopt("u:d:a:t:");
+        $options = getopt("u:d:a:t:b:");
 
         // get 'user'
         if (isset($options['u']) && !empty($options['u']))
@@ -227,6 +235,12 @@ class ZPushAdminCLI {
             self::$type = strtolower(trim($options['t']));
         elseif (isset($options['type']) && !empty($options['type']))
             self::$type = strtolower(trim($options['type']));
+
+        // get 'backend'
+        if (isset($options['b']) && !empty($options['b']))
+            self::$backend = strtolower(trim($options['b']));
+        elseif (isset($options['backend']) && !empty($options['backend']))
+            self::$backend = strtolower(trim($options['backend']));
 
         // get a command for the requested action
         switch ($action) {
@@ -294,6 +308,21 @@ class ZPushAdminCLI {
                 self::$command = self::COMMAND_FIXSTATES;
                 break;
 
+            // map users for 'combined' backend
+            case "map":
+                if (self::$user === false || self::$backend === false || self::$type === false)
+                    self::$errormessage = "Not possible to map. User, backend and target user must be specified.";
+                else
+                    self::$command = self::COMMAND_MAP;
+                break;
+
+            // unmap users for 'combined' backend
+            case "unmap":
+                if (self::$user === false || self::$backend === false)
+                    self::$errormessage = "Not possible to unmap. User and backend must be specified.";
+                else
+                    self::$command = self::COMMAND_UNMAP;
+                break;
 
             default:
                 self::UsageInstructions();
@@ -395,6 +424,13 @@ class ZPushAdminCLI {
                 self::CommandFixStates();
                 break;
 
+            case self::COMMAND_MAP:
+                self::CommandMap();
+                break;
+
+            case self::COMMAND_UNMAP:
+                self::CommandUnmap();
+                break;
         }
         echo "\n";
     }
@@ -669,6 +705,32 @@ class ZPushAdminCLI {
     }
 
     /**
+     * Maps a username for a specific backend to another username
+     *
+     * @return
+     * @access private
+     */
+    static private function CommandMap() {
+        if (ZPushAdmin::AddUsernameMapping(self::$user, self::$backend, self::$type))
+            printf("Successfully mapped username.\n");
+        else
+            echo ZLog::GetLastMessage(LOGLEVEL_ERROR) . "\n";
+    }
+
+    /**
+     * Deletes the mapping for a username and a specific bakkend
+     *
+     * @return
+     * @access private
+     */
+    static private function CommandUnmap() {
+        if (ZPushAdmin::RemoveUsernameMapping(self::$user, self::$backend))
+            printf("Successfully unmapped username.\n");
+        else
+            echo ZLog::GetLastMessage(LOGLEVEL_ERROR) . "\n";
+    }
+
+    /**
      * Prints detailed informations about a device
      *
      * @param string    $deviceId       the id of the device
@@ -839,6 +901,5 @@ class ZPushAdminCLI {
 
     }
 }
-
 
 ?>

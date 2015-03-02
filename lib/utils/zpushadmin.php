@@ -617,6 +617,42 @@ class ZPushAdmin {
         return array($processed, $deleted);
     }
 
+    /**
+     * Maps a username for a specific backend to another username.
+     *
+     * @param string $user The username
+     * @param string $backend Name of the backend to map
+     * @param string $targetUsername The username to actually use for this backend
+     *
+     * @return boolean
+     */
+    static public function AddUsernameMapping($user, $backend, $targetUsername) {
+        if (!ZPush::GetStateMachine()->MapUsername($user, $backend, $targetUsername)) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("ZPushAdmin::AddUsernameMapping(): unable to add mapping for user %s and backend %s", $user, $backend));
+            return false;
+        }
+
+        ZLog::Write(LOGLEVEL_INFO, sprintf("ZPushAdmin::AddUsernameMapping(): successfully mapped user %s and backend %s to username %s", $user, $backend, $targetUsername));
+        return true;
+    }
+
+    /**
+     * Unmaps a username for a specific backend.
+     *
+     * @param string $user The username
+     * @param string $backend Name of the backend to unmap
+     *
+     * @return boolean
+     */
+    static public function RemoveUsernameMapping($user, $backend) {
+        if (!ZPush::GetStateMachine()->UnmapUsername($user, $backend)) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("ZPushAdmin::RemoveUsernameMapping(): unable to remove mapping for user %s and backend %s", $user, $backend));
+            return false;
+        }
+
+        ZLog::Write(LOGLEVEL_INFO, sprintf("ZPushAdmin::RemoveUsernameMapping(): successfully unmapped user %s and backend %s", $user, $backend));
+        return true;
+    }
 }
 
 ?>

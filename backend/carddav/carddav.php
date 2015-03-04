@@ -207,8 +207,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
 
-
-
         // We don't need the actual cards, we only need to get the changes since this moment
         $init_ok = true;
         foreach ($this->addressbooks as $addressbook) {
@@ -261,7 +259,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             return $notifications;
         }
 
-        while($stopat > time() && empty($notifications)) {
+        while ($stopat > time() && empty($notifications)) {
             foreach ($this->addressbooks as $addressbook) {
                 $vcards = false;
                 try {
@@ -1029,17 +1027,17 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                             $fieldvalue[strtolower($matches[1])] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
                         }
                     }
-                }
-                else {
+                } else {
                     if (!isset($types[strtolower($fieldpart)]))
                         continue;
                     $fieldvalue[$types[strtolower($fieldpart)]][] = $fieldpart;
                 }
             }
+
             //
             switch ($type) {
                 case 'categories':
-                    //case 'nickname':
+                //case 'nickname':
                     $val = preg_split('/(\s)*(\\\)?\,(\s)*/i', $value);
                     break;
                 default:
@@ -1061,8 +1059,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         }
                         break;
                 }
-            }
-            else {
+            } else {
                 foreach ($val as $i => $v) {
                     $val[$i] = $this->unescape($v);
                 }
@@ -1125,6 +1122,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 }
             }
         }
+
         //;;street;city;state;postalcode;country
         if (isset($vcard['adr'])) {
             foreach ($vcard['adr'] as $adr) {

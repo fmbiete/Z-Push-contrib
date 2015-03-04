@@ -957,7 +957,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Converts the vCard into SyncContact
+     * Converts the vCard into SyncContact.
+     * See RFC 6350 for vCard format details.
      *
      * @param string        $data           string with the vcard
      * @param int           $truncsize      truncate size requested
@@ -999,13 +1000,17 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 continue;
 
             $field = trim(substr($line, 0, $pos));
-            $value = trim(substr($line, $pos+1));
+            $value = trim(substr($line, $pos + 1));
 
             $fieldparts = preg_split('/(?<!\\\\)(\;)/i', $field, -1, PREG_SPLIT_NO_EMPTY);
 
+            // The base type
             $type = strtolower(array_shift($fieldparts));
 
-            $fieldvalue = array();
+            // We do not care about visually grouping properties together, so strip groups off (see RFC 6350 § 3.3)
+            if (preg_match('#^[a-z0-9\\-]+\\.(.+)$#i', $type, $matches)) {
+                $type = $matches[1];
+            }
 
             foreach ($fieldparts as $fieldpart) {
                 if (preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)) {

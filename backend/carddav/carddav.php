@@ -1012,24 +1012,24 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 $type = $matches[1];
             }
 
+            // Parse all field values
+            $fieldvalue = array();
             foreach ($fieldparts as $fieldpart) {
                 if (preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)) {
-                    if (!in_array(strtolower($matches[1]), array('value', 'type', 'encoding', 'language')))
+                    $fieldName = strtolower($matches[1]);
+                    if (!in_array($fieldName, array('value', 'type', 'encoding', 'language')))
                         continue;
-                    if (isset($fieldvalue[strtolower($matches[1])]) && is_array($fieldvalue[strtolower($matches[1])])) {
-                        if (strtolower($matches[1]) == 'type') {
-                            $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY)));
+                    if (isset($fieldvalue[$fieldName]) && is_array($fieldvalue[$fieldName])) {
+                        if ($fieldName == 'type') {
+                            $fieldvalue[$fieldName] = array_merge($fieldvalue[$fieldName], array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY)));
+                        } else {
+                            $fieldvalue[$fieldName] = array_merge($fieldvalue[$fieldName], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
                         }
-                        else {
-                            $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
-                        }
-                    }
-                    else {
-                        if (strtolower($matches[1]) == 'type') {
-                            $fieldvalue[strtolower($matches[1])] = array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
-                        }
-                        else {
-                            $fieldvalue[strtolower($matches[1])] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
+                    } else {
+                        if ($fieldName == 'type') {
+                            $fieldvalue[$fieldName] = array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
+                        } else {
+                            $fieldvalue[$fieldName] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
                         }
                     }
                 } else {
@@ -1215,8 +1215,13 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 $message->bodysize = strlen($message->body);
             }
         }
+
+        // Support both ROLE and TITLE (RFC 6350 § 6.6.1 / § 6.6.2) as mapped to JobTitle
         if (!empty($vcard['role'][0]['val'][0]))
-            $message->jobtitle = $vcard['role'][0]['val'][0];//$vcard['title'][0]['val'][0]
+            $message->jobtitle = $vcard['role'][0]['val'][0];
+        if (!empty($vcard['title'][0]['val'][0]))
+            $message->jobtitle = $vcard['title'][0]['val'][0];
+
         if (!empty($vcard['url'][0]['val'][0]))
             $message->webpage = $vcard['url'][0]['val'][0];
         if (!empty($vcard['categories'][0]['val']))

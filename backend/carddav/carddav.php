@@ -207,8 +207,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     public function ChangesSinkInitialize($folderid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSinkInitialize(): folderid '%s'", $folderid));
 
-
-
         // We don't need the actual cards, we only need to get the changes since this moment
         $init_ok = true;
         foreach ($this->addressbooks as $addressbook) {
@@ -261,7 +259,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             return $notifications;
         }
 
-        while($stopat > time() && empty($notifications)) {
+        while ($stopat > time() && empty($notifications)) {
             foreach ($this->addressbooks as $addressbook) {
                 $vcards = false;
                 try {
@@ -959,7 +957,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Converts the vCard into SyncContact
+     * Converts the vCard into SyncContact.
+     * See RFC 6350 for vCard format details.
      *
      * @param string        $data           string with the vcard
      * @param int           $truncsize      truncate size requested
@@ -1001,45 +1000,49 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 continue;
 
             $field = trim(substr($line, 0, $pos));
-            $value = trim(substr($line, $pos+1));
+            $value = trim(substr($line, $pos + 1));
 
             $fieldparts = preg_split('/(?<!\\\\)(\;)/i', $field, -1, PREG_SPLIT_NO_EMPTY);
 
+            // The base type
             $type = strtolower(array_shift($fieldparts));
 
-            $fieldvalue = array();
+            // We do not care about visually grouping properties together, so strip groups off (see RFC 6350 § 3.3)
+            if (preg_match('#^[a-z0-9\\-]+\\.(.+)$#i', $type, $matches)) {
+                $type = $matches[1];
+            }
 
+            // Parse all field values
+            $fieldvalue = array();
             foreach ($fieldparts as $fieldpart) {
                 if (preg_match('/([^=]+)=(.+)/', $fieldpart, $matches)) {
-                    if (!in_array(strtolower($matches[1]), array('value', 'type', 'encoding', 'language')))
+                    $fieldName = strtolower($matches[1]);
+                    if (!in_array($fieldName, array('value', 'type', 'encoding', 'language')))
                         continue;
-                    if (isset($fieldvalue[strtolower($matches[1])]) && is_array($fieldvalue[strtolower($matches[1])])) {
-                        if (strtolower($matches[1]) == 'type') {
-                            $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY)));
+                    if (isset($fieldvalue[$fieldName]) && is_array($fieldvalue[$fieldName])) {
+                        if ($fieldName == 'type') {
+                            $fieldvalue[$fieldName] = array_merge($fieldvalue[$fieldName], array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY)));
+                        } else {
+                            $fieldvalue[$fieldName] = array_merge($fieldvalue[$fieldName], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
                         }
-                        else {
-                            $fieldvalue[strtolower($matches[1])] = array_merge($fieldvalue[strtolower($matches[1])], preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
-                        }
-                    }
-                    else {
-                        if (strtolower($matches[1]) == 'type') {
-                            $fieldvalue[strtolower($matches[1])] = array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
-                        }
-                        else {
-                            $fieldvalue[strtolower($matches[1])] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
+                    } else {
+                        if ($fieldName == 'type') {
+                            $fieldvalue[$fieldName] = array_map('strtolower', preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY));
+                        } else {
+                            $fieldvalue[$fieldName] = preg_split('/(?<!\\\\)(\,)/i', $matches[2], -1, PREG_SPLIT_NO_EMPTY);
                         }
                     }
-                }
-                else {
+                } else {
                     if (!isset($types[strtolower($fieldpart)]))
                         continue;
                     $fieldvalue[$types[strtolower($fieldpart)]][] = $fieldpart;
                 }
             }
+
             //
             switch ($type) {
                 case 'categories':
-                    //case 'nickname':
+                //case 'nickname':
                     $val = preg_split('/(\s)*(\\\)?\,(\s)*/i', $value);
                     break;
                 default:
@@ -1061,8 +1064,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         }
                         break;
                 }
-            }
-            else {
+            } else {
                 foreach ($val as $i => $v) {
                     $val[$i] = $this->unescape($v);
                 }
@@ -1125,6 +1127,7 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 }
             }
         }
+
         //;;street;city;state;postalcode;country
         if (isset($vcard['adr'])) {
             foreach ($vcard['adr'] as $adr) {
@@ -1212,8 +1215,13 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                 $message->bodysize = strlen($message->body);
             }
         }
+
+        // Support both ROLE and TITLE (RFC 6350 § 6.6.1 / § 6.6.2) as mapped to JobTitle
         if (!empty($vcard['role'][0]['val'][0]))
-            $message->jobtitle = $vcard['role'][0]['val'][0];//$vcard['title'][0]['val'][0]
+            $message->jobtitle = $vcard['role'][0]['val'][0];
+        if (!empty($vcard['title'][0]['val'][0]))
+            $message->jobtitle = $vcard['title'][0]['val'][0];
+
         if (!empty($vcard['url'][0]['val'][0]))
             $message->webpage = $vcard['url'][0]['val'][0];
         if (!empty($vcard['categories'][0]['val']))

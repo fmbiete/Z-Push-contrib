@@ -2050,13 +2050,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $list = @imap_getsubscribed($this->mbox, $this->server, "*");
-        // always returns an array
-        if (isset($list[0])) {
-            $this->permanentStorage->serverdelimiter = $list[0];
-
-            return $this->permanentStorage->serverdelimiter;
+        if (count($list) > 0) {
+            // get the delimiter from the first folder
+            $delimiter = $list[0]->delimiter;
+            $this->permanentStorage->serverdelimiter = $delimiter;
+        } else {
+            // default
+            $delimiter = ".";
         }
-        return "."; // default "."
+        return $delimiter;
     }
 
     /**

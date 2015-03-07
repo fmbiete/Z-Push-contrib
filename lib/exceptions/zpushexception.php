@@ -55,7 +55,7 @@ class ZPushException extends Exception {
         if (!$logLevel)
             $logLevel = $this->defaultLogLevel;
 
-        ZLog::Write($logLevel, get_class($this) .': '. $message . ' - code: '.$code);
+        ZLog::Write($logLevel, get_class($this) .': '. $message . ' - code: '. $code . ' - file: ' . $this->getFile() . ':' . $this->getLine());
         parent::__construct($message, (int) $code);
     }
 

@@ -481,7 +481,7 @@ class ZPush {
      * the backend has to be an IBackend implementation
      *
      * @access public
-     * @return object     IBackend implementation
+     * @return IBackend
      */
     static public function GetBackend() {
         // if the backend is not yet loaded, load backend drivers and instantiate it

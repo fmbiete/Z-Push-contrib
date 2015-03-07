@@ -491,7 +491,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * Returns the content of the named attachment as stream. The passed attachment identifier is
      * the exact string that is returned in the 'AttName' property of an SyncAttachment.
      * Any information necessary to find the attachment must be encoded in that 'attname' property.
-     * Data is written directly (with print $data;)
      *
      * @param string        $attname
      *

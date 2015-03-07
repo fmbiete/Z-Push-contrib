@@ -2260,13 +2260,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // Header Date could be repeated in the message, we only check the first
             $receiveddate = $receiveddate[0];
         }
-        $receiveddate = strtotime(preg_replace("/\\(.*\\)/", "", $receiveddate));
-        if ($receiveddate == false || $receiveddate == -1) {
-            ZLog::Write(LOGLEVEL_WARN, "cleanupDate() : Received date is false. Message might be broken.");
+        $receivedtime = strtotime(preg_replace("/\\(.*\\)/", "", $receiveddate));
+        if ($receivedtime == false || $receivedtime == -1) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("cleanupDate('%s'): strtotime() failed - message might be broken.", $receiveddate));
             return null;
         }
 
-        return $receiveddate;
+        return $receivedtime;
     }
 
     /**

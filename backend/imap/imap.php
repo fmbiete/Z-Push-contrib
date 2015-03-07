@@ -932,24 +932,23 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         foreach($overviews as $overview) {
             $date = "";
-            $vars = get_object_vars($overview);
-            if (array_key_exists( "date", $vars)) {
+            if (isset($overview->date)) {
                 // message is out of range for cutoffdate, ignore it
                 if ($this->cleanupDate($overview->date) < $cutoffdate) continue;
                 $date = $overview->date;
             }
 
             // cut of deleted messages
-            if (array_key_exists("deleted", $vars) && $overview->deleted)
+            if (isset($overview->deleted) && $overview->deleted)
                 continue;
 
-            if (array_key_exists("uid", $vars)) {
+            if (isset($overview->uid)) {
                 $message = array();
                 $message["mod"] = $date;
                 $message["id"] = $overview->uid;
 
                 // 'seen' aka 'read'
-                if(array_key_exists("seen", $vars) && $overview->seen) {
+                if (isset($overview->seen) && $overview->seen)
                     $message["flags"] = 1;
                 }
                 else {
@@ -957,7 +956,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 // 'flagged' aka 'FollowUp' aka 'starred'
-                if (array_key_exists("flagged", $vars) && $overview->flagged) {
+                if (isset($overview->flagged) && $overview->flagged) {
                     $message["star"] = 1;
                 }
                 else {
@@ -1330,18 +1329,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return false;
         }
 
-        // check if variables for this overview object are available
-        $vars = get_object_vars($overview[0]);
-
         // without uid it's not a valid message
-        if (! array_key_exists( "uid", $vars)) return false;
+        if (empty($overview[0]->uid)) return false;
 
         $entry = array();
-        $entry["mod"] = (array_key_exists( "date", $vars)) ? $overview[0]->date : "";
+        $entry["mod"] = isset($overview[0]->date) ? $overview[0]->date : "";
         $entry["id"] = $overview[0]->uid;
 
         // 'seen' aka 'read'
-        if (array_key_exists("seen", $vars) && $overview[0]->seen) {
+        if (isset($overview[0]->seen) && $overview[0]->seen)
             $entry["flags"] = 1;
         }
         else {
@@ -1349,7 +1345,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // 'flagged' aka 'FollowUp' aka 'starred'
-        if (array_key_exists("flagged", $vars) && $overview[0]->flagged) {
+        if (isset($overview[0]->flagged) && $overview[0]->flagged) {
             $entry["star"] = 1;
         }
         else {

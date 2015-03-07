@@ -55,16 +55,13 @@ class BackendCalDAV extends BackendDiff {
     private $_caldav;
     private $_caldav_path;
     private $_collection = array();
-    private $_username;
 
     private $changessinkinit;
     private $sinkdata;
     private $sinkmax;
 
-
     /**
      * Constructor
-     *
      */
     public function BackendCalDAV() {
         if (!function_exists("curl_init")) {
@@ -81,7 +78,6 @@ class BackendCalDAV extends BackendDiff {
      * @see IBackend::Logon()
      */
     public function Logon($username, $domain, $password) {
-        $this->_username = $username;
         $this->_caldav_path = str_replace('%u', $username, CALDAV_PATH);
         $this->_caldav = new CalDAVClient(CALDAV_SERVER . ":" . CALDAV_PORT . $this->_caldav_path, $username, $password);
         if ($connected = $this->_caldav->CheckConnection()) {
@@ -699,7 +695,6 @@ class BackendCalDAV extends BackendDiff {
                             $body = Utils::Utf8_truncate($body, $truncsize);
                             $message->bodytruncated = 1;
                         } else {
-                            $body = $body;
                             $message->bodytruncated = 0;
                         }
                         $body = str_replace("\n","\r\n", str_replace("\r","",$body));
@@ -741,7 +736,7 @@ class BackendCalDAV extends BackendDiff {
         // Workaround #127 - No organizeremail defined
         if (!isset($message->organizeremail)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->_ParseVEventToSyncObject(): No organizeremail defined, using username"));
-            $message->organizeremail = $this->_username;
+            $message->organizeremail = $this->originalUsername;
         }
 
         $valarm = current($event->GetComponents("VALARM"));
@@ -1022,7 +1017,7 @@ class BackendCalDAV extends BackendDiff {
             //Some phones doesn't send the organizeremail, so we gotto get it somewhere else.
             //Lets use the login here ($username)
             if (!isset($data->organizeremail)) {
-                $vevent->AddProperty("ORGANIZER", sprintf("MAILTO:%s", $this->_username));
+                $vevent->AddProperty("ORGANIZER", sprintf("MAILTO:%s", $this->originalUsername));
             }
             foreach ($data->attendees as $att) {
                 $att_str = sprintf("MAILTO:%s", $att->email);

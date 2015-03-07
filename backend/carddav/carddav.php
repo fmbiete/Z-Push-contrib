@@ -52,6 +52,9 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
     private $domain = '';
     private $username = '';
     private $url = null;
+    /**
+     * @var carddav_backend
+     */
     private $server = null;
     private $default_url = null;
     private $gal_url = null;

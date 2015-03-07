@@ -2035,11 +2035,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return string       delimiter
      */
     protected function getServerDelimiter() {
-        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
-        if (is_array($list)) {
-            $val = $list[0];
+        $this->InitializePermanentStorage();
+        if (isset($this->permanentStorage->serverdelimiter)) {
+            return $this->permanentStorage->serverdelimiter;
+        }
 
-            return $val->delimiter;
+        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
+        // always returns an array
+        if (isset($list[0])) {
+            $this->permanentStorage->serverdelimiter = $list[0];
+
+            return $this->permanentStorage->serverdelimiter;
         }
         return "."; // default "."
     }

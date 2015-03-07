@@ -64,7 +64,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $username;
     private $password;
     private $domain;
-    private $serverdelimiter;
     private $sinkfolders = array();
     private $sinkstates = array();
     private $changessinkinit = false;
@@ -136,8 +135,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $this->username = $username;
             $this->password = $password;
             $this->domain = $domain;
-            // set serverdelimiter
-            $this->serverdelimiter = $this->getServerDelimiter();
             return true;
         }
         else {
@@ -731,7 +728,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $imapid = $this->getImapIdFromFolderId($id);
 
         // explode hierarchy
-        $fhir = explode($this->serverdelimiter, $imapid);
+        $fhir = explode($this->getServerDelimiter(), $imapid);
 
         // compare on lowercase strings
         $lid = strtolower($imapid);
@@ -759,18 +756,18 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;
         }
-        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
+        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "trash" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
+        else if(($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "trash" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "sent" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->serverdelimiter . "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
+        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "sent" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
             $folder->parentid = $this->convertImapId($fhir[0]);
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
@@ -843,7 +840,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // rename doesn't work properly with IMAP
             // the activesync client doesn't support a 'changing ID'
             // TODO this would be solved by implementing hex ids (Mantis #459)
-            //$csts = imap_renamemailbox($this->mbox, $this->server . imap_utf7_encode(str_replace(".", $this->serverdelimiter, $oldid)), $newname);
+            //$csts = imap_renamemailbox($this->mbox, $this->server . imap_utf7_encode(str_replace(".", $this->getServerDelimiter(), $oldid)), $newname);
             ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->ChangeFolder() : we do not support rename for now");
             return false;
         }
@@ -2226,8 +2223,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         // if mod is already set add the previous part to it as it might be a folder which has
         // delimiter in its name
-        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->serverdelimiter.$displayname : array_pop($fhir);
-        $parent = implode($this->serverdelimiter, $fhir);
+        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->getServerDelimiter().$displayname : array_pop($fhir);
+        $parent = implode($this->getServerDelimiter(), $fhir);
 
         if (count($fhir) == 1 || $this->checkIfIMAPFolder($parent)) {
             return;

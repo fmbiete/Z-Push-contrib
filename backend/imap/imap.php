@@ -1318,14 +1318,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return array/boolean
      */
     public function StatMessage($folderid, $id) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->StatMessage('%s','%s')", $folderid,  $id));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->StatMessage('%s','%s')", $folderid, $id));
         $folderImapid = $this->getImapIdFromFolderId($folderid);
 
         $this->imap_reopen_folder($folderImapid);
         $overview = @imap_fetch_overview( $this->mbox , $id , FT_UID);
 
         if (!$overview) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->StatMessage('%s','%s'): Failed to retrieve overview: %s", $folderid,  $id, imap_last_error()));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->StatMessage('%s','%s'): Failed to retrieve overview: %s", $folderid, $id, imap_last_error()));
             return false;
         }
 
@@ -1497,7 +1497,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         else {
             throw new StatusException(sprintf("BackendIMAP->DeleteMessage(): Message is outside the sync range"), SYNC_STATUS_OBJECTNOTFOUND);
         }
-
 
         return ($s1 && $s2 && $s11);
     }
@@ -2261,7 +2260,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // Header Date could be repeated in the message, we only check the first
             $receiveddate = $receiveddate[0];
         }
-        $receiveddate = strtotime(preg_replace("/\(.*\)/", "", $receiveddate));
+        $receiveddate = strtotime(preg_replace("/\\(.*\\)/", "", $receiveddate));
         if ($receiveddate == false || $receiveddate == -1) {
             ZLog::Write(LOGLEVEL_DEBUG, "cleanupDate() : Received date is false. Message might be broken.");
             return null;

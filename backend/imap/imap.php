@@ -930,12 +930,18 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return $messages;
         }
 
-        foreach($overviews as $overview) {
-            $date = "";
-            if (isset($overview->date)) {
-                // message is out of range for cutoffdate, ignore it
-                if ($this->cleanupDate($overview->date) < $cutoffdate) continue;
-                $date = $overview->date;
+        foreach ($overviews as $overview) {
+            // Determine the message's date and apply the cutoff; if the overview's ->udate property is
+            // not available, fall back to the "Date:" header as it appears in the email.
+            $date = 0;
+            if (isset($overview->udate)) {
+                $date = $overview->udate;
+            } else if (isset($overview->date)) {
+                $date = $this->cleanupDate($overview->date);
+            }
+            if ($date < $cutoffdate) {
+                // Message is out of range; ignore it
+                continue;
             }
 
             // cut of deleted messages
@@ -1322,7 +1328,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $folderImapid = $this->getImapIdFromFolderId($folderid);
 
         $this->imap_reopen_folder($folderImapid);
-        $overview = @imap_fetch_overview( $this->mbox , $id , FT_UID);
+        $overview = @imap_fetch_overview($this->mbox, $id, FT_UID);
 
         if (!$overview) {
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->StatMessage('%s','%s'): Failed to retrieve overview: %s", $folderid, $id, imap_last_error()));
@@ -1333,7 +1339,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (empty($overview[0]->uid)) return false;
 
         $entry = array();
-        $entry["mod"] = isset($overview[0]->date) ? $overview[0]->date : "";
+        if (isset($overview[0]->udate)) {
+            $entry["mod"] = $overview[0]->udate;
+        } else if (isset($overview[0]->date)) {
+            $entry["mod"] = $this->cleanupDate($overview[0]->date);
+        } else {
+            $entry["mod"] = 0;
+        }
         $entry["id"] = $overview[0]->uid;
 
         // 'seen' aka 'read'

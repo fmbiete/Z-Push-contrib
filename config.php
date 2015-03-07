@@ -48,7 +48,7 @@
     define('TIMEZONE', '');
 
     // Defines the base path on the server
-    define('BASE_PATH', dirname($_SERVER['SCRIPT_FILENAME']). '/');
+    define('BASE_PATH', dirname(__FILE__) . '/');
 
     // Try to set unlimited timeout
     define('SCRIPT_TIMEOUT', 0);
@@ -59,6 +59,9 @@
     // When using client certificates, we can check if the login sent matches the owner of the certificate.
     // This setting specifies the owner parameter in the certificate to look at.
     define("CERTIFICATE_OWNER_PARAMETER", "SSL_CLIENT_S_DN_CN");
+
+    // The Z-Push server location for the autodiscover response
+    define('SERVERURL', 'https://localhost/Microsoft-Server-ActiveSync');
 
     /*
      * Whether to use the complete email address as a login name

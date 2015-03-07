@@ -141,7 +141,7 @@ domain part of the email used in the client):
     https://autodiscover.yourdomain.com/Autodiscover/Autodiscover.xml
 
 Add the following line to the apache site configuration file.
-    AliasMatch (?i)/Autodiscover/Autodiscover.xml "/usr/share/z-push/autodiscover/autodiscover.php"
+    AliasMatch (?i)/Autodiscover/Autodiscover.xml$ "/usr/share/z-push/autodiscover/autodiscover.php"
 
 This line assumes that Z-Push is installed in /usr/share/z-push. If the path 
 is different, please adjust it accordingly.

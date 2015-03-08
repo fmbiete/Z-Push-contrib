@@ -931,8 +931,9 @@ EOFILTER;
             $this->SetCalendar($relative_url);
         }
 
+        $hasToken = !$initial && isset($this->synctoken[$this->calendar_url]);
         if ($support_dav_sync) {
-            $token = ($initial ? "" : $this->synctoken[$this->calendar_url]);
+            $token = ($hasToken ? $this->synctoken[$this->calendar_url] : "");
 
             $body = <<<EOXML
 <?xml version="1.0" encoding="utf-8"?>
@@ -993,6 +994,12 @@ EOXML;
                     break;
             }
         }
+
+        // Report sync-token support on initial sync
+        if ($initial && $support_dav_sync && !isset($this->synctoken[$this->calendar_url])) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf('CalDAVClient::GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?'));
+        }
+
         return $report;
     }
 

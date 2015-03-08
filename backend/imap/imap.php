@@ -948,7 +948,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $message["id"] = $overview->uid;
 
                 // 'seen' aka 'read'
-                if (isset($overview->seen) && $overview->seen)
+                if (isset($overview->seen) && $overview->seen) {
                     $message["flags"] = 1;
                 }
                 else {
@@ -1337,7 +1337,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $entry["id"] = $overview[0]->uid;
 
         // 'seen' aka 'read'
-        if (isset($overview[0]->seen) && $overview[0]->seen)
+        if (isset($overview[0]->seen) && $overview[0]->seen) {
             $entry["flags"] = 1;
         }
         else {

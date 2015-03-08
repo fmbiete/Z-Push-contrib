@@ -52,6 +52,9 @@ include_once('include/z_RTF.php');
 include_once('include/iCalendar.php');
 
 class BackendCalDAV extends BackendDiff {
+    /**
+     * @var CalDAVClient
+     */
     private $_caldav;
     private $_caldav_path;
     private $_collection = array();

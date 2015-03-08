@@ -2256,7 +2256,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string        $receiveddate   a date as a string
      *
      * @access protected
-     * @return string
+     * @return integer
      */
     protected function cleanupDate($receiveddate) {
         if (is_array($receiveddate)) {

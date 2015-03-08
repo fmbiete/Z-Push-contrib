@@ -47,8 +47,14 @@
  */
 
 class ExportChangesCombined implements IExportChanges {
+    /**
+     * @var BackendCombined
+     */
     private $backend;
     private $syncstates;
+    /**
+     * @var IExportChanges[]
+     */
     private $exporters;
     private $importer;
     private $importwraps;

@@ -8,7 +8,7 @@
 * caldav-client-v2.php by xbgmsharp <xbgmsharp@gmail.com>.
 *
 * Copyright Andrew McMillan (original caldav-client-v2.php), Jean-Louis Dupond (cURL code), xbgmsharp (bugfixes)
-* Copyright Thorsten Köster
+* Copyright Thorsten KÃ¶ster
 * License   GNU LGPL version 3 or later (http://www.gnu.org/licenses/lgpl-3.0.txt)
 */
 

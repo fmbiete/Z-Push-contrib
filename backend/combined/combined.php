@@ -59,7 +59,13 @@ require_once("backend/combined/exporter.php");
 
 class BackendCombined extends Backend implements ISearchProvider {
     public $config;
+    /**
+     * @var IBackend[]
+     */
     public $backends;
+    /**
+     * @var IBackend
+     */
     private $activeBackend;
     private $activeBackendID;
     private $numberChangesSink;

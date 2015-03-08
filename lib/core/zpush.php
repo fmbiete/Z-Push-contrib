@@ -387,7 +387,7 @@ class ZPush {
      * @param boolean   $initialize     (opt) default true: initializes the DeviceManager if not already done
      *
      * @access public
-     * @return object DeviceManager
+     * @return DeviceManager
      */
     static public function GetDeviceManager($initialize = true) {
         if (!isset(ZPush::$deviceManager) && $initialize)

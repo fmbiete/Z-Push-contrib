@@ -948,7 +948,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $message["id"] = $overview->uid;
 
                 // 'seen' aka 'read'
-                if (isset($overview->seen) && $overview->seen)
+                if (isset($overview->seen) && $overview->seen) {
                     $message["flags"] = 1;
                 }
                 else {
@@ -1337,7 +1337,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $entry["id"] = $overview[0]->uid;
 
         // 'seen' aka 'read'
-        if (isset($overview[0]->seen) && $overview[0]->seen)
+        if (isset($overview[0]->seen) && $overview[0]->seen) {
             $entry["flags"] = 1;
         }
         else {
@@ -2050,13 +2050,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $list = @imap_getsubscribed($this->mbox, $this->server, "*");
-        // always returns an array
-        if (isset($list[0])) {
-            $this->permanentStorage->serverdelimiter = $list[0];
-
-            return $this->permanentStorage->serverdelimiter;
+        if (count($list) > 0) {
+            // get the delimiter from the first folder
+            $delimiter = $list[0]->delimiter;
+            $this->permanentStorage->serverdelimiter = $delimiter;
+        } else {
+            // default
+            $delimiter = ".";
         }
-        return "."; // default "."
+        return $delimiter;
     }
 
     /**
@@ -2254,7 +2256,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @param string        $receiveddate   a date as a string
      *
      * @access protected
-     * @return string
+     * @return integer
      */
     protected function cleanupDate($receiveddate) {
         if (is_array($receiveddate)) {

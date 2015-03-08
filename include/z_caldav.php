@@ -8,7 +8,7 @@
 * caldav-client-v2.php by xbgmsharp <xbgmsharp@gmail.com>.
 *
 * Copyright Andrew McMillan (original caldav-client-v2.php), Jean-Louis Dupond (cURL code), xbgmsharp (bugfixes)
-* Copyright Thorsten Köster
+* Copyright Thorsten KÃ¶ster
 * License   GNU LGPL version 3 or later (http://www.gnu.org/licenses/lgpl-3.0.txt)
 */
 
@@ -931,8 +931,9 @@ EOFILTER;
             $this->SetCalendar($relative_url);
         }
 
+        $hasToken = !$initial && isset($this->synctoken[$this->calendar_url]);
         if ($support_dav_sync) {
-            $token = ($initial ? "" : $this->synctoken[$this->calendar_url]);
+            $token = ($hasToken ? $this->synctoken[$this->calendar_url] : "");
 
             $body = <<<EOXML
 <?xml version="1.0" encoding="utf-8"?>
@@ -993,6 +994,12 @@ EOXML;
                     break;
             }
         }
+
+        // Report sync-token support on initial sync
+        if ($initial && $support_dav_sync && !isset($this->synctoken[$this->calendar_url])) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf('CalDAVClient::GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?'));
+        }
+
         return $report;
     }
 

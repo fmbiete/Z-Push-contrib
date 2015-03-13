@@ -126,5 +126,4 @@ return array(
     'ZPushAdmin' => $baseDir . '/lib/utils/zpushadmin.php',
     'ZPushAutodiscover' => $baseDir . '/autodiscover/autodiscover.php',
     'ZPushException' => $baseDir . '/lib/exceptions/zpushexception.php',
-    'padding_filter' => $baseDir . '/lib/core/paddingfilter.php',
 );

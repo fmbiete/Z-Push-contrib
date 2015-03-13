@@ -3,7 +3,6 @@
 * File      :   stringstreamwrapper.php
 * Project   :   Z-Push
 * Descr     :   Wraps a string as a standard php stream
-*               The used method names are predefined and can not be altered.
 *
 * Created   :   24.11.2011
 *
@@ -43,98 +42,22 @@
 ************************************************/
 
 class StringStreamWrapper {
-    const PROTOCOL = "stringstream";
-
-    private $stringstream;
-    private $position;
-    private $stringlength;
-
     /**
-     * Opens the stream
-     * The string to be streamed is passed over the context
+     * Instantiates a stream
      *
-     * @param string    $path           Specifies the URL that was passed to the original function
-     * @param string    $mode           The mode used to open the file, as detailed for fopen()
-     * @param int       $options        Holds additional flags set by the streams API
-     * @param string    $opened_path    If the path is opened successfully, and STREAM_USE_PATH is set in options,
-     *                                  opened_path should be set to the full path of the file/resource that was actually opened.
-     *
+     * @param string $string  The string to be wrapped
      * @access public
-     * @return boolean
+     * @return stream
      */
-    public function stream_open($path, $mode, $options, &$opened_path) {
-        $contextOptions = stream_context_get_options($this->context);
-        if (!isset($contextOptions[self::PROTOCOL]['string']))
-            return false;
-
-        $this->position = 0;
-
-        // this is our stream!
-        $this->stringstream = $contextOptions[self::PROTOCOL]['string'];
-
-        $this->stringlength = strlen($this->stringstream);
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("StringStreamWrapper::stream_open(): initialized stream length: %d", $this->stringlength));
-
-        return true;
-    }
-
-    /**
-     * Reads from stream
-     *
-     * @param int $len      amount of bytes to be read
-     *
-     * @access public
-     * @return string
-     */
-    public function stream_read($len) {
-        $data = substr($this->stringstream, $this->position, $len);
-        $this->position += strlen($data);
-        return $data;
-    }
-
-    /**
-     * Returns the current position on stream
-     *
-     * @access public
-     * @return int
-     */
-    public function stream_tell() {
-        return $this->position;
-    }
-
-   /**
-     * Indicates if 'end of file' is reached
-     *
-     * @access public
-     * @return boolean
-     */
-    public function stream_eof() {
-        return ($this->position >= $this->stringlength);
-    }
-
-    /**
-    * Retrieves information about a stream
-    *
-    * @access public
-    * @return array
-    */
-    public function stream_stat() {
-        return array(
-            7               => $this->stringlength,
-            'size'          => $this->stringlength,
-        );
-    }
-
-   /**
-     * Instantiates a StringStreamWrapper
-     *
-     * @param string    $string     The string to be wrapped
-     *
-     * @access public
-     * @return StringStreamWrapper
-     */
-     static public function Open($string) {
-        $context = stream_context_create(array(self::PROTOCOL => array('string' => &$string)));
-        return fopen(self::PROTOCOL . "://",'r', false, $context);
+    public static function Open($string) {
+        ZLog::Write(LOGLEVEL_DEBUG, "StringStreamWrapper::Open(): len = ".strlen($string));
+        if (defined('BUG68532FIXED') && BUG68532FIXED === true) {
+            $stream = fopen('php://temp', 'r+');
+        } else {
+            $stream = tmpfile();
+        }
+        fwrite($stream, $string);
+        rewind($stream);
+        return $stream;
     }
 }

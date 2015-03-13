@@ -449,26 +449,36 @@ class WBXMLEncoder extends WBXMLDefs {
     private function processMultipart() {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("WBXMLEncoder->processMultipart() with %d parts to be processed", $this->getBodypartsCount()));
         $len = ob_get_length();
-        $buffer = ob_get_clean();
+        $buffer = ob_get_flush();
         $nrBodyparts = $this->getBodypartsCount();
         $blockstart = (($nrBodyparts + 1) * 2) * 4 + 4;
 
         $data = pack("iii", ($nrBodyparts + 1), $blockstart, $len);
 
-        ob_start(null, 1048576);
-
         foreach ($this->bodyparts as $bp) {
             $blockstart = $blockstart + $len;
-            $len = fstat($bp);
-            $len = (isset($len['size'])) ? $len['size'] : 0;
+            if (is_resource($bp)) {
+                $len = fstat($bp);
+                $len = (isset($len['size'])) ? $len['size'] : 0;
+            } elseif (is_string($bp)) {
+                $len = strlen($bp);
+            } else {
+                throw new Exception("bp is a ".gettype($bp)."!?!");
+            }
             $data .= pack("ii", $blockstart, $len);
         }
 
         fwrite($this->_out, $data);
         fwrite($this->_out, $buffer);
         foreach($this->bodyparts as $bp) {
-            stream_copy_to_stream($bp, $this->_out);
-            fclose($bp);
+            if (is_resource($bp)) {
+                stream_copy_to_stream($bp, $this->_out);
+                fclose($bp);
+            } elseif (is_string($bp)) {
+                fwrite($this->_out, $bp);
+            } else {
+                throw new Exception("bp is a ".gettype($bp)."!?!");
+            }
         }
     }
 }

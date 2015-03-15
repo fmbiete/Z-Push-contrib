@@ -20,5 +20,3 @@ else {
     //$mail = Mail::factory('smtp');
     //$mail->send($recipents,$headers,$body);
 }
-
-?>

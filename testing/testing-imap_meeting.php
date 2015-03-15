@@ -60,8 +60,3 @@ if (count($props) > 0) {
 //     printf("TZID %s\n", $props[0]->Value());
 }
 // print_r(TimezoneUtil::GetFullTZFromTZName($tzid));
-
-
-
-
-?>

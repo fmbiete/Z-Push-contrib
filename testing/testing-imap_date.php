@@ -49,5 +49,3 @@ function inside_cutoffdate($cutoffdate, $id, $mbox) {
 
     return $is_inside;
 }
-
-?>

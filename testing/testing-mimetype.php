@@ -36,5 +36,3 @@ if (isset($list[$mime_type])) {
 else {
     echo "NOT FOUND!\n";
 }
-
-?>

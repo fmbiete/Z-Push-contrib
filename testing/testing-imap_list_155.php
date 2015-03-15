@@ -18,5 +18,3 @@ if (is_array($list)) {
 }
 
 imap_close($mbox);
-
-?>

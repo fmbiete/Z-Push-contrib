@@ -1459,5 +1459,4 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         return $addressbookId;
     }
 
-};
-?>
+}

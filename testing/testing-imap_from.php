@@ -131,5 +131,3 @@ include_once('include/z_RFC822.php');
 $Mail_RFC822 = new Mail_RFC822();
 $fromaddr = parseAddr($Mail_RFC822->parseAddressList($encoded_from));
 printf("%s\n", $fromaddr);
-
-?>

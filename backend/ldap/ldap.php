@@ -581,4 +581,3 @@ class BackendLDAP extends BackendDiff {
         return ZPush::ASV_14;
     }
 }
-?>

@@ -26,4 +26,3 @@ if ($nullset === null) {
 else {
     test_function($nullset);
 }
-?>

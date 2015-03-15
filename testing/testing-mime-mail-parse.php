@@ -60,4 +60,3 @@ function testMimeDecode($file, $new_file) {
 
     printf("HTML Body <%s>\n", $html);
 }
-?>

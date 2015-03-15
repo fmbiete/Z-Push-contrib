@@ -68,5 +68,3 @@ function getModAndParentNamesWithSharedSupport($fhir, &$displayname, &$parent) {
 function checkIfIMAPFolder($folderName) {
     return true;
 }
-
-?>

@@ -1465,5 +1465,3 @@ class BackendCalDAV extends BackendDiff {
         return base64_encode(pack('la64vvvvvvvvla64vvvvvvvvl', 0, '', 0, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 }
-
-?>

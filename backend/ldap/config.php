@@ -56,5 +56,3 @@ define('LDAP_USER_DN', 'uid=%u,ou=mailaccount,dc=phppush,dc=com');
 
 // LDAP BASE DNS
 define('LDAP_BASE_DNS', 'Contacts:ou=addressbook,uid=%u,ou=mailaccount,dc=phppush,dc=com'); //Multiple values separator is |
-
-?>

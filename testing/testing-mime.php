@@ -180,5 +180,3 @@ unset($finalEmail);
 unset($message);
 unset($mobj);
 unset($mail);
-
-?>

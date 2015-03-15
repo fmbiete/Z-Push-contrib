@@ -61,5 +61,3 @@ echo "-----------\n";
 $xml = $server->get_xml_vcard('131-52C19B00-7-7A512880');
 //var_dump($server->get_debug());
 echo "$xml\n";
-
-?>

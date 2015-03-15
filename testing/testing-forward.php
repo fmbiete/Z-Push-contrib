@@ -219,5 +219,3 @@ foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline)
         // return the new part
         return $new_part;
     }
-
-?>

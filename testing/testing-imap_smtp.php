@@ -34,5 +34,3 @@ ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): send return val
 if ($send !== true) {
     ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The email could not be sent"));
 }
-
-?>

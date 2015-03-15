@@ -226,5 +226,3 @@ interface IStateMachine {
      */
     public function UnmapUsername($username, $backend);
 }
-
-?>

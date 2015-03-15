@@ -246,31 +246,35 @@ class DiffState implements IChanges {
     protected function updateState($type, $change) {
         // Change can be a change or an add
         if($type == "change") {
-            for($i=0; $i < count($this->syncstate); $i++) {
-                if($this->syncstate[$i]["id"] == $change["id"]) {
-                    $this->syncstate[$i] = $change;
-                    return;
-                }
-            }
-            // Not found, add as new
             $this->syncstate[] = $change;
         } else {
-            for($i=0; $i < count($this->syncstate); $i++) {
-                // Search for the entry for this item
-                if($this->syncstate[$i]["id"] == $change["id"]) {
-                    if($type == "flags") {
-                        // Update flags
-                        $this->syncstate[$i]["flags"] = $change["flags"];
-                    } else if($type == "star") {
-                        // Update star
-                        $this->syncstate[$i]["star"] = $change["star"];
-                    } else if($type == "delete") {
-                        // Delete item
-                        array_splice($this->syncstate, $i, 1);
+            $change_id = $change['id'];
+            foreach ($this->syncstate as $i => &$state) {
+                if ($state['id'] == $change_id) {
+                    switch ($type) {
+                        case 'change':
+                            $state = $change;
+                            break;
+                        case 'flags':
+                            $state['flags'] = $change['flags'];
+                            break;
+                        case 'star':
+                            $state['star'] = $change['star'];
+                            break;
+                        case 'delete':
+                            array_splice($this->syncstate, $i, 1);
+                            break;
+                        default:
+                            throw new Exception("updateState: type '$type' is not supported");
                     }
                     return;
                 }
             }
+
+            $flags = empty($change['flags']) ? "<no flags>" : $change['flags'];
+            $star = empty($change['star']) ? "<no star>" : $change['star'];
+            $mod = empty($change['mod']) ? "<no mod>" : $change['mod'];
+            ZLog::Write(LOGLEVEL_WARN, sprintf("updateState: no state modification found!!! %s|%s|%s|%s|%s", $type, $change_id, $flags, $star, $mod));
         }
     }
 
@@ -321,5 +325,3 @@ class DiffState implements IChanges {
     }
 
 }
-
-?>

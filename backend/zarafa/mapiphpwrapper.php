@@ -221,5 +221,3 @@ class PHPWrapper {
         return 0;
     }
 }
-
-?>

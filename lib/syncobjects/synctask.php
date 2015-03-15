@@ -47,7 +47,11 @@
 
 
 class SyncTask extends SyncObject {
+    // AS 2.5 props
     public $body;
+    public $bodysize;
+    public $bodytruncated;
+    //
     public $complete;
     public $datecompleted;
     public $duedate;
@@ -64,10 +68,11 @@ class SyncTask extends SyncObject {
     public $subject;
     public $rtf;
     public $categories;
+    // AS 12.0 props
+    public $asbody;
 
     function SyncTask() {
         $mapping = array (
-                    SYNC_POOMTASKS_BODY                                 => array (  self::STREAMER_VAR      => "body"),
                     SYNC_POOMTASKS_COMPLETE                             => array (  self::STREAMER_VAR      => "complete",
                                                                                     self::STREAMER_CHECKS   => array(   self::STREAMER_CHECK_REQUIRED       => self::STREAMER_CHECK_SETZERO,
                                                                                                                         self::STREAMER_CHECK_ZEROORONE      => self::STREAMER_CHECK_SETZERO )),
@@ -122,12 +127,15 @@ class SyncTask extends SyncObject {
                                                                                     self::STREAMER_ARRAY    => SYNC_POOMTASKS_CATEGORY),
                 );
 
-            if (Request::GetProtocolVersion() >= 12.0) {
+        if (Request::GetProtocolVersion() >= 12.0) {
             $mapping[SYNC_AIRSYNCBASE_BODY]                             = array (   self::STREAMER_VAR      => "asbody",
                                                                                     self::STREAMER_TYPE     => "SyncBaseBody");
-
-            //unset these properties because airsyncbase body and attachments will be used instead
-            unset($mapping[SYNC_POOMTASKS_BODY]);
+        } else {
+            $mapping[SYNC_POOMTASKS_BODY]                               = array (  self::STREAMER_VAR      => "body");
+            $mapping[SYNC_POOMTASKS_BODYTRUNCATED]                      = array (  self::STREAMER_VAR      => "bodytruncated",
+                        self::STREAMER_CHECKS   => array(   self::STREAMER_CHECK_ZEROORONE      => self::STREAMER_CHECK_SETZERO));
+            $mapping[SYNC_POOMTASKS_BODYSIZE]                           = array (  self::STREAMER_VAR      => "bodysize",
+                        self::STREAMER_CHECKS   => array(   self::STREAMER_CHECK_CMPHIGHER      => -1));
         }
 
         parent::SyncObject($mapping);
@@ -176,5 +184,3 @@ class SyncTask extends SyncObject {
         return true;
     }
 }
-
-?>

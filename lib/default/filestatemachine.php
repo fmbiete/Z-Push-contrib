@@ -210,7 +210,6 @@ class FileStateMachine implements IStateMachine {
      * @return boolean     indicating if the user was added or not (existed already)
      */
     public function LinkUserDevice($username, $devid) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
         $changed = false;
 
@@ -255,7 +254,6 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function UnLinkUserDevice($username, $devid) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
         $changed = false;
 
@@ -613,7 +611,6 @@ class FileStateMachine implements IStateMachine {
      * @return string The mapped username or null if none found
      */
     public function GetMappedUsername($username, $backend) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
 
         // exclusive block
@@ -645,7 +642,6 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function MapUsername($username, $backend, $mappedname) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
 
         // exclusive block
@@ -683,7 +679,6 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function UnmapUsername($username, $backend) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
 
         // exclusive block
@@ -716,4 +711,3 @@ class FileStateMachine implements IStateMachine {
         return true;
     }
 }
-?>

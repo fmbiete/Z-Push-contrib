@@ -337,14 +337,10 @@ class Utils {
                 $back = 60 * 60 * 24 * 31 * 6;
                 break;
             default:
-                break;
+                return 0; // unlimited
         }
 
-        if(isset($back)) {
-            $date = time() - $back;
-            return $date;
-        } else
-            return 0; // unlimited
+        return time() - $back;
     }
 
     /**
@@ -441,18 +437,18 @@ class Utils {
         $len = strlen($string) - 1;
         while ($len > 0) {
             //look for '&-' sequence and replace it with '&'
-            if ($len > 0 && $string{($len-1)} == '&' && $string{$len} == '-') {
+            if ($len > 0 && $string[$len-1] == '&' && $string[$len] == '-') {
                 $string = substr_replace($string, '&', $len - 1, 2);
                 $len--; //decrease $len as this char has alreasy been processed
             }
             //search for '&' which weren't found in if clause above and
             //replace them with '+' as they mark an utf7-encoded char
-            if ($len > 0 && $string{($len-1)} == '&') {
+            if ($len > 0 && $string[($len-1)] == '&') {
                 $string = substr_replace($string, '+', $len - 1, 1);
                 $len--; //decrease $len as this char has alreasy been processed
             }
             //finally "escape" all remaining '+' chars
-            if ($len > 0 && $string{($len-1)} == '+') {
+            if ($len > 0 && $string[$len-1] == '+') {
                 $string = substr_replace($string, '+-', $len - 1, 1);
             }
             $len--;
@@ -479,18 +475,18 @@ class Utils {
         $len = strlen($string) - 1;
         while ($len > 0) {
             //look for '&-' sequence and replace it with '&'
-            if ($len > 0 && $string{($len-1)} == '+' && $string{$len} == '-') {
+            if ($len > 0 && $string[$len-1] == '+' && $string[$len] == '-') {
                 $string = substr_replace($string, '+', $len - 1, 2);
                 $len--; //decrease $len as this char has alreasy been processed
             }
             //search for '&' which weren't found in if clause above and
             //replace them with '+' as they mark an utf7-encoded char
-            if ($len > 0 && $string{($len-1)} == '+') {
+            if ($len > 0 && $string[$len-1] == '+') {
                 $string = substr_replace($string, '&', $len - 1, 1);
                 $len--; //decrease $len as this char has alreasy been processed
             }
             //finally "escape" all remaining '+' chars
-            if ($len > 0 && $string{($len-1)} == '&') {
+            if ($len > 0 && $string[$len-1] == '&') {
                 $string = substr_replace($string, '&-', $len - 1, 1);
             }
             $len--;
@@ -636,12 +632,8 @@ class Utils {
             case ZPush::COMMAND_RESOLVERECIPIENTS:    return 'ResolveRecipients';
             case ZPush::COMMAND_VALIDATECERT:         return 'ValidateCert';
 
-            // Deprecated commands
+            // Deprecated commands (AS >= 14)
             case ZPush::COMMAND_GETHIERARCHY:         return 'GetHierarchy';
-            case ZPush::COMMAND_CREATECOLLECTION:     return 'CreateCollection';
-            case ZPush::COMMAND_DELETECOLLECTION:     return 'DeleteCollection';
-            case ZPush::COMMAND_MOVECOLLECTION:       return 'MoveCollection';
-            case ZPush::COMMAND_NOTIFY:               return 'Notify';
 
             // Webservice commands
             case ZPush::COMMAND_WEBSERVICE_DEVICE:    return 'WebserviceDevice';
@@ -680,12 +672,8 @@ class Utils {
             case 'ResolveRecipients':    return ZPush::COMMAND_RESOLVERECIPIENTS;
             case 'ValidateCert':         return ZPush::COMMAND_VALIDATECERT;
 
-            // Deprecated commands
+            // Deprecated commands (AS >= 14)
             case 'GetHierarchy':         return ZPush::COMMAND_GETHIERARCHY;
-            case 'CreateCollection':     return ZPush::COMMAND_CREATECOLLECTION;
-            case 'DeleteCollection':     return ZPush::COMMAND_DELETECOLLECTION;
-            case 'MoveCollection':       return ZPush::COMMAND_MOVECOLLECTION;
-            case 'Notify':               return ZPush::COMMAND_NOTIFY;
 
             // Webservice commands
             case 'WebserviceDevice':     return ZPush::COMMAND_WEBSERVICE_DEVICE;
@@ -722,6 +710,22 @@ class Utils {
             return @strftime("%d/%m/%Y %H:%M:%S", $timestamp);
     }
 
+    /**
+     * Returns a formatted string output from an optional timestamp with microseconds.
+     * If no timestamp is sent, NOW is used.
+     *
+     * @param float $timestamp
+     *
+     * @access public
+     * @return string
+     */
+    public static function GetFormattedMicroTime($timestamp = false) {
+        if(!$timestamp)
+            $timestamp = microtime(true);
+
+        $t = explode('.',number_format($timestamp,6,'.',''),2);
+        return strftime("%Y-%m-%dT%H:%M:%S", $t[0]).'.'.$t[1];
+    }
 
    /**
     * Get charset name from a codepage
@@ -990,40 +994,3 @@ class Utils {
         return trim($timezone, '"');
     }
 }
-
-
-
-// TODO Win1252/UTF8 functions are deprecated and will be removed sometime
-//if the ICS backend is loaded in CombinedBackend and Zarafa > 7
-//STORE_SUPPORTS_UNICODE is true and the convertion will not be done
-//for other backends.
-function utf8_to_windows1252($string, $option = "", $force_convert = false) {
-    //if the store supports unicode return the string without converting it
-    if (!$force_convert && defined('STORE_SUPPORTS_UNICODE') && STORE_SUPPORTS_UNICODE == true) return $string;
-
-    if (function_exists("iconv")){
-        return @iconv("UTF-8", "Windows-1252" . $option, $string);
-    }else{
-        return utf8_decode($string); // no euro support here
-    }
-}
-
-function windows1252_to_utf8($string, $option = "", $force_convert = false) {
-    //if the store supports unicode return the string without converting it
-    if (!$force_convert && defined('STORE_SUPPORTS_UNICODE') && STORE_SUPPORTS_UNICODE == true) return $string;
-
-    if (function_exists("iconv")){
-        return @iconv("Windows-1252", "UTF-8" . $option, $string);
-    }else{
-        return utf8_encode($string); // no euro support here
-    }
-}
-
-function w2u($string) { return windows1252_to_utf8($string); }
-function u2w($string) { return utf8_to_windows1252($string); }
-
-function w2ui($string) { return windows1252_to_utf8($string, "//TRANSLIT"); }
-function u2wi($string) { return utf8_to_windows1252($string, "//TRANSLIT"); }
-
-
-?>

@@ -45,15 +45,6 @@
 
 // config file
 require_once("backend/imap/config.php");
-require_once("backend/imap/mime_encode.php");
-
-include_once('lib/default/diffbackend/diffbackend.php');
-include_once('include/Mail.php');
-include_once('include/mimeDecode.php');
-include_once('include/mimePart.php');
-include_once('include/z_RFC822.php');
-include_once('include/iCalendar.php');
-
 
 class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $wasteID;
@@ -540,7 +531,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($mobj);
         unset($mail);
 
-        include_once('include/stringstreamwrapper.php');
         $attachment = new SyncItemOperationsAttachment();
         /* BEGIN fmbiete's contribution r1528, ZP-320 */
         $attachment->data = StringStreamWrapper::Open($mparts[$part]->body);
@@ -2867,5 +2857,3 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     }
     /* END fmbiete's contribution r1528, ZP-320 */
 };
-
-?>

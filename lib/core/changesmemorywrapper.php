@@ -346,5 +346,3 @@ class ChangesMemoryWrapper extends HierarchyCache implements IImportChanges, IEx
         $this->step = 0;
     }
 }
-
-?>

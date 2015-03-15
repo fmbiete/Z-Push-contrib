@@ -300,5 +300,3 @@ interface IBackend {
      */
     public function GetUserDetails($username);
 }
-
-?>

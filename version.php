@@ -43,5 +43,3 @@
 
 
 define("ZPUSH_VERSION", "SVN-trunk-r1934");
-
-?>

@@ -42,7 +42,6 @@
 *
 * Consult LICENSE file for details
 ************************************************/
-include ('lib/utils/zpushadmin.php');
 
 class WebserviceDevice {
 
@@ -132,4 +131,3 @@ class WebserviceDevice {
         return true;
     }
 }
-?>

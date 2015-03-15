@@ -316,8 +316,8 @@ class StateManager {
      */
     public function SetBackendStorage($data, $type = self::BACKENDSTORAGE_PERMANENT) {
         if ($type == self::BACKENDSTORAGE_STATE) {
-        if (!$this->uuid)
-            throw new StateNotYetAvailableException();
+            if (!$this->uuid)
+                throw new StateNotYetAvailableException();
 
             // TODO serialization should be done in the StateMachine
             return $this->statemachine->SetState($data, $this->device->GetDeviceId(), IStateMachine::BACKENDSTORAGE, $this->uuid, $this->newStateCounter);
@@ -537,4 +537,3 @@ class StateManager {
                     mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ) );
     }
 }
-?>

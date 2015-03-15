@@ -439,8 +439,7 @@ class ZPushAdmin {
      * @access public
      */
     static public function ClearLoopDetectionData($user = false, $devid = false) {
-        $loopdetection = new LoopDetection();
-        return $loopdetection->ClearData($user, $devid);
+        return ZPush::GetLoopDetection()->ClearData($user, $devid);
     }
 
     /**
@@ -453,8 +452,7 @@ class ZPushAdmin {
      * @access public
      */
     static public function GetLoopDetectionData($user, $devid) {
-        $loopdetection = new LoopDetection();
-        return $loopdetection->GetCachedData($user, $devid);
+        return ZPush::GetLoopDetection()->GetCachedData($user, $devid);
     }
 
     /**
@@ -654,5 +652,3 @@ class ZPushAdmin {
         return true;
     }
 }
-
-?>

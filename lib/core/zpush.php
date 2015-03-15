@@ -49,7 +49,6 @@ class ZPush {
     const WEBSERVICECOMMAND = 4;
     const HIERARCHYCOMMAND = 5;
     const PLAININPUT = 6;
-    const REQUESTHANDLER = 7;
     const CLASS_NAME = 1;
     const CLASS_REQUIRESPROTOCOLVERSION = 2;
     const CLASS_DEFAULTTYPE = 3;
@@ -85,12 +84,8 @@ class ZPush {
     const COMMAND_RESOLVERECIPIENTS = 21;
     const COMMAND_VALIDATECERT = 22;
 
-    // Deprecated commands
+    // Deprecated commands (AS >= 14)
     const COMMAND_GETHIERARCHY = -1;
-    const COMMAND_CREATECOLLECTION = -2;
-    const COMMAND_DELETECOLLECTION = -3;
-    const COMMAND_MOVECOLLECTION = -4;
-    const COMMAND_NOTIFY = -5;
 
     // Webservice commands
     const COMMAND_WEBSERVICE_DEVICE = -100;
@@ -116,37 +111,59 @@ class ZPush {
                 );
 
     static private $supportedCommands = array(
-                    // COMMAND                             // AS VERSION   // REQUESTHANDLER                        // OTHER SETTINGS
-                    self::COMMAND_SYNC              => array(self::ASV_25,  self::REQUESTHANDLER => "Sync"),
-                    self::COMMAND_SENDMAIL          => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTFORWARD      => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_SMARTREPLY        => array(self::ASV_25,  self::REQUESTHANDLER => "SendMail"),
-                    self::COMMAND_GETATTACHMENT     => array(self::ASV_25,  self::REQUESTHANDLER => "GetAttachment"),
-                    self::COMMAND_GETHIERARCHY      => array(self::ASV_25,  self::REQUESTHANDLER => "GetHierarchy",  self::HIERARCHYCOMMAND),            // deprecated but implemented
-                    self::COMMAND_CREATECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_DELETECOLLECTION  => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_MOVECOLLECTION    => array(self::ASV_25),                                                                              // deprecated & not implemented
-                    self::COMMAND_FOLDERSYNC        => array(self::ASV_25,  self::REQUESTHANDLER => "FolderSync",    self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERCREATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERDELETE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_FOLDERUPDATE      => array(self::ASV_25,  self::REQUESTHANDLER => "FolderChange",  self::HIERARCHYCOMMAND),
-                    self::COMMAND_MOVEITEMS         => array(self::ASV_25,  self::REQUESTHANDLER => "MoveItems"),
-                    self::COMMAND_GETITEMESTIMATE   => array(self::ASV_25,  self::REQUESTHANDLER => "GetItemEstimate"),
-                    self::COMMAND_MEETINGRESPONSE   => array(self::ASV_25,  self::REQUESTHANDLER => "MeetingResponse"),
-                    self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_25,  self::REQUESTHANDLER => "ResolveRecipients"),
-                    self::COMMAND_VALIDATECERT      => array(self::ASV_25,  self::REQUESTHANDLER => "ValidateCert"),
-                    self::COMMAND_PROVISION         => array(self::ASV_25, self::REQUESTHANDLER => "Provisioning",  self::UNAUTHENTICATED, self::UNPROVISIONED),
-                    self::COMMAND_SEARCH            => array(self::ASV_25,  self::REQUESTHANDLER => "Search"),
-                    self::COMMAND_PING              => array(self::ASV_25,  self::REQUESTHANDLER => "Ping",          self::UNPROVISIONED),
-                    self::COMMAND_NOTIFY            => array(self::ASV_25,  self::REQUESTHANDLER => "Notify"),                                           // deprecated & not implemented
-                    self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12, self::REQUESTHANDLER => "ItemOperations"),
-                    self::COMMAND_SETTINGS          => array(self::ASV_12, self::REQUESTHANDLER => "Settings"),
+        // COMMAND                             // AS VERSION   // OTHER SETTINGS
+        self::COMMAND_SYNC              => array(self::ASV_25),
+        self::COMMAND_SENDMAIL          => array(self::ASV_25),
+        self::COMMAND_SMARTFORWARD      => array(self::ASV_25),
+        self::COMMAND_SMARTREPLY        => array(self::ASV_25),
+        self::COMMAND_GETATTACHMENT     => array(self::ASV_25),
+        self::COMMAND_GETHIERARCHY      => array(self::ASV_25, self::HIERARCHYCOMMAND),  // deprecated (AS >= 14)
+        self::COMMAND_FOLDERSYNC        => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERCREATE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERDELETE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_FOLDERUPDATE      => array(self::ASV_25, self::HIERARCHYCOMMAND),
+        self::COMMAND_MOVEITEMS         => array(self::ASV_25),
+        self::COMMAND_GETITEMESTIMATE   => array(self::ASV_25),
+        self::COMMAND_MEETINGRESPONSE   => array(self::ASV_25),
+        self::COMMAND_RESOLVERECIPIENTS => array(self::ASV_25),
+        self::COMMAND_VALIDATECERT      => array(self::ASV_25),
+        self::COMMAND_PROVISION         => array(self::ASV_25, self::UNAUTHENTICATED, self::UNPROVISIONED),
+        self::COMMAND_SEARCH            => array(self::ASV_25),
+        self::COMMAND_PING              => array(self::ASV_25, self::UNPROVISIONED),
+        self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12),
+        self::COMMAND_SETTINGS          => array(self::ASV_12),
 
-                    self::COMMAND_WEBSERVICE_DEVICE => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
-                    self::COMMAND_WEBSERVICE_USERS  => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
-            );
+        self::COMMAND_WEBSERVICE_DEVICE => array(self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
+        self::COMMAND_WEBSERVICE_USERS  => array(self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
+    );
 
 
+    static private $requestHandler = array(
+        // COMMAND                      // REQUESTHANDLER
+        self::COMMAND_SYNC              => "Sync",
+        self::COMMAND_SENDMAIL          => "SendMail",
+        self::COMMAND_SMARTFORWARD      => "SendMail",
+        self::COMMAND_SMARTREPLY        => "SendMail",
+        self::COMMAND_GETATTACHMENT     => "GetAttachment",
+        self::COMMAND_GETHIERARCHY      => "GetHierarchy",  // deprecated (AS >= 14)
+        self::COMMAND_FOLDERSYNC        => "FolderSync",
+        self::COMMAND_FOLDERCREATE      => "FolderChange",
+        self::COMMAND_FOLDERDELETE      => "FolderChange",
+        self::COMMAND_FOLDERUPDATE      => "FolderChange",
+        self::COMMAND_MOVEITEMS         => "MoveItems",
+        self::COMMAND_GETITEMESTIMATE   => "GetItemEstimate",
+        self::COMMAND_MEETINGRESPONSE   => "MeetingResponse",
+        self::COMMAND_RESOLVERECIPIENTS => "ResolveRecipients",
+        self::COMMAND_VALIDATECERT      => "ValidateCert",
+        self::COMMAND_PROVISION         => "Provisioning",
+        self::COMMAND_SEARCH            => "Search",
+        self::COMMAND_PING              => "Ping",
+        self::COMMAND_ITEMOPERATIONS    => "ItemOperations",
+        self::COMMAND_SETTINGS          => "Settings",
+
+        self::COMMAND_WEBSERVICE_DEVICE => "Webservice",
+        self::COMMAND_WEBSERVICE_USERS  => "Webservice",
+    );
 
     static private $classes = array(
                     "Email"     => array(
@@ -201,8 +218,8 @@ class ZPush {
      */
     static public function CheckConfig() {
         // check the php version
-        if (version_compare(phpversion(),'5.1.0') < 0)
-            throw new FatalException("The configured PHP version is too old. Please make sure at least PHP 5.1 is used.");
+        if (version_compare(phpversion(),'5.4.0') < 0)
+            throw new FatalException("The configured PHP version is too old. Please make sure at least PHP 5.4 is used.");
 
         // some basic checks
         if (!defined('BASE_PATH'))
@@ -320,9 +337,6 @@ class ZPush {
         }
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("Used timezone '%s'", date_default_timezone_get()));
-
-        // get the statemachine, which will also try to load the backend.. This could throw errors
-        self::GetStateMachine();
     }
 
     /**
@@ -332,7 +346,7 @@ class ZPush {
      * @access public
      * @throws FatalNotImplementedException
      * @throws HTTPReturnCodeException
-     * @return IStateMachine
+     * @return object   implementation of IStateMachine
      */
     static public function GetStateMachine() {
         if (!isset(ZPush::$stateMachine)) {
@@ -350,18 +364,16 @@ class ZPush {
             else {
                 // Initialize the default StateMachine
                 if (defined('STATE_MACHINE') && STATE_MACHINE == 'SQL') {
-                    include_once('lib/default/sqlstatemachine.php');
                     ZPush::$stateMachine = new SqlStateMachine();
                 }
                 else {
-                    include_once('lib/default/filestatemachine.php');
                     ZPush::$stateMachine = new FileStateMachine();
                 }
             }
 
             if (ZPush::$stateMachine->GetStateVersion() !== ZPush::GetLatestStateVersion()) {
                 if (class_exists("TopCollector")) self::GetTopCollector()->AnnounceInformation("Run migration script!", true);
-                throw new HTTPReturnCodeException(sprintf("The state version available to the %s is not the latest version - please run the state upgrade script. See release notes for more information.", get_class(ZPush::$stateMachine), 503));
+                throw new HTTPReturnCodeException(sprintf("The state version available to the %s is not the latest version - please run the state upgrade script. See release notes for more information.", get_class(ZPush::$stateMachine)), HTTP_CODE_500);
             }
         }
         return ZPush::$stateMachine;
@@ -383,7 +395,7 @@ class ZPush {
      * @param boolean   $initialize     (opt) default true: initializes the DeviceManager if not already done
      *
      * @access public
-     * @return DeviceManager
+     * @return object DeviceManager
      */
     static public function GetDeviceManager($initialize = true) {
         if (!isset(ZPush::$deviceManager) && $initialize)
@@ -399,10 +411,33 @@ class ZPush {
      * @return object TopCollector
      */
     static public function GetTopCollector() {
-        if (!isset(ZPush::$topCollector))
-            ZPush::$topCollector = new TopCollector();
+        if (!isset(self::$topCollector)) {
+            $class = defined('TOP_COLLECTOR_BACKEND')?TOP_COLLECTOR_BACKEND:'TopCollector';
+            self::$topCollector = new $class();
+        }
+        return self::$topCollector;
+    }
 
-        return ZPush::$topCollector;
+    /**
+     * Returns an instance of PingTracking
+     *
+     * @access public
+     * @return object IPingTracking
+     */
+    static public function GetPingTracking() {
+        $class = defined('PING_TRACKING_BACKEND')?PING_TRACKING_BACKEND:'PingTracking';
+        return new $class();
+    }
+
+    /**
+     * Returns an instance of LoopDetection
+     *
+     * @access public
+     * @return object ILoopDetection
+     */
+    static public function GetLoopDetection() {
+        $class = defined('LOOP_DETECTION_BACKEND')?LOOP_DETECTION_BACKEND:'LoopDetection';
+        return new $class();
     }
 
     /**
@@ -477,7 +512,7 @@ class ZPush {
      * the backend has to be an IBackend implementation
      *
      * @access public
-     * @return IBackend
+     * @return object     IBackend implementation
      */
     static public function GetBackend() {
         // if the backend is not yet loaded, load backend drivers and instantiate it
@@ -719,18 +754,10 @@ END;
      * @return RequestProcessor sub-class
      */
     static public function GetRequestHandlerForCommand($commandCode) {
-        if (!array_key_exists($commandCode, self::$supportedCommands) ||
-            !array_key_exists(self::REQUESTHANDLER, self::$supportedCommands[$commandCode]) )
+        if (!array_key_exists($commandCode, self::$requestHandler))
             throw new FatalNotImplementedException(sprintf("Command '%s' has no request handler or class", Utils::GetCommandFromCode($commandCode)));
 
-        $class = self::$supportedCommands[$commandCode][self::REQUESTHANDLER];
-        if ($class == "Webservice")
-            $handlerclass = REAL_BASE_PATH . "lib/webservice/webservice.php";
-        else
-            $handlerclass = REAL_BASE_PATH . "lib/request/" . strtolower($class) . ".php";
-
-        if (is_file($handlerclass))
-            include($handlerclass);
+        $class = self::$requestHandler[$commandCode];
 
         if (class_exists($class))
             return new $class();
@@ -825,4 +852,3 @@ END;
     }
 
 }
-?>

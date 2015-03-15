@@ -111,7 +111,10 @@ class ZLog {
         $data = self::buildLogString($loglevel) . $message . "\n";
 
         if ($loglevel <= LOGLEVEL) {
-            @file_put_contents(LOGFILE, $data, FILE_APPEND);
+            if(@file_put_contents(LOGFILE, $data, FILE_APPEND) === false) {
+                error_log(sprintf("Unable to write in %s", LOGFILE));
+                error_log($data);
+            }
         }
 
         // should we write this into the user log?
@@ -123,11 +126,17 @@ class ZLog {
             if (self::logToUserFile()) {
                 // something was logged before the user was authenticated, write this to the log
                 if (!empty(self::$unAuthCache)) {
-                    @file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", implode('', self::$unAuthCache), FILE_APPEND);
+                    if(@file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", implode('', self::$unAuthCache), FILE_APPEND) === false) {
+                        error_log("Unable to write in ".LOGFILEDIR . self::logToUserFile() . ".log");
+                        error_log($data);
+                    }
                     self::$unAuthCache = array();
                 }
                 // only use plain old a-z characters for the generic log file
-                @file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", $data, FILE_APPEND);
+                if(@file_put_contents(LOGFILEDIR . self::logToUserFile() . ".log", $data, FILE_APPEND) === false) {
+                    error_log(sprintf("Unable to write in %s%s.log", LOGFILEDIR, self::logToUserFile()));
+                    error_log($data);
+                }
             }
             // the user is not authenticated yet, we save the log into memory for now
             else {
@@ -136,7 +145,10 @@ class ZLog {
         }
 
         if (($loglevel & LOGLEVEL_FATAL) || ($loglevel & LOGLEVEL_ERROR)) {
-            @file_put_contents(LOGERRORFILE, $data, FILE_APPEND);
+            if(@file_put_contents(LOGERRORFILE, $data, FILE_APPEND) === false) {
+                error_log(sprintf("Unable to write in %s", LOGERRORFILE));
+                error_log($data);
+            }
         }
 
         if ($loglevel & LOGLEVEL_WBXMLSTACK) {
@@ -234,47 +246,3 @@ class ZLog {
         }
     }
 }
-
-/**----------------------------------------------------------------------------------------------------------
- * Legacy debug stuff
- */
-
-// deprecated
-// backwards compatible
-function debugLog($message) {
-    ZLog::Write(LOGLEVEL_DEBUG, $message);
-}
-
-// TODO review error handler
-function zarafa_error_handler($errno, $errstr, $errfile, $errline, $errcontext) {
-    $bt = debug_backtrace();
-    switch ($errno) {
-        case 8192:      // E_DEPRECATED since PHP 5.3.0
-            // do not handle this message
-            break;
-
-        case E_NOTICE:
-        case E_WARNING:
-            // TODO check if there is a better way to avoid these messages
-            if (stripos($errfile,'interprocessdata') !== false && stripos($errstr,'shm_get_var()') !== false)
-                break;
-            ZLog::Write(LOGLEVEL_WARN, "$errfile:$errline $errstr ($errno)");
-            break;
-
-        default:
-            ZLog::Write(LOGLEVEL_ERROR, "trace error: $errfile:$errline $errstr ($errno) - backtrace: ". (count($bt)-1) . " steps");
-            for($i = 1, $bt_length = count($bt); $i < $bt_length; $i++) {
-                $file = $line = "unknown";
-                if (isset($bt[$i]['file'])) $file = $bt[$i]['file'];
-                if (isset($bt[$i]['line'])) $line = $bt[$i]['line'];
-                ZLog::Write(LOGLEVEL_ERROR, "trace: $i:". $file . ":" . $line. " - " . ((isset($bt[$i]['class']))? $bt[$i]['class'] . $bt[$i]['type']:""). $bt[$i]['function']. "()");
-            }
-            //throw new Exception("An error occured.");
-            break;
-    }
-}
-
-error_reporting(E_ALL);
-set_error_handler("zarafa_error_handler");
-
-?>

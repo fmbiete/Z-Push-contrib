@@ -96,6 +96,3 @@ class padding_filter extends php_user_filter {
         return true;
     }
 }
-
-stream_filter_register("padding.*", "padding_filter");
-?>

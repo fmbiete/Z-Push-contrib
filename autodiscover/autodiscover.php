@@ -41,20 +41,8 @@
 * Consult LICENSE file for details
 ************************************************/
 
-include_once('../lib/core/zpushdefs.php');
-include_once('../lib/exceptions/exceptions.php');
-include_once('../lib/utils/compat.php');
-include_once('../lib/utils/utils.php');
-include_once('../lib/core/zpush.php');
-include_once('../lib/core/zlog.php');
-include_once('../lib/interface/ibackend.php');
-include_once('../lib/interface/ichanges.php');
-include_once('../lib/interface/iexportchanges.php');
-include_once('../lib/interface/iimportchanges.php');
-include_once('../lib/interface/isearchprovider.php');
-include_once('../lib/interface/istatemachine.php');
-include_once('../version.php');
-include_once('../config.php');
+require_once '../vendor/autoload.php';
+require_once 'config.php';
 
 class ZPushAutodiscover {
     const ACCEPTABLERESPONSESCHEMA = 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006';
@@ -259,10 +247,9 @@ class ZPushAutodiscover {
         if (isset($userDetails[$attrib]) && $userDetails[$attrib]) {
             return $userDetails[$attrib];
         }
-        ZLog::Write(LOGLEVEL_WARN, sprintf("The backend was not able to find attribute '%s' of the user. Fall back to the default value."));
+        ZLog::Write(LOGLEVEL_WARN, sprintf("The backend was not able to find attribute '%s' of the user. Fall back to the default value.", $attrib));
         return false;
     }
 }
 
 ZPushAutodiscover::DoZPushAutodiscover();
-?>

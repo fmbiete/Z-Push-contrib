@@ -138,7 +138,3 @@ class StringStreamWrapper {
         return fopen(self::PROTOCOL . "://",'r', false, $context);
     }
 }
-
-stream_wrapper_register(StringStreamWrapper::PROTOCOL, "StringStreamWrapper");
-
-?>

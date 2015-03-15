@@ -371,7 +371,7 @@ class Mail_mimeDecode
                         $content_transfer_encoding['value'] = '7bit';
                     // if there is no explicit charset, then don't try to convert to default charset, and make sure that only text mimetypes are converted
                     $charset = (isset($return->ctype_parameters['charset']) && ((isset($return->ctype_primary) && $return->ctype_primary == 'text') || !isset($return->ctype_primary)) )? $return->ctype_parameters['charset']: '';
-                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset, false) : $body) : null;
+                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset) : $body) : null;
                     break;
             }
 

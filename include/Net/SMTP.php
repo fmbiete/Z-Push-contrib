@@ -33,7 +33,6 @@
 
 //require_once 'PEAR.php';
 //require_once 'PEAR/Exception.php';
-require_once 'include/Net/Socket.php';
 
 /**
  * Provides an implementation of the SMTP protocol using PEAR's
@@ -199,10 +198,8 @@ class Net_SMTP
 
         /* Include the Auth_SASL package.  If the package is available, we
          * enable the authentication methods that depend upon it. */
-        if (@include_once 'include/Auth/SASL.php') {
-            $this->setAuthMethod('CRAM-MD5', array($this, '_authCram_MD5'));
-            $this->setAuthMethod('DIGEST-MD5', array($this, '_authDigest_MD5'));
-        }
+        $this->setAuthMethod('CRAM-MD5', array($this, '_authCram_MD5'));
+        $this->setAuthMethod('DIGEST-MD5', array($this, '_authDigest_MD5'));
 
         /* These standard authentication methods are always available. */
         $this->setAuthMethod('LOGIN', array($this, '_authLogin'), false);

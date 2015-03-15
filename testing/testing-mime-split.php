@@ -1,6 +1,6 @@
 <?php
 
-require_once('include/mimeDecode.php');
+require_once 'vendor/autoload.php';
 
 $mailtext = file_get_contents("testing/samples/messages/smime001.txt");
 $decoder = new Mail_mimeDecode($mailtext);

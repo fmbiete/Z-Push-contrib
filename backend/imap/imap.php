@@ -46,6 +46,8 @@
 // config file
 require_once("backend/imap/config.php");
 
+require_once("backend/imap/mime_encode.php");
+
 class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $wasteID;
     private $sentID;

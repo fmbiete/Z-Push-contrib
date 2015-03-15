@@ -46,11 +46,6 @@
 // config file
 require_once("backend/caldav/config.php");
 
-include_once('lib/default/diffbackend/diffbackend.php');
-include_once('include/z_caldav.php');
-include_once('include/z_RTF.php');
-include_once('include/iCalendar.php');
-
 class BackendCalDAV extends BackendDiff {
     /**
      * @var CalDAVClient

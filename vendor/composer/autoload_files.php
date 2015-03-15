@@ -9,4 +9,5 @@ return array(
     $baseDir . '/version.php',
     $baseDir . '/lib/core/zpush-utils.php',
     $baseDir . '/lib/core/zpushdefs.php',
+    $baseDir . '/lib/utils/compat.php',
 );

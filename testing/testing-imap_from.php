@@ -126,7 +126,7 @@ function parseAddr($ad) {
     return $addr_string;
 }
 
-include_once('include/z_RFC822.php');
+require_once 'vendor/autoload.php';
 
 $Mail_RFC822 = new Mail_RFC822();
 $fromaddr = parseAddr($Mail_RFC822->parseAddressList($encoded_from));

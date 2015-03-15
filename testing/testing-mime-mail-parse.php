@@ -1,5 +1,7 @@
 <?php
 
+require_once 'vendor/autoload.php';
+
 // Recreate a message
 // This code is used in BackendIMAP:GetMessage - for MIME format (iOS devices), and will try to fix the encoding
 // Will parse all the sample messages and reencode them, saving the result in /tmp/. The samples dir contains broken messages, feel free to add your samples!!
@@ -22,13 +24,6 @@ if ($handle = opendir($dir)) {
 }
 
 function testMimeDecode($file, $new_file) {
-    require_once('lib/utils/utils.php');
-    require_once('lib/core/zpushdefs.php');
-    require_once('lib/core/zlog.php');
-    require_once('include/mimeDecode.php');
-    require_once('include/mimePart.php');
-    require_once('backend/imap/mime_encode.php');
-
     if (!defined('LOGLEVEL'))
         define('LOGLEVEL', LOGLEVEL_DEBUG);
     if (!defined('LOGUSERLEVEL'))

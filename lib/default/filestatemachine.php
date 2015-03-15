@@ -433,7 +433,6 @@ class FileStateMachine implements IStateMachine {
      * @return integer
      */
     public function GetUserDevicePermission($user, $devid) {
-        include_once("simplemutex.php");
         $mutex = new SimpleMutex();
 
         $status = SYNC_COMMONSTATUS_SUCCESS;

@@ -42,7 +42,7 @@
 ************************************************/
 
 require_once '../vendor/autoload.php';
-require_once 'config.php';
+require_once '../config.php';
 
 class ZPushAutodiscover {
     const ACCEPTABLERESPONSESCHEMA = 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006';

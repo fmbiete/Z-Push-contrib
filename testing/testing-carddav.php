@@ -3,7 +3,7 @@
 // Test CardDAV server
 // This code will do an addressbook discover, an initial sync and will get a vcard.
 
-include_once('include/z_carddav.php');
+require_once 'vendor/autoload.php';
 
 define('CARDDAV_PROTOCOL', 'http');
 define('CARDDAV_SERVER', 'sogo-demo.inverse.ca');

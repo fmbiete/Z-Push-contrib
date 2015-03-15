@@ -1,6 +1,6 @@
 <?php
 
-include_once('include/iCalendar.php');
+require_once 'vendor/autoload.php';
 
 $body = file_get_contents('testing/samples/meeting_request.txt');
 
@@ -24,8 +24,6 @@ $ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", "ACCEPTED");
 printf("%s\n", $ical->Render());
 
 
-include_once('include/mimePart.php');
-
 $mail = new Mail_mimepart();
 $headers = array("MIME-version" => "1.0",
                 "From" => $mail->encodeHeader("from", "Pedro Picapiedra <pedro.picapiedra@zpush.org>", "UTF-8"),
@@ -45,11 +43,6 @@ $message .= "\r\n" . $encoded_mail["body"] . "\r\n";
 
 printf("%s\n", $message);
 
-
-include_once('lib/utils/utils.php');
-include_once('lib/core/zpushdefs.php');
-include_once('lib/core/zlog.php');
-include_once('lib/utils/timezoneutil.php');
 
 define('LOGLEVEL', LOGLEVEL_DEBUG);
 define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);

@@ -44,9 +44,6 @@
 // config file
 require_once("backend/carddav/config.php");
 
-include_once('lib/default/diffbackend/diffbackend.php');
-include_once('include/z_carddav.php');
-
 class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
     private $domain = '';

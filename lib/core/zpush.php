@@ -412,7 +412,7 @@ class ZPush {
      */
     static public function GetTopCollector() {
         if (!isset(self::$topCollector)) {
-            $class = defined('TOP_COLLECTOR_BACKEND')?TOP_COLLECTOR_BACKEND:'TopCollector';
+            $class = defined('TOP_COLLECTOR_BACKEND') ? TOP_COLLECTOR_BACKEND : 'TopCollector';
             self::$topCollector = new $class();
         }
         return self::$topCollector;
@@ -425,7 +425,7 @@ class ZPush {
      * @return object IPingTracking
      */
     static public function GetPingTracking() {
-        $class = defined('PING_TRACKING_BACKEND')?PING_TRACKING_BACKEND:'PingTracking';
+        $class = defined('PING_TRACKING_BACKEND') ? PING_TRACKING_BACKEND : 'PingTracking';
         return new $class();
     }
 
@@ -436,7 +436,7 @@ class ZPush {
      * @return object ILoopDetection
      */
     static public function GetLoopDetection() {
-        $class = defined('LOOP_DETECTION_BACKEND')?LOOP_DETECTION_BACKEND:'LoopDetection';
+        $class = defined('LOOP_DETECTION_BACKEND') ? LOOP_DETECTION_BACKEND : 'LoopDetection';
         return new $class();
     }
 

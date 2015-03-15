@@ -273,6 +273,10 @@
     // loop detection backend class name
     define('LOOP_DETECTION_BACKEND', 'LoopDetection');
 
+    // If using the Redis backends make sure to set this values as necessary
+    define('IPC_REDIS_IP', '127.0.0.1');
+    define('IPC_REDIS_PORT', 6379);
+
 /**********************************************************************************
  *  Search provider settings
  *

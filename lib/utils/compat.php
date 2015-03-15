@@ -41,23 +41,6 @@
 * Consult LICENSE file for details
 ************************************************/
 
-if (!function_exists("apache_request_headers")) {
-    /**
-      * When using other webservers or using php as cgi in apache
-      * the function apache_request_headers() is not available.
-      * This function parses the environment variables to extract
-      * the necessary headers for Z-Push
-      */
-    function apache_request_headers() {
-        $headers = array();
-        foreach ($_SERVER as $key => $value)
-            if (substr($key, 0, 5) == 'HTTP_')
-                $headers[strtr(substr($key, 5), '_', '-')] = $value;
-
-        return $headers;
-    }
-}
-
 if (!function_exists("hex2bin")) {
     /**
      * Complementary function to bin2hex() which converts a hex entryid to a binary entryid.

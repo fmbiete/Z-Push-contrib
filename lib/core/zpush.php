@@ -218,8 +218,8 @@ class ZPush {
      */
     static public function CheckConfig() {
         // check the php version
-        if (version_compare(phpversion(),'5.4.0') < 0)
-            throw new FatalException("The configured PHP version is too old. Please make sure at least PHP 5.4 is used.");
+        if (version_compare(phpversion(), '5.3.0') < 0)
+            throw new FatalException("The configured PHP version is too old. Please make sure at least PHP 5.3 is used.");
 
         // some basic checks
         if (!defined('BASE_PATH'))

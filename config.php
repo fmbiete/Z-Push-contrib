@@ -264,6 +264,15 @@
     // the backend data provider
     define('BACKEND_PROVIDER', '');
 
+    // top collector backend class name
+    define('TOP_COLLECTOR_BACKEND', 'TopCollector');
+
+    // ping tracking backend class name
+    define('PING_TRACKING_BACKEND', 'PingTracking');
+
+    // loop detection backend class name
+    define('LOOP_DETECTION_BACKEND', 'LoopDetection');
+
 /**********************************************************************************
  *  Search provider settings
  *

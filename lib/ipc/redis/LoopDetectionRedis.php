@@ -1,7 +1,6 @@
 <?php
 
-class LoopDetectionRedis extends InterProcessRedis
-{
+class LoopDetectionRedis extends InterProcessRedis {
     const TTL = 86400;
     private static $keystack;
     private static $keybroken;
@@ -11,18 +10,17 @@ class LoopDetectionRedis extends InterProcessRedis
     private $broken_message_uuid;
     private $broken_message_counter;
 
-    public function __construct()
-    {
+    public function __construct() {
         parent::__construct();
         if (!self::$keystack) {
-            $devuser = Request::GetDeviceID().'|'.Request::GetAuthUser();
-            self::$keystack = "ZP-LOOP-STACK|".$devuser;
-            self::$keybroken = "ZP-LOOP-BROKEN|".$devuser.'|';
-            self::$keyfolder = "ZP-LOOP-FOLDER|".$devuser.'|';
+            $devuser = Request::GetDeviceID() . '|' . Request::GetAuthUser();
+            self::$keystack = "ZP-LOOP-STACK|" . $devuser;
+            self::$keybroken = "ZP-LOOP-BROKEN|" . $devuser . '|';
+            self::$keyfolder = "ZP-LOOP-FOLDER|" . $devuser . '|';
             self::$processentry = array();
             self::$processentry['pid'] = getmypid();
             self::$processentry['time'] = $_SERVER['REQUEST_TIME_FLOAT'];
-            self::$processentry['id'] = self::$processentry['pid'].'|'.self::$processentry['time'];
+            self::$processentry['id'] = self::$processentry['pid'] . '|' . self::$processentry['time'];
             self::$processentry['cc'] = Request::GetCommandCode();
         }
     }
@@ -37,8 +35,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function ProcessLoopDetectionInit()
-    {
+    public function ProcessLoopDetectionInit() {
         $this->updateProcessStack();
     }
 
@@ -48,8 +45,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function ProcessLoopDetectionTerminate()
-    {
+    public function ProcessLoopDetectionTerminate() {
         self::$processentry['end'] = time();
         ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->ProcessLoopDetectionTerminate()");
         $this->updateProcessStack();
@@ -65,8 +61,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function ProcessLoopDetectionAddException($exception)
-    {
+    public function ProcessLoopDetectionAddException($exception) {
         if (!isset(self::$processentry['stat']))
             self::$processentry['stat'] = array();
         self::$processentry['stat'][get_class($exception)] = $exception->getCode();
@@ -84,8 +79,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function ProcessLoopDetectionAddStatus($folderid, $status)
-    {
+    public function ProcessLoopDetectionAddStatus($folderid, $status) {
         if ($folderid === false)
             $folderid = "hierarchy";
         if (!isset(self::$processentry['stat']))
@@ -102,8 +96,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function ProcessLoopDetectionSetAsPush()
-    {
+    public function ProcessLoopDetectionSetAsPush() {
         self::$processentry['push'] = true;
         $this->updateProcessStack();
 
@@ -128,8 +121,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @return boolean
      *
      */
-    public function ProcessLoopDetectionIsHierarchyResyncRequired()
-    {
+    public function ProcessLoopDetectionIsHierarchyResyncRequired() {
         $seenFailed = array();
         $seenFolderSync = false;
 
@@ -151,7 +143,8 @@ class LoopDetectionRedis extends InterProcessRedis
                     if (isset($se['stat']) && isset($se['stat']['hierarchy']) && $se['stat']['hierarchy'] == SYNC_FSSTATUS_SYNCKEYERROR) {
                         ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->ProcessLoopDetectionIsHierarchyResyncRequired(): a full FolderReSync was already requested. Resetting fail counter.");
                         $seenFailed = array();
-                    } else {
+                    }
+                    else {
                         $seenFolderSync = true;
                         if (!empty($seenFailed))
                             ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->ProcessLoopDetectionIsHierarchyResyncRequired(): seen FolderSync after other failing command");
@@ -182,8 +175,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @return boolean
      *
      */
-    public function ProcessLoopDetectionPreviousConnectionFailed()
-    {
+    public function ProcessLoopDetectionPreviousConnectionFailed() {
         $stack = $this->getProcessStack();
         if (count($stack) > 1) {
             $se = $stack[0];
@@ -204,8 +196,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @return boolean
      *
      */
-    public function ProcessLoopDetectionGetOutdatedSearchPID()
-    {
+    public function ProcessLoopDetectionGetOutdatedSearchPID() {
         $stack = $this->getProcessStack();
         if (count($stack) > 1) {
             $se = $stack[0];
@@ -223,14 +214,14 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access private
      * @return boolean
      */
-    private function updateProcessStack()
-    {
+    private function updateProcessStack() {
         while (true) {
             self::$redis->watch(self::$keystack);
             $stack = self::$redis->get(self::$keystack);
             if ($stack === false) {
                 $stack = array();
-            } else {
+            }
+            else {
                 $stack = unserialize($stack);
             }
 
@@ -240,7 +231,8 @@ class LoopDetectionRedis extends InterProcessRedis
             foreach ($stack as $entry) {
                 if ($entry['id'] != self::$processentry['id']) {
                     $nstack[] = $entry;
-                } else {
+                }
+                else {
                     $nstack[] = self::$processentry;
                     $found = true;
                 }
@@ -251,10 +243,11 @@ class LoopDetectionRedis extends InterProcessRedis
                 $nstack = array_slice($nstack, -10, 10);
             // update loop data
             if(self::$redis->multi()
-                ->setex(self::$keystack,self::TTL,serialize($nstack))
+                ->setex(self::$keystack, self::TTL, serialize($nstack))
                 ->exec()) {
                 return true;
-            } else {
+            }
+            else {
                 ZLog::Write(LOGLEVEL_WARN, "updateProcessStack(): setex just failed (too much concurrency), retrying");
             }
         }
@@ -266,12 +259,12 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access private
      * @return array
      */
-    private function getProcessStack()
-    {
+    private function getProcessStack() {
         $stack = self::$redis->get(self::$keystack);
         if ($stack === false) {
             return array();
-        } else {
+        }
+        else {
             return unserialize($stack);
         }
     }
@@ -297,25 +290,17 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function SetBrokenMessage($folderid, $id)
-    {
+    public function SetBrokenMessage($folderid, $id) {
         if ($folderid == false || !isset($this->broken_message_uuid) || !isset($this->broken_message_counter) || $this->broken_message_uuid == false || $this->broken_message_counter == false)
             return false;
 
         $brokenmsg = array('uuid' => $this->broken_message_uuid, 'counter' => $this->broken_message_counter);
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->SetBrokenMessage('%s', '%s'): tracking broken message", $folderid, $id));
-        self::$redis->multi()
-            ->hSet(self::$keybroken.$folderid, $id, serialize($brokenmsg))
-            ->expire(self::$keybroken.$folderid, self::TTL)
-            ->exec();
+        self::$redis->multi()->hSet(self::$keybroken . $folderid, $id, serialize($brokenmsg))->expire(self::$keybroken . $folderid, self::TTL)->exec();
     }
 
-    private function RemoveBrokenMessage($folderid, $id)
-    {
-        $exec = self::$redis->multi()
-            ->hDel(self::$keybroken.$folderid, $id)
-            ->expire(self::$keybroken.$folderid, self::TTL)
-            ->exec();
+    private function RemoveBrokenMessage($folderid, $id) {
+        $exec = self::$redis->multi()->hDel(self::$keybroken . $folderid, $id)->expire(self::$keybroken . $folderid, self::TTL)->exec();
 
         return $exec[0] === 1;
     }
@@ -330,14 +315,13 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return array
      */
-    public function GetSyncedButBeforeIgnoredMessages($folderid)
-    {
+    public function GetSyncedButBeforeIgnoredMessages($folderid) {
         if ($folderid == false || !isset($this->broken_message_uuid) || !isset($this->broken_message_counter) || $this->broken_message_uuid == false || $this->broken_message_counter == false)
             return array();
 
         $removeIds = array();
         $okIds = array();
-        $brokenmsgs = self::$redis->hGetAll(self::$keybroken.$folderid);
+        $brokenmsgs = self::$redis->hGetAll(self::$keybroken . $folderid);
         if (!empty($brokenmsgs)) {
             foreach ($brokenmsgs as $id => $data) {
                 $data = unserialize($data);
@@ -353,12 +337,12 @@ class LoopDetectionRedis extends InterProcessRedis
                 }
             }
             // remove data
-            $arg = array_merge(array(self::$keybroken.$folderid),$okIds,$removeIds);
+            $arg = array_merge(array(self::$keybroken . $folderid), $okIds, $removeIds);
             if (count($arg) > 1)
                 call_user_func_array(array(self::$redis, 'hDel'), $arg);
 
             //we want to increase the ttl and test if the hash is still there
-            if (!self::$redis->expire(self::$keybroken.$folderid, self::TTL)) {
+            if (!self::$redis->expire(self::$keybroken . $folderid, self::TTL)) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->GetSyncedButBeforeIgnoredMessages('%s'): removed folder from tracking of ignored messages", $folderid));
             }
         }
@@ -378,11 +362,10 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function SetSyncStateUsage($folderid, $uuid, $counter)
-    {
+    public function SetSyncStateUsage($folderid, $uuid, $counter) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->SetSyncStateUsage(): uuid: %s  counter: %d", $uuid, $counter));
 
-        return self::$redis->hSet(self::$keyfolder.$folderid, 'usage', $counter) !== false;
+        return self::$redis->hSet(self::$keyfolder . $folderid, 'usage', $counter) !== false;
     }
 
     /**
@@ -397,9 +380,8 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean indicating if an uuid+counter were exported (with changes) before
      */
-    public function IsSyncStateObsolete($folderid, $uuid, $counter)
-    {
-        $current = self::$redis->hGetAll(self::$keyfolder.$folderid);
+    public function IsSyncStateObsolete($folderid, $uuid, $counter) {
+        $current = self::$redis->hGetAll(self::$keyfolder . $folderid);
         if (empty($current))
             return false;
         $current = unserialize($current);
@@ -408,7 +390,8 @@ class LoopDetectionRedis extends InterProcessRedis
                 ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->IsSyncStateObsolete(): yes, uuid changed or not set");
 
                 return true;
-            } else {
+            }
+            else {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->IsSyncStateObsolete(): check uuid counter: %d - last known counter: %d with %d queued objects", $counter, $current["count"], $current["queued"]));
 
                 if ($current["uuid"] == $uuid && ($current["count"] > $counter || ($current["count"] == $counter && $current["queued"] > 0) || (isset($current["usage"]) && $current["usage"] >= $counter))) {
@@ -454,8 +437,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean when returning true if a loop has been identified
      */
-    public function Detect($folderid, $type, $uuid, $counter, $maxItems, $queuedMessages)
-    {
+    public function Detect($folderid, $type, $uuid, $counter, $maxItems, $queuedMessages) {
         $this->broken_message_uuid = $uuid;
         $this->broken_message_counter = $counter;
 
@@ -469,22 +451,23 @@ class LoopDetectionRedis extends InterProcessRedis
         $loop = false;
 
         while (true) {
-            self::$redis->watch(self::$keyfolder.$folderid);
-            $current = self::$redis->hGetAll(self::$keyfolder.$folderid);
+            self::$redis->watch(self::$keyfolder . $folderid);
+            $current = self::$redis->hGetAll(self::$keyfolder . $folderid);
 
             // completely new/unknown UUID
-            if (empty($current))
+            if (empty($current)) {
                 $current = array("type" => $type, "uuid" => $uuid, "count" => $counter-1, "queued" => $queuedMessages);
+            }
             // old UUID in cache - the device requested a new state!!
             elseif (isset($current['type']) && $current['type'] == $type && isset($current['uuid']) && $current['uuid'] != $uuid ) {
                 ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->Detect(): UUID changed for folder");
                 // some devices (iPhones) may request new UUIDs after broken items were sent several times
-                if (isset($current['queued']) && $current['queued'] > 0 &&
-                    (isset($current['maxCount']) && $current['count']+1 < $current['maxCount'] || $counter == 1)) {
+                if (isset($current['queued']) && $current['queued'] > 0 && (isset($current['maxCount']) && $current['count']+1 < $current['maxCount'] || $counter == 1)) {
                         ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->Detect(): UUID changed and while items where sent to device - forcing loop mode");
                         $loop = true; // force loop mode
                         $current['queued'] = $queuedMessages;
-                } else {
+                }
+                else {
                     $current['queued'] = 0;
                 }
                 // set new data, unset old loop information
@@ -497,9 +480,7 @@ class LoopDetectionRedis extends InterProcessRedis
             }
 
             // see if there are values
-            if (isset($current['uuid']) && $current['uuid'] == $uuid &&
-                isset($current['type']) && $current['type'] == $type &&
-                isset($current['count'])) {
+            if (isset($current['uuid']) && $current['uuid'] == $uuid && isset($current['type']) && $current['type'] == $type && isset($current['count'])) {
 
                 // case 1 - standard, during loop-resolving & resolving
                 if ($current['count'] < $counter) {
@@ -543,7 +524,8 @@ class LoopDetectionRedis extends InterProcessRedis
                         // the MaxCount is the max number of messages exported before
                         $current['maxCount'] = $counter + (($maxItems < $queuedMessages) ? $maxItems : $queuedMessages);
                         $loop = true;   // loop mode!!
-                    } elseif ($queuedMessages == 0) {
+                    }
+                    elseif ($queuedMessages == 0) {
                         // case 3.2) there was a loop before but now the changes are GONE
                         ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->Detect(): case 3.2 detected - changes gone - clearing loop data");
                         $current['queued'] = 0;
@@ -551,7 +533,8 @@ class LoopDetectionRedis extends InterProcessRedis
                         unset($current['ignored']);
                         unset($current['maxCount']);
                         unset($current['potential']);
-                    } else {
+                    }
+                    else {
                         // case 3.3) still looping the same message! Increase counter
                         ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->Detect(): case 3.3 detected - in loop mode, increase loop counter");
                         $current['loopcount']++;
@@ -569,13 +552,14 @@ class LoopDetectionRedis extends InterProcessRedis
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->Detect(): loop data: loopcount(%d), maxCount(%d), queued(%d), ignored(%s)", $current['loopcount'], $current['maxCount'], $current['queued'], (isset($current['ignored']) ? $current['ignored'] : 'false')));
 
             $exec = self::$redis->multi()
-                ->del(self::$keyfolder.$folderid)
-                ->hMset(self::$keyfolder.$folderid, $current)
-                ->expire(self::$keyfolder.$folderid, self::TTL)
+                ->del(self::$keyfolder . $folderid)
+                ->hMset(self::$keyfolder . $folderid, $current)
+                ->expire(self::$keyfolder . $folderid, self::TTL)
                 ->exec();
             if ($exec[1]) {
                 break;
-            } else {
+            }
+            else {
                 ZLog::Write(LOGLEVEL_WARN, "Detect($folderid, $type, $uuid, $counter, $maxItems, $queuedMessages): setex just failed (too much concurrency), retrying");
             }
         }
@@ -597,8 +581,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function IgnoreNextMessage($markAsIgnored = true, $messageid = false, $folderid = false)
-    {
+    public function IgnoreNextMessage($markAsIgnored = true, $messageid = false, $folderid = false) {
         // as the next message id is not available at all point this method is called, we use different indicators.
         // potentialbroken indicates that we know that the broken message should be exported next,
         // alltho we do not know for sure as it's export message orders can change
@@ -626,7 +609,7 @@ class LoopDetectionRedis extends InterProcessRedis
         // we found our broken message!
         if ($realBroken) {
             $this->ignore_messageid = false;
-            self::$redis->hSet(self::$keyfolder.$folderid, 'ignored', $messageid);
+            self::$redis->hSet(self::$keyfolder . $folderid, 'ignored', $messageid);
             // check if this message was broken before - here we know that it still is and remove it from the tracking
             if($this->RemoveBrokenMessage($folderid, $messageid))
                 ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->IgnoreNextMessage(): previously broken message '$messageid' is still broken and will not be tracked anymore (folder = $folderid)");
@@ -635,14 +618,15 @@ class LoopDetectionRedis extends InterProcessRedis
         // not the broken message yet
         else {
             // update potential id if looping on an item
-            if (self::$redis->hGet(self::$keyfolder.$folderid, 'loopcount') !== false) {
+            if (self::$redis->hGet(self::$keyfolder . $folderid, 'loopcount') !== false) {
                 // this message should be the broken one, but is not!!
                 // we should reset the loop count because this is certainly not the broken one
                 if ($potentialBroken) {
-                    self::$redis->hMset(self::$keyfolder.$folderid, array('potential' => $messageid, 'loopcount' => 1));
+                    self::$redis->hMset(self::$keyfolder . $folderid, array('potential' => $messageid, 'loopcount' => 1));
                     ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->IgnoreNextMessage(): this should be the broken one, but is not! Resetting loop count.");
-                } else {
-                    self::$redis->hSet(self::$keyfolder.$folderid, 'potential', $messageid);
+                }
+                else {
+                    self::$redis->hSet(self::$keyfolder . $folderid, 'potential', $messageid);
                 }
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("LoopDetection->IgnoreNextMessage(): Loop mode, potential broken message id '%s'", $messageid));
             }
@@ -660,16 +644,15 @@ class LoopDetectionRedis extends InterProcessRedis
      * @return boolean
      * @access public
      */
-    public function ClearData($user = false, $devid = false)
-    {
+    public function ClearData($user = false, $devid = false) {
         if ($user == false && $devid == false)
             self::$redis->del(self::$redis->keys('ZP-LOOP*'));
         elseif ($user == false && $devid != false)
-            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|'.$devid.'|*'));
+            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|' . $devid . '|*'));
         elseif ($user != false && $devid != false)
-            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|'.$devid.'|'.$user.'*'));
+            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|' . $devid . '|' . $user . '*'));
         elseif ($user != false && $devid == false) {
-            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|[^|]*|'.$user.'*'));
+            self::$redis->del(self::$redis->keys('ZP-LOOP[^|]*|[^|]*|' . $user . '*'));
         }
 
         return true;
@@ -684,8 +667,7 @@ class LoopDetectionRedis extends InterProcessRedis
      * @return array/boolean returns false if data not available
      * @access public
      */
-    public function GetCachedData($user, $devid)
-    {
+    public function GetCachedData($user, $devid) {
         //nobody really use it ...
         return false;
     }

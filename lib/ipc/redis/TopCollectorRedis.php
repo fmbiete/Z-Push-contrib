@@ -1,14 +1,12 @@
 <?php
 
-class TopCollectorRedis extends InterProcessRedis
-{
+class TopCollectorRedis extends InterProcessRedis {
     const PREFIX = 'ZP-TOP|';
     protected $preserved;
     protected $latest;
     protected $key;
 
-    public function __construct()
-    {
+    public function __construct() {
         parent::__construct();
         $this->preserved = array();
         // static vars come from the parent class
@@ -33,8 +31,7 @@ class TopCollectorRedis extends InterProcessRedis
      *
      * @access public
      */
-    public function __destruct()
-    {
+    public function __destruct() {
         $this->AnnounceInformation("OK", false, true);
     }
 
@@ -48,8 +45,7 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return boolean indicating if it was set to collect before
      */
-    public function CollectData($stop = false)
-    {
+    public function CollectData($stop = false) {
         //for now we always collect top data
         return true;
     }
@@ -64,15 +60,14 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function AnnounceInformation($addinfo, $preserve = false, $terminating = false)
-    {
+    public function AnnounceInformation($addinfo, $preserve = false, $terminating = false) {
         $this->latest["addinfo"] = $addinfo;
         $this->latest["update"] = time();
 
         if ($terminating) {
             $this->latest["ended"] = time();
             foreach ($this->preserved as $p)
-                $this->latest["addinfo"] .= " : ".$p;
+                $this->latest["addinfo"] .= " : " . $p;
         }
 
         if ($preserve)
@@ -90,10 +85,9 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return array
      */
-    public function ReadLatest()
-    {
+    public function ReadLatest() {
         $topdata = array();
-        $keys = self::$redis->keys(self::PREFIX.'*');
+        $keys = self::$redis->keys(self::PREFIX . '*');
         $values = self::$redis->mget($keys);
         $array = array_combine($keys, $values);
         foreach ($array as $key => $value) {
@@ -118,8 +112,7 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return boolean status
      */
-    public function ClearLatest($all = false)
-    {
+    public function ClearLatest($all = false) {
         if($all)
             self::$redis->del(self::$redis->keys(self::PREFIX.'*'));
         return true;
@@ -133,8 +126,7 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function SetUserAgent($agent)
-    {
+    public function SetUserAgent($agent) {
         $this->latest["devagent"] = $agent;
 
         return true;
@@ -148,8 +140,7 @@ class TopCollectorRedis extends InterProcessRedis
      * @access public
      * @return boolean
      */
-    public function SetAsPushConnection()
-    {
+    public function SetAsPushConnection() {
         $this->latest["push"] = true;
 
         return true;

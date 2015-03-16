@@ -1,42 +1,75 @@
-You can run a Z-Push server using Docker containers. That it's really usefull for developing, but it also can be used for production servers.
+# Docker Images
+
+You can run a Z-Push server using Docker containers. That is really usefull for developing, but it also can be used in production servers.
 
 
 Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to contribute your Apache or other server approach.
 
 
-Build a PHP-FPM image
+## Build a PHP-FPM image
+
     cd php-fpm
     docker build -t fmbiete/centos_zpush_php_fpm .
 
 
-Build a NGINX image
+## Build a NGINX image
+
     cd nginx
     docker build -t fmbiete/centos_zpush_nginx .
 
-NOTICE: this includes a SSL self-signed certificate (2048 bytes - valid until 2025), but it's intended only for development or testing uses. In production replace it with a real one.
+**NOTE**: this includes a SSL self-signed certificate (2048 bytes - valid until 2025), but it's intended only for development or testing uses. In production replace it with a real one.
 
-Create your PHP-FPM container
+
+## Create MariaDB container (optional for SQLStateMachine)
+
+    docker run --name zpush_mariadb -e MYSQL_ROOT_PASSWORD=root_password -e MYSQL_USER=user_name -e MYSQL_PASSWORD=user_password -e MYSQL_DATABASE=database -v mariadb_lib:/var/lib/mysql -p3306:3306 -d fbiete/centos_epel_mariadb:10
+
+**TODO**: Replace *mariadb_lib* with the full path when you will store the database files
+**TODO**: Replace *root_password*, *user_name*, *user_password*, *database* with the right values
+
+### Load database schema
+
+    mysql -u root -proot_password database -h 127.0.0.1 < sql/mysql.sql
+
+
+## Create PHP-FPM container
+
+### With MariaDB
+
+    docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push --link zpush_mariadb:zpushmariadb fmbiete/centos_zpush_php_fpm
+
+### Without MariaDB
+
     docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push fmbiete/centos_zpush_php_fpm
 
-TODO: Replace zpush_repo with the full path to Z-Push code
+**TODO**: Replace *zpush_repo* with the full path to Z-Push code
 
 
-Create your NGINX container (don't change the link name)
+## Create NGINX container
+
     docker run -d --name zpush_nginx -v zpush_repo:/var/www/z-push --link zpush_php_fpm:zpushphpfpm -p 443:443 fmbiete/centos_zpush_nginx
 
-TODO: Replace zpush_repo with the full path to Z-Push code
+**TODO**: Replace *zpush_repo* with the full path to Z-Push code
 
 
-Stop
+## Stop containers
+
     docker stop zpush_nginx
     docker stop zpush_php_fpm
+    docker stop zpush_mariadb
 
 
-Start containers
+## Start containers
+
+    docker start zpush_mariadb
     docker start zpush_php_fpm
     docker start zpush_nginx
 
 
-Remove containers
+## Remove containers
+
     docker rm zpush_nginx
     docker rm zpush_php_fpm
+    docker rm zpush_mariadb
+
+**NOTE**: The order of the containers in the operator is important

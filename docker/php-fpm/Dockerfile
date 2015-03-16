@@ -8,10 +8,9 @@ RUN cd /usr/local/src \
 && sed -i 's/max_input_time = 60/max_input_time = 300/g' /etc/php.ini \
 && sed -i 's/post_max_size = 8M/post_max_size = 20M/g' /etc/php.ini \
 && sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 20M/g' /etc/php.ini \
-&& mkdir /var/www/z-push \
-&& mkdir /var/log/z-push \
-&& mkdir /var/lib/z-push
+&& mkdir /var/www/z-push /var/log/z-push /var/lib/z-push \
+&& chown -R apache:apache /var/log/z-push /var/lib/z-push
 
-VOLUME ["/var/www/z-push", "/var/lib/z-push", "/var/log/z-push"]
+VOLUME ["/var/www/z-push"]
 
 

@@ -3,24 +3,40 @@ You can run a Z-Push server using Docker containers. That it's really usefull fo
 
 Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to contribute your Apache or other server approach.
 
+
 Build a PHP-FPM image
-    cd nginx
+    cd php-fpm
     docker build -t fmbiete/centos_zpush_php_fpm .
 
+
 Build a NGINX image
-    cd php-fpm
+    cd nginx
     docker build -t fmbiete/centos_zpush_nginx .
 
+NOTICE: this includes a SSL self-signed certificate (2048 bytes - valid until 2025), but it's intended only for development or testing uses. In production replace it with a real one.
+
 Create your PHP-FPM container
-    docker run -d -name zpush_php_fpm -v .:/var/www/z-push -v /path_to_zpush_states:/var/lib/z-push -v /path_to_zpush_logs:/var/log/z-push fmbiete/centos_zpush_php_fpm
+    docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push fmbiete/centos_zpush_php_fpm
 
-Create your NGINX container
-    docker run -d -name zpush_nginx -v .:/var/www/z-push --link zpushphpfpm:zpush_php_fpm fmbiete/centos_zpush_nginx
+TODO: Replace zpush_repo with the full path to Z-Push code
 
-Stop your containers
+
+Create your NGINX container (don't change the link name)
+    docker run -d --name zpush_nginx -v zpush_repo:/var/www/z-push --link zpush_php_fpm:zpushphpfpm -p 443:443 fmbiete/centos_zpush_nginx
+
+TODO: Replace zpush_repo with the full path to Z-Push code
+
+
+Stop
     docker stop zpush_nginx
     docker stop zpush_php_fpm
 
-Start your containers
+
+Start containers
     docker start zpush_php_fpm
     docker start zpush_nginx
+
+
+Remove containers
+    docker rm zpush_nginx
+    docker rm zpush_php_fpm

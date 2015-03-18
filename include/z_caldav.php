@@ -96,7 +96,6 @@ class CalDAVClient {
 	 */
 	private $curl;
 
-
     private $synctoken = array();
 
 	/**
@@ -967,12 +966,12 @@ EOXML;
         $this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
         $report = array();
-        foreach( $this->xmlnodes as $k => $v ) {
-            switch( $v['tag'] ) {
+        foreach ($this->xmlnodes as $k => $v) {
+            switch ($v['tag']) {
                 case 'DAV::response':
-                    if ( $v['type'] == 'open' ) {
+                    if ($v['type'] == 'open') {
                         $response = array();
-                    } elseif ( $v['type'] == 'close' ) {
+                    } elseif ($v['type'] == 'close') {
                         $report[] = $response;
                     }
                     break;
@@ -982,8 +981,7 @@ EOXML;
                 case 'DAV::getlastmodified':
                     if (isset($v['value'])) {
                         $response['getlastmodified'] = $v['value'];
-                    }
-                    else {
+                    } else {
                         $response['getlastmodified'] = '';
                     }
                     break;

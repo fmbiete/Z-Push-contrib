@@ -114,18 +114,20 @@ class CalDAVClient {
 		$this->headers = array();
 
 		$parsed_url = parse_url($caldav_url);
-		if ($parsed_url == FALSE) {
+		if ($parsed_url === false) {
 			ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCalDAV->caldav_backend(): Couldn't parse URL: %s", $caldav_url));
-		} else
-			$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
-			$this->base_url  = $parsed_url['path'];
-			//ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend(): base_url '%s'", $this->base_url));
-//			$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
-//			$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
+            return;
+		}
 
-			if (substr($this->base_url, -1, 1) !== '/') {
-				$this->base_url = $this->base_url . '/';
-			}
+		$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
+		$this->base_url  = $parsed_url['path'];
+		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend(): base_url '%s'", $this->base_url));
+        //$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
+        //$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
+
+        if (substr($this->base_url, -1) !== '/') {
+			$this->base_url = $this->base_url . '/';
+		}
 	}
 
 	/**
@@ -946,8 +948,7 @@ EOFILTER;
     </D:prop>
 </D:sync-collection>
 EOXML;
-        }
-        else {
+        } else {
             $body = <<<EOXML
 <?xml version="1.0" encoding="utf-8" ?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">

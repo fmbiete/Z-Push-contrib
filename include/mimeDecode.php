@@ -68,7 +68,6 @@
  *
  * used "old" method of checking if called statically, as this is deprecated between php 5.0.0 and 5.3.0
  *   (isStatic of decode() around line 215)
- *
  */
 
 /**
@@ -178,7 +177,7 @@ class Mail_mimeDecode
      * @param string The input to decode
      * @access public
      */
-    function Mail_mimeDecode($input, $deprecated_linefeed = '')
+    function Mail_mimeDecode($input)
     {
         list($header, $body)   = $this->_splitBodyHeader($input);
 
@@ -460,7 +459,6 @@ class Mail_mimeDecode
      */
     function _parseHeaders($input)
     {
-
         if ($input !== '') {
             // Unfold the input
             $input   = preg_replace("/\r?\n/", "\r\n", $input);
@@ -717,10 +715,10 @@ class Mail_mimeDecode
         while (preg_match('/(=\?([^?]+)\?(q|b)\?([^?]*)\?=)/i', $input, $matches)) {
             $encodedwords = true;
 
-            $encoded  = $matches[1];
-            $charset  = $matches[2];
+            $encoded = $matches[1];
+            $charset = $matches[2];
             $encoding = $matches[3];
-            $text     = $matches[4];
+            $text = $matches[4];
 
             switch (strtolower($encoding)) {
                 case 'b':
@@ -730,13 +728,13 @@ class Mail_mimeDecode
                 case 'q':
                     $text = str_replace('_', ' ', $text);
                     preg_match_all('/=([a-f0-9]{2})/i', $text, $matches);
-                    foreach($matches[1] as $value) {
-                        $text = str_replace('='.$value, chr(hexdec($value)), $text);
-                    }
+                    foreach ($matches[1] as $value)
+                        $text = str_replace('=' . $value, chr(hexdec($value)), $text);
                     break;
             }
 
-            $input = str_replace($encoded, $this->_autoconvert_encoding($text, $charset), $input);
+            $text = $this->_autoconvert_encoding($text, $charset);
+            $input = str_replace($encoded, $text, $input);
         }
 
         if (!$encodedwords) {
@@ -1121,4 +1119,5 @@ class Mail_mimeDecode
         ZLog::Write(LOGLEVEL_ERROR, "mimeDecode error: ". $message);
         return false;
     }
+
 } // End of class

@@ -996,7 +996,7 @@ EOXML;
 
         // Report sync-token support on initial sync
         if ($initial && $support_dav_sync && !isset($this->synctoken[$this->calendar_url])) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf('CalDAVClient::GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?'));
+            ZLog::Write(LOGLEVEL_WARN, 'CalDAVClient->GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?');
         }
 
         return $report;

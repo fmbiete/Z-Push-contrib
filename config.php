@@ -265,15 +265,21 @@
     define('BACKEND_PROVIDER', '');
 
     // top collector backend class name
+    //    Default is: TopCollector
+    //    Options: ["TopCollector", "TopCollectorRedis"]
     define('TOP_COLLECTOR_BACKEND', 'TopCollector');
 
     // ping tracking backend class name
+    //    Default is: PingTracking
+    //    Options: ["PingTracking", "PingTrackingRedis"]
     define('PING_TRACKING_BACKEND', 'PingTracking');
 
     // loop detection backend class name
+    //    Default is: LoopDetection
+    //    Options: ["LoopDetection", "LoopDetectionRedis"]
     define('LOOP_DETECTION_BACKEND', 'LoopDetection');
 
-    // If using the Redis backends make sure to set this values as necessary
+    // If using the Redis backends (for top, ping and lookp) make sure to set this values as necessary
     define('IPC_REDIS_IP', '127.0.0.1');
     define('IPC_REDIS_PORT', 6379);
 

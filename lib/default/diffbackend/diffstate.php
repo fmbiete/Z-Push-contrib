@@ -245,36 +245,36 @@ class DiffState implements IChanges {
      */
     protected function updateState($type, $change) {
         // Change can be a change or an add
-        if($type == "change") {
-            $this->syncstate[] = $change;
-        } else {
-            $change_id = $change['id'];
-            foreach ($this->syncstate as $i => &$state) {
+        $change_id = $change['id'];
+        foreach ($this->syncstate as $i => &$state) {
+            if($this->syncstate[$i]["id"] == $change["id"]) {
                 if ($state['id'] == $change_id) {
+                    $this->syncstate[$i] = $change;
                     switch ($type) {
                         case 'change':
                             $state = $change;
-                            break;
+                            return;
                         case 'flags':
                             $state['flags'] = $change['flags'];
-                            break;
+                            return;
                         case 'star':
                             $state['star'] = $change['star'];
-                            break;
+                            return;
                         case 'delete':
                             array_splice($this->syncstate, $i, 1);
-                            break;
+                            return;
                         default:
-                            throw new Exception("updateState: type '$type' is not supported");
+                            throw new Exception(sprintf("updateState: type '%s' is not supported", $type));
                     }
-                    return;
                 }
             }
-
-            $flags = empty($change['flags']) ? "<no flags>" : $change['flags'];
-            $star = empty($change['star']) ? "<no star>" : $change['star'];
-            $mod = empty($change['mod']) ? "<no mod>" : $change['mod'];
-            ZLog::Write(LOGLEVEL_WARN, sprintf("updateState: no state modification found!!! %s|%s|%s|%s|%s", $type, $change_id, $flags, $star, $mod));
+        }
+        if($type == "change") {
+            $this->syncstate[] = $change;
+        } else {
+            $flags = empty($change['flags'])?"<no flags>":$change['flags'];
+            $mod = empty($change['mod'])?"<no mod>":$change['mod'];
+            ZLog::Write(LOGLEVEL_WARN, sprintf("updateState: no state modification!!! %s|%s|%s|%s|%s", $type, $change_id, $flags, $star, $mod));
         }
     }
 

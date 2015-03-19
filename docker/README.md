@@ -25,6 +25,7 @@ Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to con
     docker run --name zpush_mariadb -e MYSQL_ROOT_PASSWORD=root_password -e MYSQL_USER=user_name -e MYSQL_PASSWORD=user_password -e MYSQL_DATABASE=database -v mariadb_lib:/var/lib/mysql -p3306:3306 -d fbiete/centos_epel_mariadb:10
 
 **TODO**: Replace *mariadb_lib* with the full path when you will store the database files
+**TODO**: If using selinux remember to change the context type for *mariadb_lib*
 **TODO**: Replace *root_password*, *user_name*, *user_password*, *database* with the right values
 
 ### Load database schema
@@ -32,17 +33,27 @@ Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to con
     mysql -u root -proot_password database -h 127.0.0.1 < sql/mysql.sql
 
 
+## Create Redis container (optional for TopCollectorRedis, LoopDetectionRedis or PingTrackingRedis)
+
+    docker run --name zpush_redis -v redis_data:/data -p 6379:6379 -d fbiete/centos_epel_redis:2.8
+
+**TODO**: Replace *redis_data* with the full path when you will store the database files
+**TODO**: If using selinux remember to change the context type for *redis_data*
+
 ## Create PHP-FPM container
+
+    docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push fmbiete/centos_zpush_php_fpm
 
 ### With MariaDB
 
     docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push --link zpush_mariadb:zpushmariadb fmbiete/centos_zpush_php_fpm
 
-### Without MariaDB
+### With Redis
 
-    docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push fmbiete/centos_zpush_php_fpm
+    docker run -d --name zpush_php_fpm -v zpush_repo:/var/www/z-push --link zpush_redis:zpushredis fmbiete/centos_zpush_php_fpm
 
 **TODO**: Replace *zpush_repo* with the full path to Z-Push code
+**TODO**: Remember to zpushmariadb and zpushredis as server name in the config for MariaDB and Redis
 
 
 ## Create NGINX container
@@ -57,11 +68,13 @@ Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to con
     docker stop zpush_nginx
     docker stop zpush_php_fpm
     docker stop zpush_mariadb
+    docker stop zpush_redis
 
 
 ## Start containers
 
     docker start zpush_mariadb
+    docker start zpush_redis
     docker start zpush_php_fpm
     docker start zpush_nginx
 
@@ -71,5 +84,6 @@ Here are the basic instructions for a Nginx+PHP-FPM deployment. Feel free to con
     docker rm zpush_nginx
     docker rm zpush_php_fpm
     docker rm zpush_mariadb
+    docker rm zpush_redis
 
-**NOTE**: The order of the containers in the operator is important
+**NOTE**: The order of the containers in the operation is important

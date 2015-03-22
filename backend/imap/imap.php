@@ -742,23 +742,23 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $fhir = explode($this->getServerDelimiter(), $imapid);
 
         // TODO WasteID or SentID could be saved for later ussage
-        if (strcasecmp($imapid, create_name_folder(IMAP_FOLDER_INBOX)) == 0) {
+        if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_INBOX)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Inbox";
             $folder->type = SYNC_FOLDER_TYPE_INBOX;
         }
-        else if (strcasecmp($imapid, create_name_folder(IMAP_FOLDER_DRAFT)) == 0) {
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_DRAFT)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if (strcasecmp($imapid, create_name_folder(IMAP_FOLDER_SENT)) == 0) {
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_SENT)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;
         }
-        else if (strcasecmp($imapid, create_name_folder(IMAP_FOLDER_TRASH)) == 0) {
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;

@@ -79,7 +79,13 @@ define('IMAP_OPTIONS', '/notls/norsh');
         //      common.drafts
         //      common.trash
         //
-        // (gmail is the 4 case)
+        // gmail is a special case, where the default folders are under the [gmail] prefix and the folders defined by the user are under INBOX.
+        // This configuration seems to work:
+        //      define('IMAP_FOLDER_PREFIX', '');
+        //      define('IMAP_FOLDER_INBOX', 'INBOX');
+        //      define('IMAP_FOLDER_SENT', '[Gmail]/Sent');
+        //      define('IMAP_FOLDER_DRAFTS', '[Gmail]/Drafts');
+        //      define('IMAP_FOLDER_TRASH', '[Gmail]/Trash');
 
 // Since I know you won't configure this, I will raise an error unless you do.
 // When configured set this to true to remove the error

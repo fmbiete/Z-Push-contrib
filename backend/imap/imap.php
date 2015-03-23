@@ -764,6 +764,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_SPAM)) == 0) {
+            $folder->parentid = "0";
+            $folder->displayname = "Junk";
+            $folder->type = SYNC_FOLDER_TYPE_USER_MAIL;
+        }
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_ARCHIVE)) == 0) {
+            $folder->parentid = "0";
+            $folder->displayname = "Archive";
+            $folder->type = SYNC_FOLDER_TYPE_USER_MAIL;
+        }
         else {
             if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0) {
                 if (strcasecmp($fhir[0], IMAP_FOLDER_PREFIX) == 0) {

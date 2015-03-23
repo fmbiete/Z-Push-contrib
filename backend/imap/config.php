@@ -86,6 +86,8 @@ define('IMAP_OPTIONS', '/notls/norsh');
         //      define('IMAP_FOLDER_SENT', '[Gmail]/Sent');
         //      define('IMAP_FOLDER_DRAFTS', '[Gmail]/Drafts');
         //      define('IMAP_FOLDER_TRASH', '[Gmail]/Trash');
+        //      define('IMAP_FOLDER_SPAM', '[Gmail]/Spam');
+        //      define('IMAP_FOLDER_ARCHIVE', '[Gmail]/All Mail');
 
 // Since I know you won't configure this, I will raise an error unless you do.
 // When configured set this to true to remove the error
@@ -108,6 +110,12 @@ define('IMAP_FOLDER_DRAFT', 'DRAFTS');
 
 // Trash folder name (case doesn't matter)
 define('IMAP_FOLDER_TRASH', 'TRASH');
+
+// Spam folder name (case doesn't matter). Only showed as special by iOS devices
+define('IMAP_FOLDER_SPAM', 'SPAM');
+
+// Archive folder name (case doesn't matter). Only showed as special by iOS devices
+define('IMAP_FOLDER_ARCHIVE', 'ARCHIVE');
 
 
 

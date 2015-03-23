@@ -1728,6 +1728,37 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
+     * Applies settings to and gets informations from the device
+     *
+     * @param SyncObject        $settings (SyncOOF or SyncUserInformation possible)
+     *
+     * @access public
+     * @return SyncObject       $settings
+     */
+    public function Settings($settings) {
+        if ($settings instanceof SyncOOF) {
+            $this->settingsOOF($settings);
+        }
+        else if ($settings instanceof SyncUserInformation) {
+            $this->settingsUserInformation($settings);
+        }
+
+        return $settings;
+    }
+
+
+    /**
+     * Indicates which AS version is supported by the backend.
+     *
+     * @access public
+     * @return string       AS version constant
+     */
+    public function GetSupportedASVersion() {
+        return ZPush::ASV_14;
+    }
+
+
+    /**
      * Returns the BackendIMAP as it implements the ISearchProvider interface
      * This could be overwritten by the global configuration
      *
@@ -2852,6 +2883,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
     }
 
+
     /**
      * Set the Return-Path header value if not set
      *
@@ -2867,17 +2899,44 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
     }
 
-    /* BEGIN fmbiete's contribution r1528, ZP-320 */
+
     /**
-     * Indicates which AS version is supported by the backend.
+     * The meta function for out of office settings.
      *
-     * @access public
-     * @return string       AS version constant
+     * @param SyncObject $oof
+     *
+     * @access private
+     * @return void
      */
-    public function GetSupportedASVersion() {
-        return ZPush::ASV_14;
+    private function settingsOOF(&$oof) {
+        //if oof state is set it must be set of oof and get otherwise
+        if (!isset($oof->oofstate)) {
+            $oof->oofstate = SYNC_SETTINGSOOF_DISABLED;
+            $oof->Status = SYNC_SETTINGSSTATUS_SUCCESS;
+
+            //unset body type for oof in order not to stream it
+            unset($oof->bodytype);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-    /* END fmbiete's contribution r1528, ZP-320 */
+
+
+    /**
+     * Gets the user's email address from server
+     *
+     * @param SyncObject $userinformation
+     *
+     * @access private
+     * @return void
+     */
+    private function settingsUserInformation(&$userinformation) {
+        $userinformation->Status = SYNC_SETTINGSSTATUS_USERINFO_SUCCESS;
+        $userinformation->emailaddresses[] = $this->username;
+        return true;
+    }
 };
 
 ?>

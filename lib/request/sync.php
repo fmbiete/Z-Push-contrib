@@ -465,7 +465,7 @@ class Sync extends RequestProcessor {
                         }
 
                         if ($status == SYNC_STATUS_SUCCESS && $this->importer !== false) {
-                            ZLog::Write(LOGLEVEL_INFO, sprintf("Processed '%d' incoming changes", $nchanges));
+                            ZLog::Write(LOGLEVEL_INFO, sprintf("Sync->Handle(): Processed %d incoming changes", $nchanges));
                             if (!$actiondata["fetchids"])
                                 self::$topCollector->AnnounceInformation(sprintf("%d incoming", $nchanges), true);
 

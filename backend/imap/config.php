@@ -54,6 +54,83 @@ define('IMAP_PORT', 143);
 // best cross-platform compatibility (see http://php.net/imap_open for options)
 define('IMAP_OPTIONS', '/notls/norsh');
 
+
+// Mark messages as read before deleting them
+define('IMAP_AUTOSEEN_ON_DELETE', false);
+
+
+// IMPORTANT: BASIC IMAP FOLDERS [ask your mail admin]
+        // We can have diferent cases (case insensitive):
+        // 1.
+        //      inbox
+        //      sent
+        //      drafts
+        //      trash
+        // 2.
+        //      inbox
+        //      common.sent
+        //      common.drafts
+        //      common.trash
+        // 3.
+        //      common.inbox
+        //      common.sent
+        //      common.drafts
+        //      common.trash
+        // 4.
+        //      common
+        //      common.sent
+        //      common.drafts
+        //      common.trash
+        //
+        // gmail is a special case, where the default folders are under the [gmail] prefix and the folders defined by the user are under INBOX.
+        // This configuration seems to work:
+        //      define('IMAP_FOLDER_PREFIX', '');
+        //      define('IMAP_FOLDER_INBOX', 'INBOX');
+        //      define('IMAP_FOLDER_SENT', '[Gmail]/Sent');
+        //      define('IMAP_FOLDER_DRAFTS', '[Gmail]/Drafts');
+        //      define('IMAP_FOLDER_TRASH', '[Gmail]/Trash');
+        //      define('IMAP_FOLDER_SPAM', '[Gmail]/Spam');
+        //      define('IMAP_FOLDER_ARCHIVE', '[Gmail]/All Mail');
+
+// Since I know you won't configure this, I will raise an error unless you do.
+// When configured set this to true to remove the error
+define('IMAP_FOLDER_CONFIGURED', false);
+
+// Folder prefix is the common part in your names (3, 4)
+define('IMAP_FOLDER_PREFIX', '');
+
+// Inbox will have the preffix preppend (3 & 4 to true)
+define('IMAP_FOLDER_PREFIX_IN_INBOX', false);
+
+// Inbox folder name (case doesn't matter) - (empty in 4)
+define('IMAP_FOLDER_INBOX', 'INBOX');
+
+// Sent folder name (case doesn't matter)
+define('IMAP_FOLDER_SENT', 'SENT');
+
+// Draft folder name (case doesn't matter)
+define('IMAP_FOLDER_DRAFT', 'DRAFTS');
+
+// Trash folder name (case doesn't matter)
+define('IMAP_FOLDER_TRASH', 'TRASH');
+
+// Spam folder name (case doesn't matter). Only showed as special by iOS devices
+define('IMAP_FOLDER_SPAM', 'SPAM');
+
+// Archive folder name (case doesn't matter). Only showed as special by iOS devices
+define('IMAP_FOLDER_ARCHIVE', 'ARCHIVE');
+
+
+
+// forward messages inline (default true - inlined)
+define('IMAP_INLINE_FORWARD', true);
+
+// list of folders we want to exclude from sync. Names, or part of it, separated by |
+// example: dovecot.sieve|archive|spam
+define('IMAP_EXCLUDED_FOLDERS', '');
+
+
+
 // overwrite the "from" header with some value
 // options:
 //        ''              - do nothing, use the From header
@@ -98,34 +175,6 @@ define('IMAP_FROM_LDAP_FIELDS', serialize(array('givenname', 'sn', 'mail')));
 define('IMAP_FROM_LDAP_FROM', '#givenname #sn <#mail>');
 define('IMAP_FROM_LDAP_FULLNAME', '#givenname #sn');
 
-
-// Root folder or prefix in your IMAP server (without the separator). For example, with courier it will be INBOX, and your folder will be INBOX.Sent
-//  You can use the real case
-define('IMAP_FOLDER_ROOT', 'INBOX');
-
-// copy outgoing mail to this folder. If not set z-push will try the default folders
-//  You can use the real case and the full path (INBOX.Sent)
-define('IMAP_FOLDER_SENT', '');
-
-// Draft folder
-//  You can use the real case and the full path (INBOX.Draft)
-define('IMAP_FOLDER_DRAFT', '');
-
-// Trash folder
-//  You can use the real case and the full path (INBOX.Trash)
-define('IMAP_FOLDER_TRASH', '');
-
-// forward messages inline (default true - inlined)
-define('IMAP_INLINE_FORWARD', true);
-
-// list of folders we want to exclude from sync. Names, or part of it, separated by |
-// example: dovecot.sieve|archive|spam
-define('IMAP_EXCLUDED_FOLDERS', '');
-
-// List of prefixes for shared folders (view dbmail wiki http://www.dbmail.org/dokuwiki/doku.php/shared-mbox)
-// If a folder path starts with one of those, it will be treated as a shared folder
-// example: #Users|#Public
-define('IMAP_PREFIX_SHARED_FOLDERS', '');
 
 
 // Method used for sending mail

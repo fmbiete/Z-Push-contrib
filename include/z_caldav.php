@@ -96,7 +96,6 @@ class CalDAVClient {
 	 */
 	private $curl;
 
-
     private $synctoken = array();
 
 	/**
@@ -114,18 +113,20 @@ class CalDAVClient {
 		$this->headers = array();
 
 		$parsed_url = parse_url($caldav_url);
-		if ($parsed_url == FALSE) {
+		if ($parsed_url === false) {
 			ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCalDAV->caldav_backend(): Couldn't parse URL: %s", $caldav_url));
-		} else
-			$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
-			$this->base_url  = $parsed_url['path'];
-			//ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend(): base_url '%s'", $this->base_url));
-//			$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
-//			$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
+            return;
+		}
 
-			if (substr($this->base_url, -1, 1) !== '/') {
-				$this->base_url = $this->base_url . '/';
-			}
+		$this->server = $parsed_url['scheme'] . '://' . $parsed_url['host'] . ':' . $parsed_url['port'];
+		$this->base_url  = $parsed_url['path'];
+		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend(): base_url '%s'", $this->base_url));
+        //$this->base_url .= !empty($parsed_url['query'])    ? '?' . $parsed_url['query']    : '';
+        //$this->base_url .= !empty($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
+
+        if (substr($this->base_url, -1) !== '/') {
+			$this->base_url = $this->base_url . '/';
+		}
 	}
 
 	/**
@@ -946,8 +947,7 @@ EOFILTER;
     </D:prop>
 </D:sync-collection>
 EOXML;
-        }
-        else {
+        } else {
             $body = <<<EOXML
 <?xml version="1.0" encoding="utf-8" ?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -966,12 +966,12 @@ EOXML;
         $this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
         $report = array();
-        foreach( $this->xmlnodes as $k => $v ) {
-            switch( $v['tag'] ) {
+        foreach ($this->xmlnodes as $k => $v) {
+            switch ($v['tag']) {
                 case 'DAV::response':
-                    if ( $v['type'] == 'open' ) {
+                    if ($v['type'] == 'open') {
                         $response = array();
-                    } elseif ( $v['type'] == 'close' ) {
+                    } elseif ($v['type'] == 'close') {
                         $report[] = $response;
                     }
                     break;
@@ -981,8 +981,7 @@ EOXML;
                 case 'DAV::getlastmodified':
                     if (isset($v['value'])) {
                         $response['getlastmodified'] = $v['value'];
-                    }
-                    else {
+                    } else {
                         $response['getlastmodified'] = '';
                     }
                     break;
@@ -997,7 +996,7 @@ EOXML;
 
         // Report sync-token support on initial sync
         if ($initial && $support_dav_sync && !isset($this->synctoken[$this->calendar_url])) {
-            ZLog::Write(LOGLEVEL_WARN, sprintf('CalDAVClient::GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?'));
+            ZLog::Write(LOGLEVEL_WARN, 'CalDAVClient->GetSync(): no DAV::sync-token received; did you set CALDAV_SUPPORTS_SYNC correctly?');
         }
 
         return $report;

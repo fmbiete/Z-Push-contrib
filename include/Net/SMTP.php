@@ -327,7 +327,8 @@ class Net_SMTP
                 if (empty($line)) {
                     $this->disconnect();
                     return Net_SMTP::raiseError('Connection was closed',
-                                            null, PEAR_ERROR_RETURN);
+//                                            null, PEAR_ERROR_RETURN);
+                                            null, 1);
                 }
 
                 /* Read the code and store the rest in the arguments array. */
@@ -358,7 +359,8 @@ class Net_SMTP
         }
 
         return Net_SMTP::raiseError('Invalid response code received from server',
-                                $this->_code, PEAR_ERROR_RETURN);
+//                                $this->_code, PEAR_ERROR_RETURN);
+                                $this->_code, 1);
     }
 
     /**
@@ -506,7 +508,8 @@ class Net_SMTP
             //if (PEAR::isError($this->_parseResponse(250))) {
             if (($this->_parseResponse(250)) === false) {
                 return Net_SMTP::raiseError('HELO was not accepted: ', $this->_code,
-                                        PEAR_ERROR_RETURN);
+//                                        PEAR_ERROR_RETURN);
+                                        1);
             }
 
             return true;
@@ -545,7 +548,8 @@ class Net_SMTP
         }
 
         return Net_SMTP::raiseError('No supported authentication methods',
-                                null, PEAR_ERROR_RETURN);
+//                                null, PEAR_ERROR_RETURN);
+                                null, 1);
     }
 
     /**

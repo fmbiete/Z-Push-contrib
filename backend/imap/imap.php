@@ -61,7 +61,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $sinkstates = array();
     private $changessinkinit = false;
     private $excludedFolders;
-    private $prefixSharedFolders;
     private static $mimeTypes = false;
 
 
@@ -104,6 +103,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);
 
+        if (defined('IMAP_FOLDER_CONFIGURED') && IMAP_FOLDER_CONFIGURED == false)
+            throw new FatalException("BackendIMAP(): You didn't configure your IMAP folder names. Do it before!", 0, null, LOGLEVEL_FATAL);
+
         /* BEGIN fmbiete's contribution r1527, ZP-319 */
         $this->excludedFolders = array();
         if (defined('IMAP_EXCLUDED_FOLDERS') && strlen(IMAP_EXCLUDED_FOLDERS) > 0) {
@@ -111,13 +113,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): Excluding Folders (%s)", IMAP_EXCLUDED_FOLDERS));
         }
         /* END fmbiete's contribution r1527, ZP-319 */
-
-        $this->prefixSharedFolders = array();
-        if (defined('IMAP_PREFIX_SHARED_FOLDERS') && strlen(IMAP_PREFIX_SHARED_FOLDERS) > 0) {
-            $this->prefixSharedFolders = explode("|", IMAP_PREFIX_SHARED_FOLDERS);
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->Logon(): Shared Folders Prefixes (%s)", IMAP_PREFIX_SHARED_FOLDERS));
-        }
-
 
         // open the IMAP-mailbox
         $this->mbox = @imap_open($this->server , $username, $password, OP_HALFOPEN);
@@ -224,18 +219,32 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $message = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
         unset($mobj);
 
+        // We only need the headers TO and FROM decoded so we can validate the addresses
+        $mobj = new Mail_mimeDecode($sm->mime);
+        $message_headers_decoded = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => false, 'include_bodies' => false, 'charset' => 'utf-8'));
+        unset($mobj);
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
         $Mail_RFC822 = new Mail_RFC822();
 
         $toaddr = "";
         $this->setFromHeaderValue($message->headers);
-        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
+        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message_headers_decoded->headers["from"]));
 
-        if (isset($message->headers["to"])) {
-            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
+        if (isset($message_headers_decoded->headers["to"])) {
+            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message_headers_decoded->headers["to"]));
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
         }
         unset($Mail_RFC822);
+
+        // overwrite CC and BCC with the decoded versions, because we will parse/validate the address in the sending method
+        if (isset($message->headers["cc"])) {
+            $message->headers["cc"] = $message_headers_decoded->headers["cc"];
+        }
+        if (isset($message->headers["bcc"])) {
+            $message->headers["bcc"] = $message_headers_decoded->headers["bcc"];
+        }
+        unset($message_headers_decoded);
 
         $this->setReturnPathValue($message->headers, $fromaddr);
 
@@ -466,7 +475,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // TODO this could be retrieved from the DeviceFolderCache
         if ($this->wasteID == false) {
             //try to get the waste basket without doing complete hierarchy sync
-            $wastebaskt = @imap_getsubscribed($this->mbox, $this->server, "Trash");
+            $folder_name = IMAP_FOLDER_TRASH;
+            if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0)
+                $folder_name = IMAP_FOLDER_PREFIX . $this->getServerDelimiter() . $folder_name;
+            $wastebaskt = @imap_getmailboxes($this->mbox, $this->server, $folder_name);
             if (isset($wastebaskt[0])) {
                 $this->wasteID = $this->convertImapId(substr($wastebaskt[0]->name, strlen($this->server)));
                 return $this->wasteID;
@@ -654,7 +666,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     public function GetFolderList() {
         $folders = array();
 
-        $list = @imap_getsubscribed($this->mbox, $this->server, "*");
+        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
         if (is_array($list)) {
             // reverse list to obtain folders in right order
             $list = array_reverse($list);
@@ -679,19 +691,32 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
                     $fhir = explode($val->delimiter, $imapid);
                     if (count($fhir) > 1) {
-                        $this->getModAndParentNames($fhir, $box["mod"], $imapparent);
-                        if ($imapparent === null) {
+                        if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0) {
+                            if (strcasecmp($fhir[0], IMAP_FOLDER_PREFIX) == 0) {
+                                // Discard prefix
+                                array_shift($fhir);
+                            }
+                        }
+
+                        if (count($fhir) == 1) {
+                            $box["mod"] = $fhir[0];
                             $box["parent"] = "0";
                         }
                         else {
-                            $box["parent"] = $this->convertImapId($imapparent);
+                            $this->getModAndParentNames($fhir, $box["mod"], $imapparent);
+                            if ($imapparent === null) {
+                                $box["parent"] = "0";
+                            }
+                            else {
+                                $box["parent"] = $this->convertImapId($imapparent);
+                            }
                         }
                     }
                     else {
                         $box["mod"] = $imapid;
                         $box["parent"] = "0";
                     }
-                    $folders[]=$box;
+                    $folders[] = $box;
                     /* END fmbiete's contribution r1527, ZP-319 */
                 }
             }
@@ -722,65 +747,64 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // explode hierarchy
         $fhir = explode($this->getServerDelimiter(), $imapid);
 
-        // compare on lowercase strings
-        $lid = strtolower($imapid);
-// TODO WasteID or SentID could be saved for later ussage
-        if($lid == strtolower(IMAP_FOLDER_ROOT)) {
-            $folder->parentid = "0"; // Root
+        // TODO WasteID or SentID could be saved for later ussage
+        if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_INBOX)) == 0) {
+            $folder->parentid = "0";
             $folder->displayname = "Inbox";
             $folder->type = SYNC_FOLDER_TYPE_INBOX;
         }
-        // Zarafa IMAP-Gateway outputs
-        else if($lid == "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_DRAFT)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
         }
-        else if(($lid == "trash" || $lid == "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
-            $folder->parentid = "0";
-            $folder->displayname = "Trash";
-            $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
-            $this->wasteID = $id;
-        }
-        else if($lid == "sent" || $lid == "sent items" || $lid == "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_SENT)) == 0) {
             $folder->parentid = "0";
             $folder->displayname = "Sent";
             $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
             $this->sentID = $id;
         }
-        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "drafts" || $lid == strtolower(IMAP_FOLDER_DRAFT)) {
-            $folder->parentid = $this->convertImapId($fhir[0]);
-            $folder->displayname = "Drafts";
-            $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
-        }
-        else if(($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "trash" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "deleted messages" || $lid == strtolower(IMAP_FOLDER_TRASH)) && ($this->wasteID === false || $this->wasteID == $id)) {
-            $folder->parentid = $this->convertImapId($fhir[0]);
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) == 0) {
+            $folder->parentid = "0";
             $folder->displayname = "Trash";
             $folder->type = SYNC_FOLDER_TYPE_WASTEBASKET;
             $this->wasteID = $id;
         }
-        else if($lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "sent" || $lid == strtolower(IMAP_FOLDER_ROOT) . $this->getServerDelimiter() . "sent messages" || $lid == strtolower(IMAP_FOLDER_SENT)) {
-            $folder->parentid = $this->convertImapId($fhir[0]);
-            $folder->displayname = "Sent";
-            $folder->type = SYNC_FOLDER_TYPE_SENTMAIL;
-            $this->sentID = $id;
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_SPAM)) == 0) {
+            $folder->parentid = "0";
+            $folder->displayname = "Junk";
+            $folder->type = SYNC_FOLDER_TYPE_USER_MAIL;
         }
-
-        // define the rest as other-folders
+        else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_ARCHIVE)) == 0) {
+            $folder->parentid = "0";
+            $folder->displayname = "Archive";
+            $folder->type = SYNC_FOLDER_TYPE_USER_MAIL;
+        }
         else {
-            if (count($fhir) > 1) {
+            if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0) {
+                if (strcasecmp($fhir[0], IMAP_FOLDER_PREFIX) == 0) {
+                    // Discard prefix
+                    array_shift($fhir);
+                }
+                else {
+                    ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->GetFolder('%s'): '%s'; using server delimiter '%s', first part '%s' is not equal to the prefix defined '%s'. Something is wrong with your config.", $id, $imapid, $this->getServerDelimiter(), $fhir[0], IMAP_FOLDER_PREFIX));
+                }
+            }
+
+            if (count($fhir) == 1) {
+                $folder->displayname = Utils::Utf7_to_utf8(Utils::Utf7_iconv_decode($fhir[0]));
+                $folder->parentid = "0";
+            }
+            else {
                 $this->getModAndParentNames($fhir, $folder->displayname, $imapparent);
                 $folder->displayname = Utils::Utf7_to_utf8(Utils::Utf7_iconv_decode($folder->displayname));
                 if ($imapparent === null) {
-                    $folder->parentid = "0";
+                    ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->GetFolder('%s'): '%s'; we didn't found a valid parent name for the folder, but we should... contact the developers for further info", $id, $imapid));
+                    $folder->parentid = "0"; // We put the folder as root folder, so we see it
                 }
                 else {
                     $folder->parentid = $this->convertImapId($imapparent);
                 }
-            }
-            else {
-                $folder->displayname = Utils::Utf7_to_utf8(Utils::Utf7_iconv_decode($imapid));
-                $folder->parentid = "0";
             }
             $folder->type = SYNC_FOLDER_TYPE_USER_MAIL;
         }
@@ -1493,6 +1517,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->imap_reopen_folder($folderImapid);
 
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            if (defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true) {
+                $s0 = @imap_setflag_full($this->mbox, $id, "\\Seen", FT_UID);
+            }
             $s1 = @imap_delete ($this->mbox, $id, FT_UID);
             $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
             $s2 = @imap_expunge($this->mbox);
@@ -1706,6 +1733,37 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $email .= "@" . $this->domain;
         }
         return array('emailaddress' => $email, 'fullname' => $this->getDefaultFullNameValue($username));
+    }
+
+
+    /**
+     * Applies settings to and gets informations from the device
+     *
+     * @param SyncObject        $settings (SyncOOF or SyncUserInformation possible)
+     *
+     * @access public
+     * @return SyncObject       $settings
+     */
+    public function Settings($settings) {
+        if ($settings instanceof SyncOOF) {
+            $this->settingsOOF($settings);
+        }
+        else if ($settings instanceof SyncUserInformation) {
+            $this->settingsUserInformation($settings);
+        }
+
+        return $settings;
+    }
+
+
+    /**
+     * Indicates which AS version is supported by the backend.
+     *
+     * @access public
+     * @return string       AS version constant
+     */
+    public function GetSupportedASVersion() {
+        return ZPush::ASV_14;
     }
 
 
@@ -2052,8 +2110,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return $this->permanentStorage->serverdelimiter;
         }
 
-        $list = @imap_getsubscribed($this->mbox, $this->server, "*");
-        if (count($list) > 0) {
+        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
+        if (is_array($list) && count($list) > 0) {
             // get the delimiter from the first folder
             $delimiter = $list[0]->delimiter;
             $this->permanentStorage->serverdelimiter = $delimiter;
@@ -2206,29 +2264,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return
      */
     protected function getModAndParentNames($fhir, &$displayname, &$parent) {
-        // Special case: dbmail shared folders have a prefix before the folder path
-        //  Ex: #Users/owner-account@domain/Folder Name
-        //  Ex: #Public/owner-account@domain/Folder Name
-        if (count($this->prefixSharedFolders) > 0) {
-            if (!isset($displayname) || strlen($displayname) == 0) {
-                if (count($fhir) > 1) {
-                    foreach($this->prefixSharedFolders as $prefix) {
-                        if (strcasecmp($fhir[0], $prefix) == 0) {
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Found shared prefix '%s'", $prefix));
-                            // Create the display name "Folder Name (owner-account@domain)"
-                            $displayname = array_pop($fhir) . "(" . array_pop($fhir) . ")";
-                            $parent = null;
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getModAndParentNames(): Returning displayname '%s' parent null", $displayname));
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        // if mod is already set add the previous part to it as it might be a folder which has
-        // delimiter in its name
-        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir).$this->getServerDelimiter().$displayname : array_pop($fhir);
+        // if mod is already set add the previous part to it as it might be a folder which has delimiter in its name
+        $displayname = (isset($displayname) && strlen($displayname) > 0) ? $displayname = array_pop($fhir) . $this->getServerDelimiter() . $displayname : array_pop($fhir);
         $parent = implode($this->getServerDelimiter(), $fhir);
 
         if (count($fhir) == 1 || $this->checkIfIMAPFolder($parent)) {
@@ -2236,6 +2273,26 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         //recursion magic
         $this->getModAndParentNames($fhir, $displayname, $parent);
+    }
+
+    /**
+     * Prepare the folder name to get the type and parent.
+     *
+     * @param string $folder_name
+     * @return string
+     * @access private
+     */
+    private function create_name_folder($folder_name) {
+        $foldername = $folder_name;
+        // If we have defined a folder prefix, and it's not empty
+        if (defined('IMAP_FOLDER_PREFIX') && IMAP_FOLDER_PREFIX != "") {
+            // If inbox uses prefix or we are not evaluating inbox
+            if (IMAP_FOLDER_PREFIX_IN_INBOX == true || strcasecmp($foldername, IMAP_FOLDER_INBOX) != 0) {
+                $foldername = IMAP_FOLDER_PREFIX . $this->getServerDelimiter() . $foldername;
+            }
+        }
+
+        return $foldername;
     }
 
     /**
@@ -2247,9 +2304,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     protected function checkIfIMAPFolder($folderName) {
-        $parent = imap_list($this->mbox, $this->server, $folderName);
-        if ($parent === false) return false;
-        return true;
+        $folder_name = $folderName;
+        if (defined(IMAP_FOLDER_PREFIX) && strlen(IMAP_FOLDER_PREFIX) > 0) {
+            // TODO: We don't care about the inbox exception with the prefix, because we won't check inbox
+            $folder_name = IMAP_FOLDER_PREFIX . $this->getServerDelimiter() . $folder_name;
+        }
+        $list_subfolders = @imap_list($this->mbox, $this->server, $folder_name);
+        return is_array($list_subfolders);
     }
 
     /**
@@ -2831,6 +2892,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
     }
 
+
     /**
      * Set the Return-Path header value if not set
      *
@@ -2847,15 +2909,41 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     }
 
 
-    /* BEGIN fmbiete's contribution r1528, ZP-320 */
     /**
-     * Indicates which AS version is supported by the backend.
+     * The meta function for out of office settings.
      *
-     * @access public
-     * @return string       AS version constant
+     * @param SyncObject $oof
+     *
+     * @access private
+     * @return void
      */
-    public function GetSupportedASVersion() {
-        return ZPush::ASV_14;
+    private function settingsOOF(&$oof) {
+        //if oof state is set it must be set of oof and get otherwise
+        if (!isset($oof->oofstate)) {
+            $oof->oofstate = SYNC_SETTINGSOOF_DISABLED;
+            $oof->Status = SYNC_SETTINGSSTATUS_SUCCESS;
+
+            //unset body type for oof in order not to stream it
+            unset($oof->bodytype);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-    /* END fmbiete's contribution r1528, ZP-320 */
+
+
+    /**
+     * Gets the user's email address from server
+     *
+     * @param SyncObject $userinformation
+     *
+     * @access private
+     * @return void
+     */
+    private function settingsUserInformation(&$userinformation) {
+        $userinformation->Status = SYNC_SETTINGSSTATUS_USERINFO_SUCCESS;
+        $userinformation->emailaddresses[] = $this->username;
+        return true;
+    }
 };

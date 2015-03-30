@@ -55,6 +55,9 @@ define('IMAP_PORT', 143);
 define('IMAP_OPTIONS', '/notls/norsh');
 
 
+// Mark messages as read before deleting them
+define('IMAP_AUTOSEEN_ON_DELETE', false);
+
 
 // IMPORTANT: BASIC IMAP FOLDERS [ask your mail admin]
         // We can have diferent cases (case insensitive):

@@ -1525,6 +1525,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->imap_reopen_folder($folderImapid);
 
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
+            if (defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true) {
+                $s0 = @imap_setflag_full($this->mbox, $id, "\\Seen", FT_UID);
+            }
             $s1 = @imap_delete ($this->mbox, $id, FT_UID);
             $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
             $s2 = @imap_expunge($this->mbox);

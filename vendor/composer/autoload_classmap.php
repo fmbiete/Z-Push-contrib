@@ -51,6 +51,7 @@ return array(
     'ImportChangesStream' => $baseDir . '/lib/core/streamimporter.php',
     'InterProcessData' => $baseDir . '/lib/ipc/shm/interprocessdata.php',
     'InterProcessRedis' => $baseDir . '/lib/ipc/redis/InterProcessRedis.php',
+    'InterProcessStorage' => $baseDir . '/lib/ipc/interprocessstorage.php',
     'ItemOperations' => $baseDir . '/lib/request/itemoperations.php',
     'LoopDetection' => $baseDir . '/lib/ipc/shm/loopdetection.php',
     'LoopDetectionRedis' => $baseDir . '/lib/ipc/redis/LoopDetectionRedis.php',

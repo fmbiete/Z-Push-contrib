@@ -42,7 +42,7 @@
 * Consult LICENSE file for details
 ************************************************/
 
-abstract class InterProcessData {
+abstract class InterProcessData extends InterProcessStorage {
     const CLEANUPTIME = 1;
 
     static protected $devid;
@@ -68,19 +68,23 @@ abstract class InterProcessData {
     }
 
     /**
-     * Initializes internal parameters
+     * Indicates if the shared memory is active
      *
      * @access public
      * @return boolean
      */
-    public function InitializeParams() {
-        if (!isset(self::$devid)) {
-            self::$devid = Request::GetDeviceID();
-            self::$pid = @getmypid();
-            self::$user = Request::GetAuthUser();
-            self::$start = time();
-        }
-        return true;
+    public function IsActive() {
+        return ((isset($this->mutexid) && $this->mutexid !== false) && (isset($this->memid) && $this->memid !== false));
+    }
+
+    /**
+     * Reinitializes shared memory by removing, detaching and re-allocating it
+     *
+     * @access public
+     * @return boolean
+     */
+    public function ReInitSharedMem() {
+        return ($this->RemoveSharedMem() && $this->InitSharedMem());
     }
 
     /**
@@ -148,16 +152,6 @@ abstract class InterProcessData {
     }
 
     /**
-     * Reinitializes shared memory by removing, detaching and re-allocating it
-     *
-     * @access public
-     * @return boolean
-     */
-    public function ReInitSharedMem() {
-        return ($this->RemoveSharedMem() && $this->InitSharedMem());
-    }
-
-    /**
      * Cleans up the shared memory block
      *
      * @access public
@@ -177,16 +171,6 @@ abstract class InterProcessData {
         // end exclusive block
 
         return $stat;
-    }
-
-    /**
-     * Indicates if the shared memory is active
-     *
-     * @access public
-     * @return boolean
-     */
-    public function IsActive() {
-        return ((isset($this->mutexid) && $this->mutexid !== false) && (isset($this->memid) && $this->memid !== false));
     }
 
     /**

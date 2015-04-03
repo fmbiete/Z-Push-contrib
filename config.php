@@ -258,6 +258,13 @@
     // NOTE: THIS IS AN EXPERIMENTAL FEATURE WHICH COULD PREVENT YOUR MOBILES FROM SYNCHRONIZING.
     define('USE_PARTIAL_FOLDERSYNC', false);
 
+
+
+    // Your PHP could have a bug when base64 encoding: https://bugs.php.net/bug.php?id=68532
+    // NOTE: Run "php testing/testing-bug68532fixed.php" to know what value put here
+    define('BUG68532FIXED', false);
+
+
 /**********************************************************************************
  *  Backend settings
  */

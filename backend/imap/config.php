@@ -55,7 +55,8 @@ define('IMAP_PORT', 143);
 define('IMAP_OPTIONS', '/notls/norsh');
 
 
-// Mark messages as read before deleting them
+// Mark messages as read when moving to Trash.
+//      BE AWARE that you will lose the unread flag, but some mail clients do this so the Trash folder doesn't get boldened
 define('IMAP_AUTOSEEN_ON_DELETE', false);
 
 

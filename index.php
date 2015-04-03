@@ -141,30 +141,11 @@ require_once 'config.php';
         foreach (RequestProcessor::GetSpecialHeaders() as $header)
             header($header);
 
-        $len = ob_get_length();
-
         // log amount of data transferred
         // TODO check $len when streaming more data (e.g. Attachments), as the data will be send chunked
-        ZPush::GetDeviceManager()->SentData($len);
+        ZPush::GetDeviceManager()->SentData(ob_get_length());
 
-        // Unfortunately, even though Z-Push can stream the data to the client
-        // with a chunked encoding, using chunked encoding breaks the progress bar
-        // on the PDA. So the data is de-chunk here, written a content-length header and
-        // data send as a 'normal' packet. If the output packet exceeds 1MB (see ob_start)
-        // then it will be sent as a chunked packet anyway because PHP will have to flush
-        // the buffer.
-        if(!headers_sent())
-            header("Content-Length: $len");
-
-        // unset content type header if there is no content
-        // otherwise text/html content type is added which might break some devices
-        if (!headers_sent() && $len === 0)
-            header("Content-Type:");
-
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("Sending %d, headers already sent? %s", $len, headers_sent()));
-
-        if (!ob_end_flush())
-            ZLog::Write(LOGLEVEL_ERROR, "Unable to flush buffer!?");
+        ZPush::FinishResponse();
 
         // destruct backend after all data is on the stream
         ZPush::GetBackend()->Logoff();
@@ -190,16 +171,7 @@ require_once 'config.php';
                 ZPush::PrintZPushLegal('GET not supported', $nopostex->getMessage());
         }
 
-        $len = ob_get_length();
-        if ($len !== false) {
-            if (!headers_sent()) {
-                header("Content-Length: $len");
-                if ($len == 0)
-                    header("Content-Type:");
-            }
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("Flushing %d, headers already sent? %s", $len, headers_sent()));
-            ob_end_flush();
-        }
+        ZPush::FinishResponse();
     }
 
     catch (Exception $ex) {
@@ -256,16 +228,7 @@ require_once 'config.php';
         // Announce exception if the TopCollector if available
         ZPush::GetTopCollector()->AnnounceInformation(get_class($ex), true);
 
-        $len = ob_get_length();
-        if ($len !== false) {
-            if (!headers_sent()) {
-                header("Content-Length: $len");
-                if ($len == 0)
-                    header("Content-Type:");
-            }
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("Flushing %d, headers already sent? %s", $len, headers_sent()));
-            ob_end_flush();
-        }
+        ZPush::FinishResponse();
     }
 
     // save device data if the DeviceManager is available

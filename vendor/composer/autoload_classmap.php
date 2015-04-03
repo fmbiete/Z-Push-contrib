@@ -150,6 +150,5 @@ return array(
     'iCalComponent' => $baseDir . '/include/iCalendar.php',
     'iCalProp' => $baseDir . '/include/iCalendar.php',
     'iCalendar' => $baseDir . '/include/iCalendar.php',
-    'padding_filter' => $baseDir . '/lib/core/paddingfilter.php',
     'rtf' => $baseDir . '/include/z_RTF.php',
 );

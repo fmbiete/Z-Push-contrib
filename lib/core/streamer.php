@@ -316,17 +316,9 @@ class Streamer implements Serializable {
                     }
                     else if(isset($map[self::STREAMER_TYPE]) && $map[self::STREAMER_TYPE] == self::STREAMER_TYPE_STREAM) {
                         //we need to encode in base64
-                        $stream = $this->$map[self::STREAMER_VAR];
-                        //we need to pad the stream because of bug #68532
-                        $stat = fstat($stream);
-                        $padding = (isset($stat['size'])) ? ($stat['size'] % 3) : 0;
-                        $paddingfilter = stream_filter_append($stream, 'padding.'.$padding);
-
-                        $base64filter = stream_filter_append($stream, 'convert.base64-encode');
-                        $encoder->content(stream_get_contents($stream));
-                        stream_filter_remove($base64filter);
-                        stream_filter_remove($paddingfilter);
-                        fclose($stream);
+                        $encoder->content(Utils::EncodeBase64($this->$map[self::STREAMER_VAR]));
+                        //memory ...
+                        $this->$map[self::STREAMER_VAR] = null;
                     }
                     // implode comma or semicolon arrays into a string
                     else if(isset($map[self::STREAMER_TYPE]) && is_array($this->$map[self::STREAMER_VAR]) &&

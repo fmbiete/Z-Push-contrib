@@ -218,10 +218,10 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
      * Imports a move of a message. This occurs when a user moves an item to another folder
      *
      * @param string        $id
-     * @param int           $flags - read/unread
+     * @param string        $newfolder
      *
      * @access public
-     * @return boolean
+     * @return string
      * @throws StatusException
      */
     public function ImportMessageMove($id, $newfolder) {
@@ -229,7 +229,14 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         if ($this->folderid == SYNC_FOLDER_TYPE_DUMMY || $newfolder == SYNC_FOLDER_TYPE_DUMMY)
             throw new StatusException(sprintf("ImportChangesDiff->ImportMessageMove('%s'): can not be done on a dummy folder", $id), SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
 
-        return $this->backend->MoveMessage($this->folderid, $id, $newfolder, $this->contentparameters);
+        $newid = $this->backend->MoveMessage($this->folderid, $id, $newfolder, $this->contentparameters);
+        if ($newid === false)
+            throw new StatusException("ImportChangesDiff->ImportMessageMove($id, $newfolder): MoveMessage failed (false)", SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
+
+        //TODO: we should add newid to new folder, instead of a full folder resync
+        ZLog::Write(LOGLEVEL_DEBUG, "ImportMessageMove(): Force resync of dest folder ($newfolder)");
+        ZPushAdmin::ResyncFolder(Request::GetAuthUser(), Request::GetDeviceID(), $newfolder);
+        return $newid;
     }
 
 

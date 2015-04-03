@@ -71,9 +71,3 @@ function zarafa_error_handler($errno, $errstr, $errfile, $errline, $errcontext) 
 
 error_reporting(E_ALL);
 set_error_handler("zarafa_error_handler");
-
-//from lib/core/paddingfilter.php
-stream_filter_register("padding.*", "padding_filter");
-
-//from stringstreamwrapper.php
-stream_wrapper_register(StringStreamWrapper::PROTOCOL, "StringStreamWrapper");

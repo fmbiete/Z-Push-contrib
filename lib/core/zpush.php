@@ -851,4 +851,17 @@ END;
         return $defcapa;
     }
 
+    public static function FinishResponse() {
+        $len = ob_get_length();
+        if ($len !== false) {
+            if (!headers_sent()) {
+                header("Content-Length: $len");
+                if ($len == 0)
+                    header("Content-Type:");
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, "Flushing $len, headers already sent ? ".(headers_sent()?'true':'false'));
+            if (!ob_end_flush())
+                ZLog::Write(LOGLEVEL_ERROR, "Unable to flush buffer!?");
+        }
+    }
 }

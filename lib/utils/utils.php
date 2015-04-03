@@ -603,6 +603,40 @@ class Utils {
     }
 
     /**
+     * Encode a string or a stream into a base64 string
+     *
+     * @param string or stream $input
+     *
+     * @access public
+     * @return string
+     */
+    public static function EncodeBase64($input) {
+        if (is_resource($input)) {
+            if (defined('BUG68532FIXED') && BUG68532FIXED === true) {
+                $stream = $input;
+            } elseif ( ($meta = stream_get_meta_data($input)) && $meta['stream_type'] === 'STDIO') {
+                $stream = $input;
+            } else {
+                //because of bug #68532, we can't work with memory stream,
+                //so we copy input to a tmpfile
+                $stream = tmpfile();
+                stream_copy_to_stream($input, $stream);
+                fclose($input);
+                rewind($stream);
+            }
+            $base64filter = stream_filter_append($stream, 'convert.base64-encode');
+            $base64 = stream_get_contents($stream);
+            stream_filter_remove($base64filter);
+            fclose($stream);
+            return $base64;
+        } elseif (is_string($input)) {
+            return base64_encode($input);
+        } else {
+            throw new Exception("unsupported type : ".gettype($input));
+        }
+    }
+
+    /**
      * Returns a command string for a given command code.
      *
      * @param int $code

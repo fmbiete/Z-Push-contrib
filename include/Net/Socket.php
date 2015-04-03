@@ -680,6 +680,9 @@ class Net_Socket
      *                         and false to disable encryption.
      * @param integer $type    Type of encryption. See stream_socket_enable_crypto()
      *                         for values.
+     * @param boolean $verify_peer Require verification of SSL certificate used
+     * @param boolean $verify_peer_name Require verification of peer name
+     * @param boolean $allow_self_signed Allow self-signed certificates. Requires verify_peer
      *
      * @see    http://se.php.net/manual/en/function.stream-socket-enable-crypto.php
      * @access public
@@ -688,11 +691,15 @@ class Net_Socket
      *         A PEAR_Error object is returned if the socket is not
      *         connected
      */
-    function enableCrypto($enabled, $type)
+    function enableCrypto($enabled, $type, $verify_peer, $verify_peer_name, $allow_self_signed)
     {
         if (version_compare(phpversion(), "5.1.0", ">=")) {
             if (!is_resource($this->fp)) {
                 return $this->raiseError('not connected');
+            }
+            if (version_compare(phpversion(), "5.6.0", ">=")) {
+                // 5.6.0    Added verify_peer_name. verify_peer default changed to TRUE.
+                stream_context_set_option($this->fp, array('ssl' => array('verify_peer' => $verify_peer, 'verify_peer_name' => $verify_peer_name, 'allow_self_signed' => $allow_self_signed)));
             }
             return @stream_socket_enable_crypto($this->fp, $enabled, $type);
         } else {

@@ -191,20 +191,24 @@ $imap_smtp_params = array();
 //      sendmail
 //$imap_smtp_params = array('sendmail_path' => '/usr/bin/sendmail', 'sendmail_args' => '-i');
 //      smtp
-//          "host"          - The server to connect. Default is localhost.
-//          "port"          - The port to connect. Default is 25.
-//          "auth"          - Whether or not to use SMTP authentication. Default is FALSE.
-//          "username"      - The username to use for SMTP authentication. "imap_username" for using the same username as the imap server
-//          "password"      - The password to use for SMTP authentication. "imap_password" for using the same password as the imap server
-//          "localhost"     - The value to give when sending EHLO or HELO. Default is localhost
-//          "timeout"       - The SMTP connection timeout. Default is NULL (no timeout).
-//          "verp"          - Whether to use VERP or not. Default is FALSE.
-//          "debug"         - Whether to enable SMTP debug mode or not. Default is FALSE.
-//          "persist"       - Indicates whether or not the SMTP connection should persist over multiple calls to the send() method.
-//          "pipelining"    - Indicates whether or not the SMTP commands pipelining should be used.
+//          "host"              - The server to connect. Default is localhost.
+//          "port"              - The port to connect. Default is 25.
+//          "auth"              - Whether or not to use SMTP authentication. Default is FALSE.
+//          "username"          - The username to use for SMTP authentication. "imap_username" for using the same username as the imap server
+//          "password"          - The password to use for SMTP authentication. "imap_password" for using the same password as the imap server
+//          "localhost"         - The value to give when sending EHLO or HELO. Default is localhost
+//          "timeout"           - The SMTP connection timeout. Default is NULL (no timeout).
+//          "verp"              - Whether to use VERP or not. Default is FALSE.
+//          "debug"             - Whether to enable SMTP debug mode or not. Default is FALSE.
+//          "persist"           - Indicates whether or not the SMTP connection should persist over multiple calls to the send() method.
+//          "pipelining"        - Indicates whether or not the SMTP commands pipelining should be used.
+//          "verify_peer"       - Require verification of SSL certificate used. Default is TRUE.
+//          "verify_peer_name"  - Require verification of peer name. Default is TRUE.
+//          "allow_self_signed" - Allow self-signed certificates. Requires verify_peer. Default is FALSE.
 //$imap_smtp_params = array('host' => 'localhost', 'port' => 25, 'auth' => false);
 // If you want to use SSL with port 25 or port 465 you must preppend "ssl://" before the hostname or IP of your SMTP server
 // IMPORTANT: To use SSL you must use PHP 5.1 or later, install openssl libs and use ssl:// within the host variable
+// IMPORTANT: To use SSL with PHP 5.6 you should set verify_peer, verify_peer_name and allow_self_signed
 //$imap_smtp_params = array('host' => 'ssl://localhost', 'port' => 465, 'auth' => true, 'username' => 'imap_username', 'password' => 'imap_password');
 
 

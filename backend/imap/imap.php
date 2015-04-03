@@ -1525,9 +1525,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->imap_reopen_folder($folderImapid);
 
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
-            if (defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true) {
-                $s0 = @imap_setflag_full($this->mbox, $id, "\\Seen", FT_UID);
-            }
             $s1 = @imap_delete ($this->mbox, $id, FT_UID);
             $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
             $s2 = @imap_expunge($this->mbox);
@@ -1556,6 +1553,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MoveMessage('%s','%s','%s')", $folderid, $id, $newfolderid));
         $folderImapid = $this->getImapIdFromFolderId($folderid);
         $newfolderImapid = $this->getImapIdFromFolderId($newfolderid);
+        $move_to_trash = strcasecmp($newfolderImapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) == 0;
 
         if ($folderImapid == $newfolderImapid) {
             throw new StatusException(sprintf("BackendIMAP->MoveMessage('%s','%s','%s'): Error, destination folder is source folder. Canceling the move.", $folderid, $id, $newfolderid), SYNC_MOVEITEMSSTATUS_SAMESOURCEANDDEST);
@@ -1600,7 +1598,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 // remove all flags
                 $s3 = @imap_clearflag_full($this->mbox, $newid, "\\Seen \\Answered \\Flagged \\Deleted \\Draft", FT_UID);
                 $newflags = "";
-                if ($overview[0]->seen)
+                if ($overview[0]->seen || ($move_to_trash && defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true))
                     $newflags .= "\\Seen";
                 if ($overview[0]->flagged)
                     $newflags .= " \\Flagged";

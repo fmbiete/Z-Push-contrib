@@ -4,21 +4,19 @@ Installing Z-Push
 Requirements
 ------------
 
-Z-Push 2 runs only on PHP 5.1 or later
+Z-Push 2 runs only on PHP 5.3 or later
 A PEAR dependency as in previous versions does not exist in Z-Push 2.
 
 The PHP version requirement is met in these distributions and versions (or later).
 
-Debian      4.0 (etch)
-Ubuntu      8.04 (hardy heron)
-RHEL/CentOS 5.5
-Fedora      5 (bordeaux)
-OpenSuse    10.1
-Slackware   12.0
-Gentoo      2006.1
-FreeBSD     6.1
-OpenBSD     4.0
-Mandriva    2007
+Debian      6.0 (squeeze)
+Ubuntu      10.04 (LTS lucid)
+RHEL/CentOS 6
+Fedora      12 (constantine)
+OpenSuse    11.2
+Slackware   13.37
+FreeBSD     7.4
+OpenBSD     5.0
 
 If your distribution is not listed here, you can check which PHP version
 is default for it at http://distrowatch.com/.
@@ -34,11 +32,15 @@ additional php packages are required. These provide SOAP support, access to
 process control and shared memory.
 
 These packages vary in names between the distributions.
-- Generally install the packages:                   php-cli php-soap 
+- Generally install the packages:                   php-cli php-soap
 - On Suse (SLES & OpenSuse) install the packages:   php53 php53-soap php53-pcntl php53-sysvshm php53-sysvsem php53-posix
 - On RHEL based systems install the package:        php-cli php-soap php-process
   In order to install these packages you need to add an extra channel subscription
   from the RHEL Server Optional channel.
+
+
+Be aware that each backend can have their own requirements. Take a look to the
+REQUIREMENTS file inside its folder for more information.
 
 
 How to install
@@ -46,10 +48,10 @@ How to install
 
 To install Z-Push, simply untar the z-push archive, e.g. with:
    tar -xzvf z-push-[version]-{buildnr}.tar.gz
-   
+
 The tar contains a folder which has the following structure:
     z-push-[version]-{buildnr}
-    
+
 The contents of this folder should be copied to /usr/share/z-push.
 In a case that /usr/share/z-push does not exist yet, create it with:
     mkdir -p /usr/share/z-push
@@ -70,7 +72,7 @@ your apache process or make the directories world writeable:
 
     chmod 755 /var/lib/z-push /var/log/z-push
     chown apache:apache /var/lib/z-push /var/log/z-push
-    
+
 For the default webserver user please refer to your distribution's manual.
 
 Now, you must configure Apache to redirect the URL
@@ -122,7 +124,7 @@ FileStateMachine (which is default). In order to make this possible,
 you either need to disable the php-safe-mode in php.ini or .htaccess with
     php_admin_flag safe_mode off
 or configure it accordingly, so Z-Push is allowed to write to the
-log and state directories. 
+log and state directories.
 
 After doing this, you should be able to synchronize with your mobile device.
 
@@ -217,7 +219,7 @@ property. It should be mapped to 0x3A220102 in ldap.propmap.cfg
 (0x3A220102 = userCertificate). Make sure it looks like this in LDAP:
 
 userCertificate;binary
-    MIIFGjCCBAKgAwIBAgIQbRnqpxlPa… 
+    MIIFGjCCBAKgAwIBAgIQbRnqpxlPa…
 
 *Important*
 It is strongly recommended to use MS AD or LDAP to manage certificates.
@@ -273,11 +275,11 @@ synchronisation.
 *every* user on the system. You can set a different log level for particular
 users by adding them comma separated to $specialLogUsers in the config.php
  e.g. $specialLogUsers = array("user1", "user2", "user3");
- 
- *NOTE* Be aware that if you are using LOGLEVEL_DEBUG and LOGLEVEL_WBXML
+
+*NOTE* Be aware that if you are using LOGLEVEL_DEBUG and LOGLEVEL_WBXML
  Z-Push will be quite talkative, so it is advisable to use log-rotate
  on the log file.
- 
+
 *Repeated incorrect password messages*
 If a password contains characters which are encoded differently in ISO-8859-1
 and Windows-1252 encodings (e.g. "§") the login might fail with Z-Push but

@@ -31,9 +31,9 @@ You can find some configuration guidelines in the Wiki https://github.com/fmbiet
 
 Requisites
 ==========
-- PHP 5.5 (5.3 should also work, 5.4 it's fine, but 5.5 is better)
+- PHP 5.x (5.3 it's the minimum supported) using PHP-FPM or MOD_PHP
+- HHVM 3.6 or newer, instead of PHP
 - NGINX or APACHE
-- PHP-FPM or MOD_PHP
 
 Configuration
 =============

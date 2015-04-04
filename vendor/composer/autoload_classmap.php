@@ -146,6 +146,7 @@ return array(
     'ZPushAdmin' => $baseDir . '/lib/utils/zpushadmin.php',
     'ZPushAutodiscover' => $baseDir . '/autodiscover/autodiscover.php',
     'ZPushException' => $baseDir . '/lib/exceptions/zpushexception.php',
+    'ZSyslog' => $baseDir . '/lib/core/zsyslog.php',
     'carddav_backend' => $baseDir . '/include/z_carddav.php',
     'iCalComponent' => $baseDir . '/include/iCalendar.php',
     'iCalProp' => $baseDir . '/include/iCalendar.php',

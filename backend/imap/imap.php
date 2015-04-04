@@ -1517,9 +1517,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $this->imap_reopen_folder($folderImapid);
 
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
-            if (defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true) {
-                $s0 = @imap_setflag_full($this->mbox, $id, "\\Seen", FT_UID);
-            }
             $s1 = @imap_delete ($this->mbox, $id, FT_UID);
             $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
             $s2 = @imap_expunge($this->mbox);
@@ -1592,7 +1589,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 // remove all flags
                 $s3 = @imap_clearflag_full($this->mbox, $newid, "\\Seen \\Answered \\Flagged \\Deleted \\Draft", FT_UID);
                 $newflags = "";
-                if ($overview[0]->seen)
+                $move_to_trash = strcasecmp($newfolderImapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) == 0;
+
+                if ($overview[0]->seen || ($move_to_trash && defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true))
                     $newflags .= "\\Seen";
                 if ($overview[0]->flagged)
                     $newflags .= " \\Flagged";
@@ -2819,41 +2818,31 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $headers .= "$k: $v";
         }
 
+        if ($this->sentID == false) {
+            // We don't have sentID loaded, try to find it
+            $folder_name = IMAP_FOLDER_SENT;
+            if (defined('IMAP_FOLDER_SENT') && strlen(IMAP_FOLDER_PREFIX) > 0)
+                $folder_name = IMAP_FOLDER_PREFIX . $this->getServerDelimiter() . $folder_name;
+            $sentfolder = @imap_getmailboxes($this->mbox, $this->server, $folder_name);
+            if (isset($sentfolder[0])) {
+                $this->sentID = $this->convertImapId(substr($sentfolder[0]->name, strlen($this->server)));
+            }
+            else {
+                // We didn't find it, so we will do a full search
+                $this->GetHierarchy();
+            }
+        }
+
         $saved = false;
         if ($this->sentID) {
-            $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
+            $imapid = $this->getImapIdFromFolderId($this->sentID);
+            $saved = $this->addSentMessage($imapid, $headers, $finalBody);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent' folder '%s' ['%s']", $imapid, $this->sentID));
         }
-        else if (strlen(IMAP_FOLDER_SENT) > 0) {
-            // try to open the sentfolder
-            if (!$this->imap_reopen_folder(IMAP_FOLDER_SENT, false)) {
-                // if we cannot open it, it mustn't exist, we try to create it.
-                $this->imap_create_folder($this->server . IMAP_FOLDER_SENT);
-            }
-            $saved = $this->addSentMessage(IMAP_FOLDER_SENT, $headers, $finalBody);
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in configured 'Sent' folder '%s'", IMAP_FOLDER_SENT));
-        }
-        // No Sent folder set, try defaults
         else {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): No Sent mailbox set");
-            if($this->addSentMessage("INBOX.Sent", $headers, $finalBody)) {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'INBOX.Sent'");
-                $saved = true;
-            }
-            else if ($this->addSentMessage("Sent", $headers, $finalBody)) {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent'");
-                $saved = true;
-            }
-            else if ($this->addSentMessage("Sent Items", $headers, $finalBody)) {
-                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent Items'");
-                $saved = true;
-            }
-        }
-
-        unset($headers);
-
-        if (!$saved) {
             ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->saveSentMessage(): The email could not be saved to Sent Items folder. Check your configuration.");
         }
+        unset($headers);
 
         return $saved;
     }

@@ -160,6 +160,27 @@ class Net_SMTP
     protected $_esmtp = array();
 
     /**
+     * Require verification of SSL certificate used.
+     *
+     * @var bool
+     */
+    protected $_verify_peer;
+
+    /**
+     * Require verification of peer name
+     *
+     * @var bool
+     */
+    protected $_verify_peer_name;
+
+    /**
+     * Allow self-signed certificates. Requires verify_peer
+     *
+     * @var bool
+     */
+    protected $_allow_self_signed;
+
+    /**
      * Instantiates a new Net_SMTP object, overriding any defaults
      * with parameters that are passed in.
      *
@@ -176,10 +197,15 @@ class Net_SMTP
      * @param boolean $pipeling   Use SMTP command pipelining
      * @param integer $timeout    Socket I/O timeout in seconds.
      * @param array   $socket_options Socket stream_context_create() options.
+     * @param boolean $verify_peer Require verification of SSL certificate used
+     * @param boolean $verify_peer_name Require verification of peer name
+     * @param boolean $allow_self_signed Allow self-signed certificates. Requires verify_peer
+     */
      */
     public function __construct($host = null, $port = null, $localhost = null,
                                 $pipelining = false, $timeout = 0,
-                                $socket_options = null)
+                                $socket_options = null,
+                                $verify_peer = true, $verify_peer_name = true, $allow_self_signed = false)
     {
         if (isset($host)) {
             $this->host = $host;
@@ -195,6 +221,10 @@ class Net_SMTP
         $this->_socket = new Net_Socket();
         $this->_socket_options = $socket_options;
         $this->_timeout = $timeout;
+
+        $this->_verify_peer = $verify_peer;
+        $this->_verify_peer_name = $verify_peer_name;
+        $this->_allow_self_signed = $allow_self_signed;
 
         /* Include the Auth_SASL package.  If the package is available, we
          * enable the authentication methods that depend upon it. */
@@ -588,7 +618,7 @@ class Net_SMTP
                 return $result;
             }
             //if (PEAR::isError($result = $this->_socket->enableCrypto(true, STREAM_CRYPTO_METHOD_TLS_CLIENT))) {
-            if (($result = $this->_socket->enableCrypto(true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) === false) {
+            if (($result = $this->_socket->enableCrypto(true, STREAM_CRYPTO_METHOD_TLS_CLIENT, $this->_verify_peer, $this->_verify_peer_name, $this->_allow_self_signed)) === false) {
                 return $result;
             } elseif ($result !== true) {
                 return Net_SMTP::raiseError('STARTTLS failed');

@@ -1598,7 +1598,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $s3 = @imap_clearflag_full($this->mbox, $newid, "\\Seen \\Answered \\Flagged \\Deleted \\Draft", FT_UID);
                 $newflags = "";
                 $move_to_trash = strcasecmp($newfolderImapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) == 0;
-                
+
                 if ($overview[0]->seen || ($move_to_trash && defined('IMAP_AUTOSEEN_ON_DELETE') && IMAP_AUTOSEEN_ON_DELETE == true))
                     $newflags .= "\\Seen";
                 if ($overview[0]->flagged)
@@ -2843,8 +2843,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $saved = false;
         if ($this->sentID) {
-            $saved = $this->addSentMessage($this->sentID, $headers, $finalBody);
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent' folder '%s'", $this->sentID));
+            $imapid = $this->getImapIdFromFolderId($this->sentID);
+            $saved = $this->addSentMessage($imapid, $headers, $finalBody);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveSentMessage(): Outgoing mail saved in 'Sent' folder '%s' ['%s']", $imapid, $this->sentID));
         }
         else {
             ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->saveSentMessage(): The email could not be saved to Sent Items folder. Check your configuration.");

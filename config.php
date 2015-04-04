@@ -68,10 +68,6 @@
     // Uncomment and modify the following line if the validation of the certificates fails.
     // define('CAINFO', '/etc/ssl/certs/EmailCA.pem');
 
-    // The Z-Push server location for the autodiscover response
-    // NOTE: change localhost by your full fqdn
-    define('SERVERURL', 'https://localhost/Microsoft-Server-ActiveSync');
-
     /*
      * Whether to use the complete email address as a login name
      * (e.g. user@company.com) or the username only (user).

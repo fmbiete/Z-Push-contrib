@@ -208,12 +208,13 @@ class ZPushAutodiscover {
      * @return string
      */
     private function createResponse($email, $userFullname) {
+        $server_url = 'https://' . $_SERVER['SERVER_NAME'] . '/Microsoft-Server-ActiveSync';
         $xml = file_get_contents('response.xml');
         $response = new SimpleXMLElement($xml);
         $response->Response->User->DisplayName = $userFullname;
         $response->Response->User->EMailAddress = $email;
-        $response->Response->Action->Settings->Server->Url = SERVERURL;
-        $response->Response->Action->Settings->Server->Name = SERVERURL;
+        $response->Response->Action->Settings->Server->Url = $server_url;
+        $response->Response->Action->Settings->Server->Name = $server_url;
         $response = $response->asXML();
         ZLog::Write(LOGLEVEL_WBXML, sprintf("ZPushAutodiscover->createResponse() XML response:%s%s", PHP_EOL, $response));
         return $response;

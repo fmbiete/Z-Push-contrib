@@ -58,12 +58,12 @@ class ZSyslog {
     /**
      * Converts the ZLog level to SYSLOG level.
      *
-     * @params int      $zlog_level     Z-Push LogLevel
+     * @params int      $loglevel     Z-Push LogLevel
      *
      * @access private
      * @return SYSLOG_LEVEL or false
      */
-    private static function zlogLevel2SyslogLevel($level) {
+    private static function zlogLevel2SyslogLevel($loglevel) {
         switch($loglevel) {
             case LOGLEVEL_OFF:   return false; break;
             case LOGLEVEL_FATAL: return LOG_ALERT; break;

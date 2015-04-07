@@ -88,17 +88,19 @@ class TopCollectorRedis extends InterProcessRedis {
     public function ReadLatest() {
         $topdata = array();
         $keys = self::$redis->keys(self::PREFIX . '*');
-        $values = self::$redis->mget($keys);
-        $array = array_combine($keys, $values);
-        foreach ($array as $key => $value) {
-            if ($value === false)
-                continue;
-            $key = explode('|',$key);
-            if (!array_key_exists($key[1], $topdata))
-                $topdata[$key[1]] = array();
-            if (!array_key_exists($key[2], $topdata[$key[1]]))
-                $topdata[$key[1]][$key[2]] = array();
-            $topdata[$key[1]][$key[2]][$key[3]] = unserialize($value);
+        if (count($keys) > 0) {
+            $values = self::$redis->mGet($keys);
+            $array = array_combine($keys, $values);
+            foreach ($array as $key => $value) {
+                if ($value === false)
+                    continue;
+                $key = explode('|',$key);
+                if (!array_key_exists($key[1], $topdata))
+                    $topdata[$key[1]] = array();
+                if (!array_key_exists($key[2], $topdata[$key[1]]))
+                    $topdata[$key[1]][$key[2]] = array();
+                $topdata[$key[1]][$key[2]][$key[3]] = unserialize($value);
+            }
         }
 
         return $topdata;
@@ -113,7 +115,7 @@ class TopCollectorRedis extends InterProcessRedis {
      * @return boolean status
      */
     public function ClearLatest($all = false) {
-        if($all)
+        if ($all)
             self::$redis->del(self::$redis->keys(self::PREFIX.'*'));
         return true;
     }

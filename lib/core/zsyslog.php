@@ -46,8 +46,10 @@ class ZSyslog {
             $facility = 1; // user level
             $pri = ($facility*8) + $level; // multiplying the Facility number by 8 + adding the level
             foreach (explode("\n", $message) as $line) {
-                $syslog_message = "<{$pri}>" . date('M d H:i:s ') . self::$program . ': ' . $line;
-                socket_sendto($sock, $syslog_message, strlen($syslog_message), 0, self::$hostname, self::$port);
+                if (strlen(trim($line)) > 0) {
+                    $syslog_message = "<{$pri}>" . date('M d H:i:s ') . self::$program . ': ' . $line;
+                    socket_sendto($sock, $syslog_message, strlen($syslog_message), 0, self::$hostname, self::$port);
+                }
             }
             socket_close($sock);
         }

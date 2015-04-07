@@ -7,7 +7,7 @@ class PingTrackingRedis extends InterProcessRedis {
     public function __construct() {
         parent::__construct();
         $this->key = "ZP-PING|" . Request::GetDeviceID() . '|' . Request::GetAuthUser() . '|' . Request::GetAuthDomain();
-        DoForcePingTimeout();
+        $this->DoForcePingTimeout();
     }
 
     /**

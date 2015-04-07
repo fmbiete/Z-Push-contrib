@@ -7,7 +7,7 @@ abstract class InterProcessStorage {
      * @access public
      * @return boolean
      */
-    public function IsActive();
+    abstract public function IsActive();
 
     /**
      * Initializes internal parameters
@@ -31,5 +31,5 @@ abstract class InterProcessStorage {
      * @access public
      * @return boolean
      */
-    public function ReInitSharedMem();
+    abstract public function ReInitSharedMem();
 }

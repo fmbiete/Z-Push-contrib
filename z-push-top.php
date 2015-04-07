@@ -170,6 +170,9 @@ class ZPushTop {
     public function run() {
         $this->initialize();
 
+        // Non-blocking read from stdin
+        stream_set_blocking(STDIN, FALSE);
+
         do {
             $this->currenttime = time();
 
@@ -443,7 +446,7 @@ class ZPushTop {
         }
         $this->scrPrintAt(5,0, $str);
 
-        $this->scrPrintAt(4,0,"Action: \033[01m".$this->action . "\033[0m");
+        $this->scrPrintAt(4,0,"Action: \033[01m" . $this->action . "\033[0m");
     }
 
     /**
@@ -453,18 +456,21 @@ class ZPushTop {
      * @return
      */
     private function readLineProcess() {
-        $ans = explode("^^", shell_exec('bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"'));
+        //$ans = explode("^^", shell_exec('bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"'));
+        sleep(1);
+        $ans = false;
+        $ans = fread(STDIN, 1);
 
-        if ($ans[0] < 128) {
-            if (isset($ans[1]) && bin2hex(trim($ans[1])) == "7f") {
-                $this->action = substr($this->action,0,-1);
+        if ($ans !== false) {
+            if (bin2hex($ans) == "7f") {
+                $this->action = substr($this->action, 0, -1);
             }
 
-            if (isset($ans[1]) && $ans[1] != "" ){
-                $this->action .= trim(preg_replace("/[^A-Za-z0-9:]/","",$ans[1]));
+            if (trim($ans) != "" ){
+                $this->action .= trim(preg_replace("/[^A-Za-z0-9:]/", "", $ans));
             }
 
-            if (bin2hex($ans[0]) == "30" && bin2hex($ans[1]) == "0a")  {
+            if (bin2hex($ans) == "0a") {
                 $cmds = explode(':', $this->action);
                 if ($cmds[0] == "quit" || $cmds[0] == "q" || (isset($cmds[1]) && $cmds[0] == "" && $cmds[1] == "q")) {
                     $this->topCollector->CollectData(true);

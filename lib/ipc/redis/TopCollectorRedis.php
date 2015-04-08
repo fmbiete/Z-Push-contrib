@@ -55,6 +55,17 @@ class TopCollectorRedis extends InterProcessRedis
     }
 
     /**
+     * Indicates if the TopCollector is active
+     *
+     * @access public
+     * @return boolean
+     */
+    public function IsActive() {
+        //for now we always collect top data
+        return true;
+    }
+
+    /**
      * Announces a string to the TopCollector
      *
      * @param string  $info
@@ -94,6 +105,8 @@ class TopCollectorRedis extends InterProcessRedis
     {
         $topdata = array();
         $keys = self::$redis->keys(self::PREFIX.'*');
+        if(empty($keys))
+            return $topdata;
         $values = self::$redis->mget($keys);
         $array = array_combine($keys, $values);
         foreach ($array as $key => $value) {

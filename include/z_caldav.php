@@ -708,13 +708,11 @@ class CalDAVClient {
 			$href = str_replace( rawurlencode('/'),'/',rawurlencode($href));
 			$hrefs .= '<href>'.$href.'</href>';
 		}
-		$body = <<<EOXML
-<?xml version="1.0" encoding="utf-8" ?>
-<C:calendar-multiget xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-<prop><getetag/><C:calendar-data/></prop>
-$hrefs
-</C:calendar-multiget>
-EOXML;
+	        $body = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+	        $body .= "<C:calendar-multiget xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
+	        $body .= "<prop><getetag/><C:calendar-data/></prop>\n";
+	        $body .= sprintf("%s\n", $hrefs);
+	        $body .= "</C:calendar-multiget>\n";
 
 		$this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
@@ -754,18 +752,16 @@ EOXML;
 			$this->SetCalendar($url);
 		}
 
-		$body = <<<EOXML
-<?xml version="1.0" encoding="utf-8" ?>
-<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-  <D:prop>
-    <C:calendar-data/>
-    <D:getetag/>
-  </D:prop>
-  $filter
-</C:calendar-query>
-EOXML;
+	        $body = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
+	        $body .= "<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
+	        $body .= sprintf("\t<D:prop>\n");
+	        $body .= sprintf("\t\t<C:calendar-data/>\n");
+	        $body .= sprintf("\t\t<D:getetag/>\n");
+	        $body .= sprintf("\t</D:prop>\n");
+	        $body .= sprintf("\t%s\n", $filter);
+	        $body .= "</C:calendar-query>\n";
 
-        $this->SetDepth(1);
+	        $this->SetDepth(1);
 		$this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
 		$report = array();
@@ -814,15 +810,13 @@ EOXML;
 			$range = '';
 		}
 
-		$filter = <<<EOFILTER
-  <C:filter>
-    <C:comp-filter name="VCALENDAR">
-      <C:comp-filter name="VEVENT">
-        $range
-      </C:comp-filter>
-    </C:comp-filter>
-  </C:filter>
-EOFILTER;
+	        $filter = "<C:filter>\n";
+	        $filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
+	        $filter .= sprintf("\t\t<C:comp-filter name=\"VEVENT\">\n");
+	        $filter .= sprintf("\t\t\t%s\n", $range);
+	        $filter .= sprintf("\t\t</C:comp-filter>\n");
+	        $filter .= sprintf("\t</C:comp-filter>\n");
+	        $filter .= sprintf("</C:filter>\n");
 
 		return $this->DoCalendarQuery($filter, $relative_url);
 	}
@@ -846,9 +840,7 @@ EOFILTER;
 	function GetTodos( $start, $finish, $completed = false, $cancelled = false, $relative_url = null ) {
 
 		if ( $start && $finish ) {
-			$time_range = <<<EOTIME
-                <C:time-range start="$start" end="$finish"/>
-EOTIME;
+		    $time_range = sprintf("<C:time-range start=\"%s\" end=\"%s\"/>", $start, $finish);
 		} else {
         	$time_range = "";
     	}
@@ -857,20 +849,18 @@ EOTIME;
 		$neg_cancelled = ( $cancelled === true ? "no" : "yes" );
 		$neg_completed = ( $cancelled === true ? "no" : "yes" );
 
-		$filter = <<<EOFILTER
-  <C:filter>
-    <C:comp-filter name="VCALENDAR">
-          <C:comp-filter name="VTODO">
-                <C:prop-filter name="STATUS">
-                        <C:text-match negate-condition="$neg_completed">COMPLETED</C:text-match>
-                </C:prop-filter>
-                <C:prop-filter name="STATUS">
-                        <C:text-match negate-condition="$neg_cancelled">CANCELLED</C:text-match>
-                </C:prop-filter>$time_range
-          </C:comp-filter>
-    </C:comp-filter>
-  </C:filter>
-EOFILTER;
+	        $filter = "<C:filter>\n";
+	        $filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
+	        $filter .= sprintf("\t\t<C:comp-filter name=\"VTODO\">\n");
+	        $filter .= sprintf("\t\t\t<C:prop-filter name=\"STATUS\">\n");
+	        $filter .= sprintf("\t\t\t\t<C:text-match negate-condition=\"%s\">COMPLETED</C:text-match>\n", $neg_completed);
+	        $filter .= sprintf("\t\t\t</C:prop-filter>\n");
+	        $filter .= sprintf("\t\t\t<C:prop-filter name=\"STATUS\">\n");
+	        $filter .= sprintf("\t\t\t\t<C:text-match negate-condition=\"%s\">CANCELLED</C:text-match>\n", $neg_cancelled);
+	        $filter .= sprintf("\t\t\t</C:prop-filter>%s\n", $time_range);
+	        $filter .= sprintf("\t\t</C:comp-filter>\n");
+	        $filter .= sprintf("\t</C:comp-filter>\n");
+	        $filter .= sprintf("</C:filter>\n");
 
 		return $this->DoCalendarQuery($filter, $relative_url);
 	}
@@ -888,17 +878,15 @@ EOFILTER;
 	function GetEntryByUid( $uid, $relative_url = null, $component_type = 'VEVENT' ) {
 		$filter = "";
 		if ( $uid ) {
-			$filter = <<<EOFILTER
-  <C:filter>
-    <C:comp-filter name="VCALENDAR">
-          <C:comp-filter name="$component_type">
-                <C:prop-filter name="UID">
-                        <C:text-match icollation="i;octet">$uid</C:text-match>
-                </C:prop-filter>
-          </C:comp-filter>
-    </C:comp-filter>
-  </C:filter>
-EOFILTER;
+			$filter = sprintf("<C:filter>\n");
+			$filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
+			$filter .= sprintf("\t\t<C:comp-filter name=\"%s\">\n", $component_type);
+			$filter .= sprintf("\t\t\t<C:prop-filter name=\"UID\">\n");
+			$filter .= sprintf("\t\t\t\t<C:text-match icollation=\"i;octet\">%s</C:text-match>\n", $uid);
+			$filter .= sprintf("\t\t\t</C:prop-filter>\n");
+			$filter .= sprintf("\t\t</C:comp-filter>\n");
+			$filter .= sprintf("\t</C:comp-filter>\n");
+			$filter .= sprintf("</C:filter>\n");
 		}
 
 		return $this->DoCalendarQuery($filter, $relative_url);
@@ -936,30 +924,26 @@ EOFILTER;
         if ($support_dav_sync) {
             $token = ($hasToken ? $this->synctoken[$this->calendar_url] : "");
 
-            $body = <<<EOXML
-<?xml version="1.0" encoding="utf-8"?>
-<D:sync-collection xmlns:D="DAV:">
-    <D:sync-token>$token</D:sync-token>
-    <D:sync-level>1</D:sync-level>
-    <D:prop>
-        <D:getetag/>
-        <D:getlastmodified/>
-    </D:prop>
-</D:sync-collection>
-EOXML;
+            $body  = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+            $body .= "<D:sync-collection xmlns:D=\"DAV:\">\n";
+            $body .= sprintf("\t<D:sync-token>%s</D:sync-token>\n", $token);
+            $body .= "\t<D:sync-level>1</D:sync-level>\n";
+            $body .= "\t<D:prop>\n";
+            $body .= "\t\t<D:getetag/>\n";
+            $body .= "\t\t<D:getlastmodified/>\n";
+            $body .= "\t</D:prop>\n";
+            $body .= "</D:sync-collection>\n";
         } else {
-            $body = <<<EOXML
-<?xml version="1.0" encoding="utf-8" ?>
-<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-  <D:prop>
-    <D:getetag/>
-    <D:getlastmodified/>
-  </D:prop>
-  <C:filter>
-    <C:comp-filter name="VCALENDAR" />
-  </C:filter>
-</C:calendar-query>
-EOXML;
+            $body  = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+            $body .= "<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
+            $body .= "\t<D:prop>\n";
+            $body .= "\t\t<D:getetag/>\n";
+            $body .= "\t\t<D:getlastmodified/>\n";
+            $body .= "\t</D:prop>\n";
+            $body .= "\t<C:filter>\n";
+            $body .= "\t\t<C:comp-filter name=\"VCALENDAR\"/>\n";
+            $body .= "\t</C:filter>\n";
+            $body .= "</C:calendar-query>\n";
         }
 
         $this->SetDepth(1);

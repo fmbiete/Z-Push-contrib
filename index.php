@@ -236,4 +236,7 @@ require_once 'config.php';
         ZPush::GetDeviceManager()->Save();
 
     // end gracefully
-    ZLog::Write(LOGLEVEL_DEBUG, '-------- End - max mem: '.memory_get_peak_usage(false).'/'.memory_get_peak_usage(true) .' - time: '.number_format(microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"],4).' - code: '.http_response_code());
+    if (version_compare(phpversion(), '5.4.0') < 0)
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(time() - $_SERVER["REQUEST_TIME"], 4), http_response_code());
+    else
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"], 4), http_response_code());

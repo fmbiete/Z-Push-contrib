@@ -201,7 +201,6 @@ class Net_SMTP
      * @param boolean $verify_peer_name Require verification of peer name
      * @param boolean $allow_self_signed Allow self-signed certificates. Requires verify_peer
      */
-     */
     public function __construct($host = null, $port = null, $localhost = null,
                                 $pipelining = false, $timeout = 0,
                                 $socket_options = null,

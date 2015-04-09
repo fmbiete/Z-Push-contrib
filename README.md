@@ -1,6 +1,8 @@
 Z-Push-contrib
 ==============
 
+[![Join the chat at https://gitter.im/fmbiete/Z-Push-contrib](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fmbiete/Z-Push-contrib?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This is a Z-Push fork with changes that I will try to put into the contrib branch, so they can get into the official Z-Push
 
 IMPORTANT:

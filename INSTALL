@@ -11,7 +11,7 @@ The PHP version requirement is met in these distributions and versions (or later
 
 Debian      6.0 (squeeze)
 Ubuntu      10.04 (LTS lucid)
-RHEL/CentOS 6
+RHEL/CentOS 6 (You can use SCL for newer version without overwriting system files: https://www.softwarecollections.org)
 Fedora      12 (constantine)
 OpenSuse    11.2
 Slackware   13.37

@@ -298,6 +298,9 @@
     // If using the Redis backends (for top, ping and lookp) make sure to set this values as necessary
     define('IPC_REDIS_IP', '127.0.0.1');
     define('IPC_REDIS_PORT', 6379);
+    // Database name/index in Redis: 0 by default
+        // NOTE: this database must be exclusive for z-push, since its content will be ERASED. You are warned.
+    define('IPC_REDIS_DATABASE', 0);
 
 /**********************************************************************************
  *  Search provider settings

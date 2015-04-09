@@ -11,6 +11,7 @@ abstract class InterProcessRedis extends InterProcessStorage {
 
             self::$redis = new Redis();
             self::$redis->connect(IPC_REDIS_IP, IPC_REDIS_PORT);
+            self::$redis->select(IPC_REDIS_DATABASE);
         }
     }
 

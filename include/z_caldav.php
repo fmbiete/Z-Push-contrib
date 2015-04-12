@@ -708,11 +708,13 @@ class CalDAVClient {
 			$href = str_replace( rawurlencode('/'),'/',rawurlencode($href));
 			$hrefs .= '<href>'.$href.'</href>';
 		}
-	        $body = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-	        $body .= "<C:calendar-multiget xmlns=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
-	        $body .= "<prop><getetag/><C:calendar-data/></prop>\n";
-	        $body .= sprintf("%s\n", $hrefs);
-	        $body .= "</C:calendar-multiget>\n";
+		$body = sprintf(
+			"%s\n%s\n%s\n%s\n%s\n",
+			'<?xml version="1.0" encoding="utf-8" ?>',
+			'<C:calendar-multiget xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">',
+			'<prop><getetag/><C:calendar-data/></prop>',
+			$hrefs,
+			'</C:calendar-multiget>');
 
 		$this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
 
@@ -752,14 +754,17 @@ class CalDAVClient {
 			$this->SetCalendar($url);
 		}
 
-	        $body = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-	        $body .= "<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
-	        $body .= sprintf("\t<D:prop>\n");
-	        $body .= sprintf("\t\t<C:calendar-data/>\n");
-	        $body .= sprintf("\t\t<D:getetag/>\n");
-	        $body .= sprintf("\t</D:prop>\n");
-	        $body .= sprintf("\t%s\n", $filter);
-	        $body .= "</C:calendar-query>\n";
+		$body = sprintf(
+			"%s\n%s\n\t%s\n\t\t%s\n\t\t%s\n\t%s\n\t%s\n%s\n",
+			'<?xml version="1.0" encoding="utf-8" ?>',
+			'<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">',
+			'<D:prop>',
+			'<C:calendar-data/>',
+			'<D:getetag/>',
+			'</D:prop>',
+			$filter,
+			'</C:calendar-query>'
+		);
 
 	        $this->SetDepth(1);
 		$this->DoRequest($this->calendar_url, "REPORT", $body, "text/xml");
@@ -810,13 +815,16 @@ class CalDAVClient {
 			$range = '';
 		}
 
-	        $filter = "<C:filter>\n";
-	        $filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
-	        $filter .= sprintf("\t\t<C:comp-filter name=\"VEVENT\">\n");
-	        $filter .= sprintf("\t\t\t%s\n", $range);
-	        $filter .= sprintf("\t\t</C:comp-filter>\n");
-	        $filter .= sprintf("\t</C:comp-filter>\n");
-	        $filter .= sprintf("</C:filter>\n");
+		$filter = sprintf(
+			"%s\n\t%s\n\t\t%s\n\t\t\t%s\n\t\t%s\n\t%s\n%s\n",
+			'<C:filter>',
+			'<C:comp-filter name="VCALENDAR">',
+			'<C:comp-filter name="VEVENT">',
+			$range,
+			'</C:comp-filter>',
+			'</C:comp-filter>',
+			'</C:filter>'
+		);
 
 		return $this->DoCalendarQuery($filter, $relative_url);
 	}
@@ -840,7 +848,7 @@ class CalDAVClient {
 	function GetTodos( $start, $finish, $completed = false, $cancelled = false, $relative_url = null ) {
 
 		if ( $start && $finish ) {
-		    $time_range = sprintf("<C:time-range start=\"%s\" end=\"%s\"/>", $start, $finish);
+		    $time_range = sprintf("\n\t\t\t<C:time-range start=\"%s\" end=\"%s\"/>", $start, $finish);
 		} else {
         	$time_range = "";
     	}
@@ -849,18 +857,26 @@ class CalDAVClient {
 		$neg_cancelled = ( $cancelled === true ? "no" : "yes" );
 		$neg_completed = ( $cancelled === true ? "no" : "yes" );
 
-	        $filter = "<C:filter>\n";
-	        $filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
-	        $filter .= sprintf("\t\t<C:comp-filter name=\"VTODO\">\n");
-	        $filter .= sprintf("\t\t\t<C:prop-filter name=\"STATUS\">\n");
-	        $filter .= sprintf("\t\t\t\t<C:text-match negate-condition=\"%s\">COMPLETED</C:text-match>\n", $neg_completed);
-	        $filter .= sprintf("\t\t\t</C:prop-filter>\n");
-	        $filter .= sprintf("\t\t\t<C:prop-filter name=\"STATUS\">\n");
-	        $filter .= sprintf("\t\t\t\t<C:text-match negate-condition=\"%s\">CANCELLED</C:text-match>\n", $neg_cancelled);
-	        $filter .= sprintf("\t\t\t</C:prop-filter>%s\n", $time_range);
-	        $filter .= sprintf("\t\t</C:comp-filter>\n");
-	        $filter .= sprintf("\t</C:comp-filter>\n");
-	        $filter .= sprintf("</C:filter>\n");
+		$filter = sprintf(
+			"%s\n\t%s\n\t\t%s\n\t\t\t%s\n\t\t\t\t%s%s%s\n\t\t\t%s\n\t\t\t%s\n\t\t\t\t%s%s%s\n\t\t\t%s%s\n\t\t%s\n\t%s\n%s\n",
+			'<C:filter>',
+			'<C:comp-filter name="VCALENDAR">',
+			'<C:comp-filter name="VTODO">',
+			'<C:prop-filter name="STATUS">',
+			'<C:text-match negate-condition="',
+			$neg_completed,
+			'">COMPLETED</C:text-match>',
+			'</C:prop-filter>',
+			'<C:prop-filter name="STATUS">',
+			'<C:text-match negate-condition="',
+			$neg_cancelled,
+			'">CANCELLED</C:text-match>',
+			'</C:prop-filter>',
+			$time_range,
+			'</C:comp-filter>',
+			'</C:comp-filter>',
+			'</C:filter>'
+		);
 
 		return $this->DoCalendarQuery($filter, $relative_url);
 	}
@@ -878,15 +894,22 @@ class CalDAVClient {
 	function GetEntryByUid( $uid, $relative_url = null, $component_type = 'VEVENT' ) {
 		$filter = "";
 		if ( $uid ) {
-			$filter = sprintf("<C:filter>\n");
-			$filter .= sprintf("\t<C:comp-filter name=\"VCALENDAR\">\n");
-			$filter .= sprintf("\t\t<C:comp-filter name=\"%s\">\n", $component_type);
-			$filter .= sprintf("\t\t\t<C:prop-filter name=\"UID\">\n");
-			$filter .= sprintf("\t\t\t\t<C:text-match icollation=\"i;octet\">%s</C:text-match>\n", $uid);
-			$filter .= sprintf("\t\t\t</C:prop-filter>\n");
-			$filter .= sprintf("\t\t</C:comp-filter>\n");
-			$filter .= sprintf("\t</C:comp-filter>\n");
-			$filter .= sprintf("</C:filter>\n");
+			$filter = sprintf(
+				"%s\n\t%s\n\t\t%s%s%s\n\t\t\t%s\n\t\t\t\t%s%s%s\n\t\t\t%s\n\t\t%s\n\t%s\n%s\n",
+				'<C:filter>',
+				'<C:comp-filter name="VCALENDAR">',
+				'<C:comp-filter name="',
+				$component_type,
+				'">',
+				'<C:prop-filter name="UID">',
+				'<C:text-match icollation="i;octet">',
+				$uid,
+				'</C:text-match>',
+				'</C:prop-filter>',
+				'</C:comp-filter>',
+				'</C:comp-filter>',
+				'</C:filter>'
+			);
 		}
 
 		return $this->DoCalendarQuery($filter, $relative_url);
@@ -922,28 +945,36 @@ class CalDAVClient {
 
         $hasToken = !$initial && isset($this->synctoken[$this->calendar_url]);
         if ($support_dav_sync) {
-            $token = ($hasToken ? $this->synctoken[$this->calendar_url] : "");
+        	$token = ($hasToken ? $this->synctoken[$this->calendar_url] : "");
 
-            $body  = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-            $body .= "<D:sync-collection xmlns:D=\"DAV:\">\n";
-            $body .= sprintf("\t<D:sync-token>%s</D:sync-token>\n", $token);
-            $body .= "\t<D:sync-level>1</D:sync-level>\n";
-            $body .= "\t<D:prop>\n";
-            $body .= "\t\t<D:getetag/>\n";
-            $body .= "\t\t<D:getlastmodified/>\n";
-            $body .= "\t</D:prop>\n";
-            $body .= "</D:sync-collection>\n";
+		$body = sprintf(
+			"%s\n%s\n\t%s%s%s\n\t%s\n\t%s\n\t\t%s\n\t\t%s\n\t%s\n%s\n",
+			'<?xml version="1.0" encoding="utf-8"?>',
+			'<D:sync-collection xmlns:D="DAV:">',
+			'<D:sync-token>',
+			$token,
+			'</D:sync-token>',
+			'<D:sync-level>1</D:sync-level>',
+			'<D:prop>',
+			'<D:getetag/>',
+			'<D:getlastmodified/>',
+			'</D:prop>',
+			'</D:sync-collection>'
+		);
         } else {
-            $body  = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-            $body .= "<C:calendar-query xmlns:D=\"DAV:\" xmlns:C=\"urn:ietf:params:xml:ns:caldav\">\n";
-            $body .= "\t<D:prop>\n";
-            $body .= "\t\t<D:getetag/>\n";
-            $body .= "\t\t<D:getlastmodified/>\n";
-            $body .= "\t</D:prop>\n";
-            $body .= "\t<C:filter>\n";
-            $body .= "\t\t<C:comp-filter name=\"VCALENDAR\"/>\n";
-            $body .= "\t</C:filter>\n";
-            $body .= "</C:calendar-query>\n";
+        	$body = sprintf(
+        		"%s\n%s\n\t%s\n\t\t%s\n\t\t%s\n\t%s\n\t%s\n\t\t%s\n\t%s\n%s\n",
+        		'<?xml version="1.0" encoding="utf-8"?>',
+        		'<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">',
+        		'<D:prop>',
+        		'<D:getetag/>',
+        		'<D:getlastmodified/>',
+        		'</D:prop>',
+        		'<C:filter>',
+        		'<C:comp-filter name="VCALENDAR"/>',
+        		'</C:filter>',
+        		'</C:calendar-query>'
+        	);
         }
 
         $this->SetDepth(1);

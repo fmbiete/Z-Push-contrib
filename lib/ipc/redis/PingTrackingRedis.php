@@ -7,6 +7,7 @@ class PingTrackingRedis extends InterProcessRedis {
     public function __construct() {
         parent::__construct();
         $this->key = "ZP-PING|" . Request::GetDeviceID() . '|' . Request::GetAuthUser() . '|' . Request::GetAuthDomain();
+	$this->DoForcePingTimeout();
     }
 
     /**
@@ -24,6 +25,9 @@ class PingTrackingRedis extends InterProcessRedis {
                 $res = self::$redis->multi()->setex($this->key,self::TTL, $_SERVER['REQUEST_TIME'])->exec();
                 if ($res === false) {
                     ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout(): set just failed, retrying");
+                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() key: ".$this->key);
+                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() reqtime: ".$_SERVER['REQUEST_TIME']);
+                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() last: ".self::$redis->getLastError());
                     continue;
                 }
                 else {

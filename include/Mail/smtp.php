@@ -496,7 +496,8 @@ class Mail_smtp extends Mail {
 
         /* Build our standardized error string. */
         return $text
-            . ' [SMTP: ' . $error->getMessage()
+//            . ' [SMTP: ' . $error->getMessage()
+            . ' [SMTP: '
             . " (code: $code, response: $response)]";
     }
 

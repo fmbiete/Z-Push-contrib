@@ -288,8 +288,9 @@ class Net_SMTP
 
         $result = $this->_socket->write($data);
         if ($result === false) {
-            return Net_SMTP::raiseError('Failed to write to socket: ' . $result->getMessage(),
-                                     $result);
+//            return Net_SMTP::raiseError('Failed to write to socket: ' . $result->getMessage(),
+//                                     $result);
+            return Net_SMTP::raiseError('Failed to write to socket: ');
         }
 
         return $result;
@@ -457,8 +458,9 @@ class Net_SMTP
                                           $this->_socket_options);
         //if (PEAR::isError($result)) {
         if ($result === false) {
-            return Net_SMTP::raiseError('Failed to connect socket: ' .
-                                    $result->getMessage());
+//            return Net_SMTP::raiseError('Failed to connect socket: ' .
+//                                    $result->getMessage());
+            return Net_SMTP::raiseError('Failed to connect socket: ');
         }
 
         /*

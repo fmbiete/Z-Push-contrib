@@ -697,10 +697,13 @@ class Net_Socket
             if (!is_resource($this->fp)) {
                 return $this->raiseError('not connected');
             }
-            if (version_compare(phpversion(), "5.6.0", ">=")) {
-                // 5.6.0    Added verify_peer_name. verify_peer default changed to TRUE.
+
+            // 5.6.0    Added verify_peer_name. verify_peer default changed to TRUE.
+            if (version_compare(phpversion(), "5.6.0", ">="))
                 stream_context_set_option($this->fp, array('ssl' => array('verify_peer' => $verify_peer, 'verify_peer_name' => $verify_peer_name, 'allow_self_signed' => $allow_self_signed)));
-            }
+            else
+                stream_context_set_option($this->fp, array('ssl' => array('verify_peer' => $verify_peer, 'allow_self_signed' => $allow_self_signed)));
+
             return @stream_socket_enable_crypto($this->fp, $enabled, $type);
         } else {
             $msg = 'Net_Socket::enableCrypto() requires php version >= 5.1.0';

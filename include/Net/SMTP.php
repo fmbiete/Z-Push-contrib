@@ -219,8 +219,25 @@ class Net_SMTP
 
         $this->_socket = new Net_Socket();
         $this->_socket_options = $socket_options;
+
+        // SSL connection, we need to modify the socket_options
+        if (strpos($this->host, "ssl://") === 0) {
+            if ($this->_socket_options == null)
+                $this->_socket_options = array();
+
+            if (!array_key_exists('ssl', $this->_socket_options))
+                $this->_socket_options['ssl'] = array();
+
+            $this->_socket_options['ssl']['verify_peer'] = $verify_peer;
+            $this->_socket_options['ssl']['allow_self_signed'] = $allow_self_signed;
+            // This option was introduced in 5.6
+            if (version_compare(phpversion(), "5.6.0", ">="))
+                $this->_socket_options['ssl']['verify_peer_name'] = $verify_peer_name;
+        }
+
         $this->_timeout = $timeout;
 
+        // We also need this for use in the STARTTLS command
         $this->_verify_peer = $verify_peer;
         $this->_verify_peer_name = $verify_peer_name;
         $this->_allow_self_signed = $allow_self_signed;

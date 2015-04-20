@@ -98,10 +98,14 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function Logon($username, $domain, $password) {
-        $this->url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_PATH));
-        $this->default_url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_DEFAULT_PATH));
+	// If domain is empty we use username's domain
+	$domain_replace = ( $domain ) ? $domain : explode('@', $username,2)[1];
+	$carddav_server = str_replace('%d',$domain_replace,CARDDAV_SERVER);
+	
+        $this->url = CARDDAV_PROTOCOL . '://' . $carddav_server . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_PATH));
+        $this->default_url = CARDDAV_PROTOCOL . '://' . $carddav_server . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_DEFAULT_PATH));
         if (defined('CARDDAV_GAL_PATH')) {
-            $this->gal_url = CARDDAV_PROTOCOL . '://' . CARDDAV_SERVER . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_GAL_PATH));
+            $this->gal_url = CARDDAV_PROTOCOL . '://' . $carddav_server . ':' . CARDDAV_PORT . str_replace("%d", $domain, str_replace("%u", $username, CARDDAV_GAL_PATH));
         }
         else {
             $this->gal_url = false;

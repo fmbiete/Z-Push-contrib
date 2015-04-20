@@ -105,7 +105,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     public function Logon($username, $domain, $password) {
         $this->wasteID = false;
         $this->sentID = false;
-        $this->server = "{" . IMAP_SERVER . ":" . IMAP_PORT . "/imap" . IMAP_OPTIONS . "}";
+	
+        // If domain is empty we use username's domain
+        $domain_replace = ( $domain ) ? $domain : explode('@', $username,2)[1];
+        $this->server = "{" . str_replace('%d',$domain_replace,IMAP_SERVER) . ":" . IMAP_PORT . "/imap" . IMAP_OPTIONS . "}";
 
         if (!function_exists("imap_open"))
             throw new FatalException("BackendIMAP(): php-imap module is not installed", 0, null, LOGLEVEL_FATAL);

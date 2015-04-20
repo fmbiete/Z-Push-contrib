@@ -46,7 +46,8 @@
 // ************************
 
 // Server address
-define('CALDAV_SERVER', 'http://calendar.domain.com');
+// %d: replaced with the domain
+define('CALDAV_SERVER', 'http://calendar.%d');
 
 // Port
 define('CALDAV_PORT', '80');

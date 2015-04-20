@@ -49,7 +49,8 @@
 define('CARDDAV_PROTOCOL', 'https');
 
 // Server name
-define('CARDDAV_SERVER', 'localhost');
+// %d: replaced with the domain
+define('CARDDAV_SERVER', 'carddav.%d');
 
 // Server port
 define('CARDDAV_PORT', '443');

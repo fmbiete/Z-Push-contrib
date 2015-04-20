@@ -46,7 +46,8 @@
 // ************************
 
 // Defines the server to which we want to connect
-define('IMAP_SERVER', 'localhost');
+// %d: replaced with the domain
+define('IMAP_SERVER', 'mail.%d');
 
 // connecting to default port (143)
 define('IMAP_PORT', 143);

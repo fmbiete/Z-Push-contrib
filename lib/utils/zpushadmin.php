@@ -543,7 +543,7 @@ class ZPushAdmin {
             $users = self::ListUsers($devid);
             foreach ($users as $username) {
                 $seen++;
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '%s' to device '%d'", $username, $devid));
+                ZLog::Write(LOGLEVEL_DEBUG, "ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '$username' to device '$devid'");
 
                 if (ZPush::GetStateMachine()->LinkUserDevice($username, $devid))
                     $fixed++;

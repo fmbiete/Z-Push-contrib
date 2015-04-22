@@ -571,8 +571,13 @@ class ZPushAdmin {
                 $devicedata = ZPush::GetStateMachine()->GetState($devid, IStateMachine::DEVICEDATA);
                 $knownUuids = array();
 
+                // == self::ListUsers (no need to GetState 2 times)
+                if ($devicedata instanceof StateObject && isset($devicedata->devices) && is_array($devicedata->devices))
+                    $usernames = array_keys($devicedata->devices);
+                else
+                    $usernames = array();
                 // get all known UUIDs for this device
-                foreach (self::ListUsers($devid) as $username) {
+                foreach ($usernames as $username) {
                     $device = new ASDevice($devid, ASDevice::UNDEFINED, $username, ASDevice::UNDEFINED);
                     $device->SetData($devicedata, false);
 

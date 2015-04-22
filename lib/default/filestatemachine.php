@@ -385,36 +385,16 @@ class FileStateMachine implements IStateMachine {
         $devdir = $this->getDirectoryForDevice($devid) . "/$devid-";
 
         foreach (glob($devdir . "*", GLOB_NOSORT) as $devdata) {
-            // cut the device dir away and split into parts
-            $parts = explode("-", substr($devdata, strlen($devdir)));
-
-            $state = array('type' => false, 'counter' => false, 'uuid' => false);
-
-            if (isset($parts[0]) && $parts[0] == IStateMachine::DEVICEDATA)
-                $state['type'] = IStateMachine::DEVICEDATA;
-
-            if (isset($parts[0]) && strlen($parts[0]) == 8 &&
-                isset($parts[1]) && strlen($parts[1]) == 4 &&
-                isset($parts[2]) && strlen($parts[2]) == 4 &&
-                isset($parts[3]) && strlen($parts[3]) == 4 &&
-                isset($parts[4]) && strlen($parts[4]) == 12)
-                $state['uuid'] = $parts[0]."-".$parts[1]."-".$parts[2]."-".$parts[3]."-".$parts[4];
-
-            if (isset($parts[5]) && is_numeric($parts[5])) {
-                $state['counter'] = $parts[5];
-                $state['type'] = ""; // default
-            }
-
-            if (isset($parts[5])) {
-                if (is_int($parts[5]))
-                    $state['counter'] = $parts[5];
-
-                else if (in_array($parts[5], array(IStateMachine::FOLDERDATA, IStateMachine::FAILSAVE, IStateMachine::HIERARCHY, IStateMachine::BACKENDSTORAGE)))
-                    $state['type'] = $parts[5];
-            }
-            if (isset($parts[6]) && is_numeric($parts[6]))
-                $state['counter'] = $parts[6];
-
+            $str = substr($devdata, strlen($devdir)-1);
+            $matches = array();
+            $typematch = IStateMachine::DEVICEDATA.'|'.IStateMachine::FOLDERDATA.'|'.IStateMachine::FAILSAVE.'|'.IStateMachine::HIERARCHY.'|'.IStateMachine::BACKENDSTORAGE;
+            if (!preg_match("/^(?:-(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}))?(?:-($typematch))?(?:-(\d+))?$/", $str, $matches))
+                throw new Exception("we didn't matched the regexp !!!: $str");
+            $state = array(
+                'uuid' => (isset($matches[1])?$matches[1]:false),
+                'type' => (isset($matches[2])?$matches[2]:false),
+                'counter' => (isset($matches[3])?$matches[3]:false),
+            );
             $out[] = $state;
         }
         return $out;

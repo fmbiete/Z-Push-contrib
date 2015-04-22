@@ -456,6 +456,48 @@ class ZPushAdmin {
     }
 
     /**
+     * Remove users that doesn't belong to this devicedata state
+     *
+     * @return boolean
+     * @access public
+     */
+    public static function FixStatesWrongDevicedata() {
+        $statesfixed = 0;
+        $statesok = 0;
+        $usersremoved = 0;
+        $usersok = 0;
+        $devices = ZPush::GetStateMachine()->GetAllDevices(false);
+        foreach ($devices as $devid) {
+            $changed = false;
+            $devicedata = ZPush::GetStateMachine()->GetState($devid, IStateMachine::DEVICEDATA);
+            if (!($devicedata instanceof StateObject && isset($devicedata->devices) && is_array($devicedata->devices)))
+                continue;
+
+            $asdevices = $devicedata->devices;
+            foreach ($asdevices as $asuser => $asdev) {
+                $asdevid = $asdev->GetDeviceId();
+                if (strcasecmp($asdevid, $devid) !== 0) {
+                    $usersremoved++;
+                    $changed = true;
+                    unset($asdevices[$asuser]);
+                    ZPush::GetStateMachine()->UnLinkUserDevice($asuser, $devid);
+                    ZLog::Write(LOGLEVEL_WARN, "Removed from $devid devicedata state user $asuser (devid = $asdevid)");
+                } else {
+                    $usersok++;
+                }
+            }
+            if ($changed) {
+                $statesfixed++;
+                $devicedata->devices = $asdevices;
+                ZPush::GetStateMachine()->SetState($devicedata, $devid, IStateMachine::DEVICEDATA);
+            } else {
+                $statesok++;
+            }
+        }
+        return array($statesfixed, $statesok, $usersremoved, $usersok);
+    }
+
+    /**
      * Fixes states with usernames in different cases
      *
      * @return boolean

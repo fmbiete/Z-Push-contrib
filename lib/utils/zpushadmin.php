@@ -572,26 +572,46 @@ class ZPushAdmin {
     /**
      * Fixes states of available device data to the user linking
      *
-     * @return int
+     * @return array
      * @access public
      */
-    static public function FixStatesDeviceToUserLinking() {
-        $seen = 0;
-        $fixed = 0;
-        $devices = ZPush::GetStateMachine()->GetAllDevices(false);
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("ZPushAdmin::FixStatesDeviceToUserLinking(): found %d devices", count($devices)));
-
-        foreach ($devices as $devid) {
-            $users = self::ListUsers($devid);
-            foreach ($users as $username) {
-                $seen++;
-                ZLog::Write(LOGLEVEL_DEBUG, "ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '$username' to device '$devid'");
-
-                if (ZPush::GetStateMachine()->LinkUserDevice($username, $devid))
-                    $fixed++;
+    public static function FixStatesDeviceToUserLinking() {
+        //users to devices mapping
+        $usersdevs = ZPush::GetStateMachine()->GetAllUserDevice();
+        $devsusers = array();
+        foreach ($usersdevs as $user => $devs) {
+            foreach (array_keys($devs) as $dev) {
+                if (empty($devsusers[$dev]))
+                    $devsusers[$dev] = array();
+                $devsusers[$dev][] = $user;
             }
         }
-        return array($seen, $fixed);
+        unset($usersdevs);
+
+        $linked = 0;
+        $unlinked = 0;
+        //devices to users mapping
+        $statedevices = ZPush::GetStateMachine()->GetAllDevices(false);
+        $alldevices = array_merge($statedevices, array_keys($devsusers));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("ZPushAdmin::FixStatesDeviceToUserLinking(): found %d devices (%d|%d)", count($alldevices), count($statedevices), count($devsusers)));
+
+        foreach ($alldevices as $devid) {
+            $stateusers = self::ListUsers($devid);
+            $mapusers = isset($devsusers[$devid]) ? $devsusers[$devid] : array();
+            $links = array_diff($stateusers, $mapusers);
+            foreach ($links as $user) {
+                ZLog::Write(LOGLEVEL_INFO, "ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '$user' to device '$devid'");
+                ZPush::GetStateMachine()->LinkUserDevice($user, $devid);
+                $linked++;
+            }
+            $unlinks = array_diff($stateusers, $mapusers);
+            foreach ($unlinks as $user) {
+                ZLog::Write(LOGLEVEL_INFO, "ZPushAdmin::FixStatesDeviceToUserLinking(): unlinking user '$user' to device '$devid'");
+                ZPush::GetStateMachine()->UnLinkUserDevice($user, $devid);
+                $unlinked++;
+            }
+        }
+        return array($unlinked, $linked);
     }
 
     /**

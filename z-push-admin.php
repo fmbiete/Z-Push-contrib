@@ -616,7 +616,7 @@ class ZPushAdminCLI {
         // fixes ZP-339
         echo "\tChecking available devicedata & user linking: ";
         if ($stat = ZPushAdmin::FixStatesDeviceToUserLinking())
-            printf("Processed: %d - Fixed: %d\n", $stat[0], $stat[1]);
+            printf("Unlinked: %d - Linked: %d\n", $stat[0], $stat[1]);
         else
             echo ZLog::GetLastMessage(LOGLEVEL_ERROR) . "\n";
 

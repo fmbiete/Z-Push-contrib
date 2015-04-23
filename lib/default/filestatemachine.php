@@ -208,7 +208,7 @@ class FileStateMachine implements IStateMachine {
      * @return boolean     indicating if the user was added or not (existed already)
      */
     public function LinkUserDevice($username, $devid) {
-        $mutex = new SimpleMutex();
+        $mutex = new SimpleMutex(__FILE__);
         $changed = false;
 
         // exclusive block
@@ -252,7 +252,7 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function UnLinkUserDevice($username, $devid) {
-        $mutex = new SimpleMutex();
+        $mutex = new SimpleMutex(__FILE__);
         $changed = false;
 
         // exclusive block

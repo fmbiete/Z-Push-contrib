@@ -291,6 +291,16 @@ class FileStateMachine implements IStateMachine {
     }
 
     /**
+     * Get all UserDevice mapping
+     *
+     * @access public
+     * @return array
+     */
+    public function GetAllUserDevice() {
+        return unserialize(file_get_contents($this->userfilename))?:array();
+    }
+
+    /**
      * Returns an array with all device ids for a user.
      * If no user is set, all device ids should be returned
      *

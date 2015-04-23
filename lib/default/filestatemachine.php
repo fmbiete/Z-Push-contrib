@@ -153,7 +153,7 @@ class FileStateMachine implements IStateMachine {
         $state = serialize($state);
 
         $filename = $this->getFullFilePath($devid, $type, $key, $counter);
-        if (($bytes = file_put_contents($filename, $state)) === false)
+        if (($bytes = Utils::safe_put_contents($filename, $state)) === false)
             throw new FatalMisconfigurationException(sprintf("FileStateMachine->SetState(): Could not write state '%s'",$filename));
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->SetState() written %d bytes on file: '%s'", $bytes, $filename));
@@ -231,7 +231,7 @@ class FileStateMachine implements IStateMachine {
             }
 
             if ($changed) {
-                $bytes = file_put_contents($this->userfilename, serialize($users));
+                $bytes = Utils::safe_put_contents($this->userfilename, serialize($users));
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->LinkUserDevice(): wrote %d bytes to users file", $bytes));
             }
             else
@@ -279,7 +279,7 @@ class FileStateMachine implements IStateMachine {
             }
 
             if ($changed) {
-                $bytes = file_put_contents($this->userfilename, serialize($users));
+                $bytes = Utils::safe_put_contents($this->userfilename, serialize($users));
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->UnLinkUserDevice(): wrote %d bytes to users file", $bytes));
             }
             else
@@ -377,7 +377,7 @@ class FileStateMachine implements IStateMachine {
 
         $settings[self::VERSION] = $version;
         ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->SetStateVersion() saving supported state version, value '%d'", $version));
-        $status = file_put_contents($this->settingsfilename, serialize($settings));
+        $status = Utils::safe_put_contents($this->settingsfilename, serialize($settings));
         Utils::FixFileOwner($this->settingsfilename);
         return $status;
     }

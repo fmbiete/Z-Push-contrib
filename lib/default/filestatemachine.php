@@ -155,7 +155,7 @@ class FileStateMachine implements IStateMachine {
         $state = serialize($state);
 
         $filename = $this->getFullFilePath($devid, $type, $key, $counter);
-        if (($bytes = file_put_contents($filename, $state)) === false)
+        if (($bytes = Utils::safe_put_contents($filename, $state)) === false)
             throw new FatalMisconfigurationException(sprintf("FileStateMachine->SetState(): Could not write state '%s'",$filename));
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->SetState() written %d bytes on file: '%s'", $bytes, $filename));
@@ -210,7 +210,7 @@ class FileStateMachine implements IStateMachine {
      * @return boolean     indicating if the user was added or not (existed already)
      */
     public function LinkUserDevice($username, $devid) {
-        $mutex = new SimpleMutex();
+        $mutex = new SimpleMutex(__FILE__);
         $changed = false;
 
         // exclusive block
@@ -233,7 +233,7 @@ class FileStateMachine implements IStateMachine {
             }
 
             if ($changed) {
-                $bytes = file_put_contents($this->userfilename, serialize($users));
+                $bytes = Utils::safe_put_contents($this->userfilename, serialize($users));
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->LinkUserDevice(): wrote %d bytes to users file", $bytes));
             }
             else
@@ -254,7 +254,7 @@ class FileStateMachine implements IStateMachine {
      * @return boolean
      */
     public function UnLinkUserDevice($username, $devid) {
-        $mutex = new SimpleMutex();
+        $mutex = new SimpleMutex(__FILE__);
         $changed = false;
 
         // exclusive block
@@ -281,7 +281,7 @@ class FileStateMachine implements IStateMachine {
             }
 
             if ($changed) {
-                $bytes = file_put_contents($this->userfilename, serialize($users));
+                $bytes = Utils::safe_put_contents($this->userfilename, serialize($users));
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("FileStateMachine->UnLinkUserDevice(): wrote %d bytes to users file", $bytes));
             }
             else
@@ -290,6 +290,16 @@ class FileStateMachine implements IStateMachine {
             $mutex->Release();
         }
         return $changed;
+    }
+
+    /**
+     * Get all UserDevice mapping
+     *
+     * @access public
+     * @return array
+     */
+    public function GetAllUserDevice() {
+        return unserialize(file_get_contents($this->userfilename))?:array();
     }
 
     /**
@@ -369,7 +379,7 @@ class FileStateMachine implements IStateMachine {
 
         $settings[self::VERSION] = $version;
         ZLog::Write(LOGLEVEL_INFO, sprintf("FileStateMachine->SetStateVersion() saving supported state version, value '%d'", $version));
-        $status = file_put_contents($this->settingsfilename, serialize($settings));
+        $status = Utils::safe_put_contents($this->settingsfilename, serialize($settings));
         Utils::FixFileOwner($this->settingsfilename);
         return $status;
     }
@@ -387,36 +397,16 @@ class FileStateMachine implements IStateMachine {
         $devdir = $this->getDirectoryForDevice($devid) . "/$devid-";
 
         foreach (glob($devdir . "*", GLOB_NOSORT) as $devdata) {
-            // cut the device dir away and split into parts
-            $parts = explode("-", substr($devdata, strlen($devdir)));
-
-            $state = array('type' => false, 'counter' => false, 'uuid' => false);
-
-            if (isset($parts[0]) && $parts[0] == IStateMachine::DEVICEDATA)
-                $state['type'] = IStateMachine::DEVICEDATA;
-
-            if (isset($parts[0]) && strlen($parts[0]) == 8 &&
-                isset($parts[1]) && strlen($parts[1]) == 4 &&
-                isset($parts[2]) && strlen($parts[2]) == 4 &&
-                isset($parts[3]) && strlen($parts[3]) == 4 &&
-                isset($parts[4]) && strlen($parts[4]) == 12)
-                $state['uuid'] = $parts[0]."-".$parts[1]."-".$parts[2]."-".$parts[3]."-".$parts[4];
-
-            if (isset($parts[5]) && is_numeric($parts[5])) {
-                $state['counter'] = $parts[5];
-                $state['type'] = ""; // default
-            }
-
-            if (isset($parts[5])) {
-                if (is_int($parts[5]))
-                    $state['counter'] = $parts[5];
-
-                else if (in_array($parts[5], array(IStateMachine::FOLDERDATA, IStateMachine::FAILSAVE, IStateMachine::HIERARCHY, IStateMachine::BACKENDSTORAGE)))
-                    $state['type'] = $parts[5];
-            }
-            if (isset($parts[6]) && is_numeric($parts[6]))
-                $state['counter'] = $parts[6];
-
+            $str = substr($devdata, strlen($devdir)-1);
+            $matches = array();
+            $typematch = IStateMachine::DEVICEDATA.'|'.IStateMachine::FOLDERDATA.'|'.IStateMachine::FAILSAVE.'|'.IStateMachine::HIERARCHY.'|'.IStateMachine::BACKENDSTORAGE;
+            if (!preg_match("/^(?:-(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}))?(?:-($typematch))?(?:-(\d+))?$/", $str, $matches))
+                throw new Exception("we didn't matched the regexp !!!: $str");
+            $state = array(
+                'uuid' => (isset($matches[1])?$matches[1]:false),
+                'type' => (isset($matches[2])?$matches[2]:false),
+                'counter' => (isset($matches[3])?$matches[3]:false),
+            );
             $out[] = $state;
         }
         return $out;

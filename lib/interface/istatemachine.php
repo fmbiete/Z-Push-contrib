@@ -157,6 +157,14 @@ interface IStateMachine {
     public function UnLinkUserDevice($username, $devid);
 
     /**
+     * Get all UserDevice mapping
+     *
+     * @access public
+     * @return array
+     */
+    public function GetAllUserDevice();
+
+    /**
      * Returns an array with all device ids for a user.
      * If no user is set, all device ids should be returned
      *

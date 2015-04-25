@@ -637,6 +637,12 @@ class ZPushAdminCLI {
     static private function CommandFixStates() {
         echo "Validating and fixing states (this can take some time):\n";
 
+        echo "\tChecking devicedata states: ";
+        if ($stat = ZPushAdmin::FixStatesWrongDevicedata())
+            printf("Devices: fixed %d - ok %d Users: removed %d - ok %d\n",$stat[0], $stat[1], $stat[2], $stat[3]);
+        else
+            echo ZLog::GetLastMessage(LOGLEVEL_ERROR) . "\n";
+
         echo "\tChecking username casings: ";
         if ($stat = ZPushAdmin::FixStatesDifferentUsernameCases())
             printf("Processed: %d - Converted: %d - Removed: %d\n", $stat[0], $stat[1], $stat[2]);
@@ -646,7 +652,7 @@ class ZPushAdminCLI {
         // fixes ZP-339
         echo "\tChecking available devicedata & user linking: ";
         if ($stat = ZPushAdmin::FixStatesDeviceToUserLinking())
-            printf("Processed: %d - Fixed: %d\n", $stat[0], $stat[1]);
+            printf("Unlinked: %d - Linked: %d\n", $stat[0], $stat[1]);
         else
             echo ZLog::GetLastMessage(LOGLEVEL_ERROR) . "\n";
 

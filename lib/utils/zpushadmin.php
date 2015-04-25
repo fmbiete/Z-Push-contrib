@@ -481,7 +481,7 @@ class ZPushAdmin {
                     $changed = true;
                     unset($asdevices[$asuser]);
                     ZPush::GetStateMachine()->UnLinkUserDevice($asuser, $devid);
-                    ZLog::Write(LOGLEVEL_WARN, "Removed from $devid devicedata state user $asuser (devid = $asdevid)");
+                    ZLog::Write(LOGLEVEL_WARN, sprintf("Removed from %s devicedata state user '%s' (devid = '%s')", $devid, $asuser, $asdevid));
                 } else {
                     $usersok++;
                 }
@@ -600,13 +600,13 @@ class ZPushAdmin {
             $mapusers = isset($devsusers[$devid]) ? $devsusers[$devid] : array();
             $links = array_diff($stateusers, $mapusers);
             foreach ($links as $user) {
-                ZLog::Write(LOGLEVEL_INFO, "ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '$user' to device '$devid'");
+                ZLog::Write(LOGLEVEL_INFO, sprintf("ZPushAdmin::FixStatesDeviceToUserLinking(): linking user '%s' to device '%s'", $user, $devid));
                 ZPush::GetStateMachine()->LinkUserDevice($user, $devid);
                 $linked++;
             }
             $unlinks = array_diff($stateusers, $mapusers);
             foreach ($unlinks as $user) {
-                ZLog::Write(LOGLEVEL_INFO, "ZPushAdmin::FixStatesDeviceToUserLinking(): unlinking user '$user' to device '$devid'");
+                ZLog::Write(LOGLEVEL_INFO, sprintf("ZPushAdmin::FixStatesDeviceToUserLinking(): unlinking user '%s' to device '%s'", $user, $devid));
                 ZPush::GetStateMachine()->UnLinkUserDevice($user, $devid);
                 $unlinked++;
             }

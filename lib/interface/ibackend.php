@@ -299,4 +299,12 @@ interface IBackend {
      * @return Array
      */
     public function GetUserDetails($username);
+
+    /**
+     * Returns the username of the currently active user
+     *
+     * @access public
+     * @return Array
+     */
+    public function GetCurrentUsername();
 }

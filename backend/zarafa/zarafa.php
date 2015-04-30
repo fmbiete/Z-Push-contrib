@@ -62,6 +62,10 @@ include_once('backend/zarafa/mapi/class.recurrence.php');
 include_once('backend/zarafa/mapi/class.meetingrequest.php');
 include_once('backend/zarafa/mapi/class.freebusypublish.php');
 
+// processing of RFC822 messages
+include_once('include/mimeDecode.php');
+require_once('include/z_RFC822.php');
+
 // components of Zarafa backend
 include_once('backend/zarafa/mapiutils.php');
 include_once('backend/zarafa/mapimapping.php');
@@ -1191,12 +1195,21 @@ class BackendZarafa implements IBackend, ISearchProvider {
      */
     public function GetUserDetails($username) {
         ZLog::Write(LOGLEVEL_WBXML, sprintf("ZarafaBackend->GetUserDetails for '%s'.", $username));
-        $zarafauserinfo = @mapi_zarafa_getuser_by_name($this->defaultstore, $username);
+        $zarafauserinfo = @mapi_zarafa_getuser_by_name($this->store, $username);
         $userDetails['emailaddress'] = (isset($zarafauserinfo['emailaddress']) && $zarafauserinfo['emailaddress']) ? $zarafauserinfo['emailaddress'] : false;
         $userDetails['fullname'] = (isset($zarafauserinfo['fullname']) && $zarafauserinfo['fullname']) ? $zarafauserinfo['fullname'] : false;
         return $userDetails;
     }
 
+    /**
+     * Returns the username of the currently active user
+     *
+     * @access public
+     * @return String
+     */
+    public function GetCurrentUsername() {
+        return $this->storeName;
+    }
 
     /**----------------------------------------------------------------------------------------------------------
      * Private methods

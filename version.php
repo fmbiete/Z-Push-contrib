@@ -42,4 +42,4 @@
 ************************************************/
 
 
-define("ZPUSH_VERSION", "SVN-trunk-r1935");
+define("ZPUSH_VERSION", "SVN-trunk-r1938");

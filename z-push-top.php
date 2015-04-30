@@ -44,17 +44,8 @@
 * Consult LICENSE file for details
 ************************************************/
 
-include('lib/exceptions/exceptions.php');
-include('lib/core/zpushdefs.php');
-include('lib/core/zpush.php');
-include('lib/core/zlog.php');
-include('lib/core/interprocessdata.php');
-include('lib/core/topcollector.php');
-include('lib/utils/utils.php');
-include('lib/request/request.php');
-include('lib/request/requestprocessor.php');
-include('config.php');
-include('version.php');
+require_once 'vendor/autoload.php';
+require_once 'config.php';
 
 /************************************************
  * MAIN
@@ -64,6 +55,7 @@ include('version.php');
 
     try {
         ZPush::CheckConfig();
+        ZLog::Initialize();
         if (!function_exists("pcntl_signal"))
             throw new FatalException("Function pcntl_signal() is not available. Please install package 'php5-pcntl' (or similar) on your system.");
 
@@ -148,7 +140,7 @@ class ZPushTop {
         $this->pingInterval = (defined('PING_INTERVAL') && PING_INTERVAL > 0) ? PING_INTERVAL : 12;
 
         // get a TopCollector
-        $this->topCollector = new TopCollector();
+        $this->topCollector = ZPush::GetTopCollector();
     }
 
     /**
@@ -177,6 +169,9 @@ class ZPushTop {
      */
     public function run() {
         $this->initialize();
+
+        // Non-blocking read from stdin
+        stream_set_blocking(STDIN, FALSE);
 
         do {
             $this->currenttime = time();
@@ -322,7 +317,7 @@ class ZPushTop {
 
         $this->scrPrintAt($lc,0, sprintf("Open connections: %d\t\t\t\tUsers:\t %d\tZ-Push:   %s ",count($this->activeConn),count($this->activeUsers), $this->getVersion())); $lc++;
         $this->scrPrintAt($lc,0, sprintf("Push connections: %d\t\t\t\tDevices: %d\tPHP-MAPI: %s", $this->pushConn, count($this->activeDevices),phpversion("mapi"))); $lc++;
-        $this->scrPrintAt($lc,0, sprintf("                                                Hosts:\t %d", $this->pushConn, count($this->activeHosts))); $lc++;
+        $this->scrPrintAt($lc,0, sprintf("                                                Hosts:\t %d", count($this->activeHosts))); $lc++;
         $lc++;
 
         $this->scrPrintAt($lc,0, "\033[4m". $this->getLine(array('pid'=>'PID', 'ip'=>'IP', 'user'=>'USER', 'command'=>'COMMAND', 'time'=>'TIME', 'devagent'=>'AGENT', 'devid'=>'DEVID', 'addinfo'=>'Additional Information')). str_repeat(" ",20)."\033[0m"); $lc++;
@@ -451,7 +446,7 @@ class ZPushTop {
         }
         $this->scrPrintAt(5,0, $str);
 
-        $this->scrPrintAt(4,0,"Action: \033[01m".$this->action . "\033[0m");
+        $this->scrPrintAt(4,0,"Action: \033[01m" . $this->action . "\033[0m");
     }
 
     /**
@@ -461,18 +456,21 @@ class ZPushTop {
      * @return
      */
     private function readLineProcess() {
-        $ans = explode("^^", `bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"`);
+        //$ans = explode("^^", shell_exec('bash -c "read -n 1 -t 1 ANS ; echo \\\$?^^\\\$ANS;"'));
+        sleep(1);
+        $ans = false;
+        $ans = fread(STDIN, 1);
 
-        if ($ans[0] < 128) {
-            if (isset($ans[1]) && bin2hex(trim($ans[1])) == "7f") {
-                $this->action = substr($this->action,0,-1);
+        if ($ans !== false) {
+            if (bin2hex($ans) == "7f") {
+                $this->action = substr($this->action, 0, -1);
             }
 
-            if (isset($ans[1]) && $ans[1] != "" ){
-                $this->action .= trim(preg_replace("/[^A-Za-z0-9:]/","",$ans[1]));
+            if (trim($ans) != "" ){
+                $this->action .= trim(preg_replace("/[^A-Za-z0-9:]/", "", $ans));
             }
 
-            if (bin2hex($ans[0]) == "30" && bin2hex($ans[1]) == "0a")  {
+            if (bin2hex($ans) == "0a") {
                 $cmds = explode(':', $this->action);
                 if ($cmds[0] == "quit" || $cmds[0] == "q" || (isset($cmds[1]) && $cmds[0] == "" && $cmds[1] == "q")) {
                     $this->topCollector->CollectData(true);
@@ -498,7 +496,7 @@ class ZPushTop {
                 }
                 else if ($cmds[0] == "option" || $cmds[0] == "o") {
                     if (!isset($cmds[1]) || $cmds[1] == "") {
-                        $this->status = sprintf("Option value needs to be specified. See 'help' or 'h' for instructions", $cmds[1]);
+                        $this->status = "Option value needs to be specified. See 'help' or 'h' for instructions";
                         $this->statusexpire = $this->currenttime+5;
                     }
                     else if ($cmds[1] == "p" || $cmds[1] == "push" || $cmds[1] == "ping")
@@ -707,10 +705,6 @@ class ZPushTop {
      * @return string
      */
     private function getVersion() {
-        if (ZPUSH_VERSION == "SVN checkout" && file_exists(REAL_BASE_PATH.".svn/entries")) {
-            $svn = file(REAL_BASE_PATH.".svn/entries");
-            return "SVN " . substr(trim($svn[4]),stripos($svn[4],"z-push")+7) ." r".trim($svn[3]);
-        }
         return ZPUSH_VERSION;
     }
 
@@ -765,5 +759,3 @@ class ZPushTop {
     }
 
 }
-
-?>

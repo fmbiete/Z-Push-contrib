@@ -397,6 +397,41 @@ class SqlStateMachine implements IStateMachine {
     }
 
     /**
+     * Get all UserDevice mapping
+     *
+     * @access public
+     * @return array
+     */
+    public function GetAllUserDevice() {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("SqlStateMachine->GetAllUserDevice(): '%s'", $username));
+
+        $sth = null;
+        $record = null;
+        $out = array();
+        try {
+            $this->dbh = new PDO(STATE_SQL_DSN, STATE_SQL_USER, STATE_SQL_PASSWORD, $this->options);
+
+            $sql = "select device_id, username from zpush_users order by username";
+            $sth = $this->dbh->prepare($sql);
+            $sth->execute();
+
+            while ($record = $sth->fetch(PDO::FETCH_ASSOC)) {
+                if (!array_key_exists($record["username"], $out)) {
+                    $out[$record["username"]] = array();
+                }
+                $out[$record["username"]][] = $record["device_id"];
+            }
+        }
+        catch(PDOException $ex) {
+            ZLog::Write(LOGLEVEL_ERROR, sprintf("SqlStateMachine->GetAllUserDevice(): Error listing devices: %s", $ex->getMessage()));
+        }
+
+        $this->clearConnection($this->dbh, $sth, $record);
+
+        return $out;
+    }
+
+    /**
      * Returns an array with all device ids for a user.
      * If no user is set, all device ids should be returned
      *
@@ -892,4 +927,3 @@ class SqlStateMachine implements IStateMachine {
     }
 
 }
-?>

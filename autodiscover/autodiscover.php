@@ -41,20 +41,8 @@
 * Consult LICENSE file for details
 ************************************************/
 
-include_once('../lib/core/zpushdefs.php');
-include_once('../lib/exceptions/exceptions.php');
-include_once('../lib/utils/compat.php');
-include_once('../lib/utils/utils.php');
-include_once('../lib/core/zpush.php');
-include_once('../lib/core/zlog.php');
-include_once('../lib/interface/ibackend.php');
-include_once('../lib/interface/ichanges.php');
-include_once('../lib/interface/iexportchanges.php');
-include_once('../lib/interface/iimportchanges.php');
-include_once('../lib/interface/isearchprovider.php');
-include_once('../lib/interface/istatemachine.php');
-include_once('../version.php');
-include_once('../config.php');
+require_once '../vendor/autoload.php';
+require_once '../config.php';
 
 class ZPushAutodiscover {
     const ACCEPTABLERESPONSESCHEMA = 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006';
@@ -220,12 +208,13 @@ class ZPushAutodiscover {
      * @return string
      */
     private function createResponse($email, $userFullname) {
+        $server_url = 'https://' . $_SERVER['SERVER_NAME'] . '/Microsoft-Server-ActiveSync';
         $xml = file_get_contents('response.xml');
         $response = new SimpleXMLElement($xml);
         $response->Response->User->DisplayName = $userFullname;
         $response->Response->User->EMailAddress = $email;
-        $response->Response->Action->Settings->Server->Url = SERVERURL;
-        $response->Response->Action->Settings->Server->Name = SERVERURL;
+        $response->Response->Action->Settings->Server->Url = $server_url;
+        $response->Response->Action->Settings->Server->Name = $server_url;
         $response = $response->asXML();
         ZLog::Write(LOGLEVEL_WBXML, sprintf("ZPushAutodiscover->createResponse() XML response:%s%s", PHP_EOL, $response));
         return $response;
@@ -259,10 +248,9 @@ class ZPushAutodiscover {
         if (isset($userDetails[$attrib]) && $userDetails[$attrib]) {
             return $userDetails[$attrib];
         }
-        ZLog::Write(LOGLEVEL_WARN, sprintf("The backend was not able to find attribute '%s' of the user. Fall back to the default value."));
+        ZLog::Write(LOGLEVEL_WARN, sprintf("The backend was not able to find attribute '%s' of the user. Fall back to the default value.", $attrib));
         return false;
     }
 }
 
 ZPushAutodiscover::DoZPushAutodiscover();
-?>

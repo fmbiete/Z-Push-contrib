@@ -91,7 +91,7 @@ class DeviceManager {
         else
             throw new FatalNotImplementedException("Can not proceed without a device id.");
 
-        $this->loopdetection = new LoopDetection();
+        $this->loopdetection = ZPush::GetLoopDetection();
         $this->loopdetection->ProcessLoopDetectionInit();
         $this->loopdetection->ProcessLoopDetectionPreviousConnectionFailed();
 
@@ -427,6 +427,8 @@ class DeviceManager {
             return true;
         }
 
+        if (!is_object($message))
+            throw new Exception("DeviceManager->DoNotStreamMessage(): message isn't an object");
         // message is semantically incorrect
         if (!$message->Check(true)) {
             $this->AnnounceIgnoredMessage($folderid, $id, $message, self::MSG_BROKEN_SEMANTICERR);
@@ -899,5 +901,3 @@ class DeviceManager {
         return $this->latestFolder;
     }
 }
-
-?>

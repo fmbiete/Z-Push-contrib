@@ -211,7 +211,7 @@ class ItemOperations extends RequestProcessor {
                         if(self::$decoder->getElementStartTag(SYNC_ITEMOPERATIONS_DELETESUBFOLDERS)) {
                             $operation['deletesubfolders'] = true;
                             if (($dsf = self::$decoder->getElementContent()) !== false) {
-                                $operation['deletesubfolders'] = (boolean)$dsf;
+                                $operation['deletesubfolders'] = (bool)$dsf;
                                 if(!self::$decoder->getElementEndTag())
                                     return false;
                             }
@@ -330,6 +330,9 @@ class ItemOperations extends RequestProcessor {
                     }
 
                     if (isset($data)) {
+                        if (!is_object($data))
+                            throw new StatusException("ItemOperations->Handle(): data isn't an object !!!");
+
                         self::$topCollector->AnnounceInformation("Streaming data");
 
                         self::$encoder->startTag(SYNC_ITEMOPERATIONS_PROPERTIES);
@@ -384,4 +387,3 @@ class ItemOperations extends RequestProcessor {
         return true;
     }
 }
-?>

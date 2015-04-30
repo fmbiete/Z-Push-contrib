@@ -53,6 +53,10 @@
     // Try to set unlimited timeout
     define('SCRIPT_TIMEOUT', 0);
 
+    // Your PHP could have a bug when base64 encoding: https://bugs.php.net/bug.php?id=68532
+    // NOTE: Run "php testing/testing-bug68532fixed.php" to know what value put here
+    define('BUG68532FIXED', false);
+
     // When accessing through a proxy, the "X-Forwarded-For" header contains the original remote IP
     define('USE_X_FORWARDED_FOR_HEADER', false);
 
@@ -60,8 +64,9 @@
     // This setting specifies the owner parameter in the certificate to look at.
     define("CERTIFICATE_OWNER_PARAMETER", "SSL_CLIENT_S_DN_CN");
 
-    // The Z-Push server location for the autodiscover response
-    define('SERVERURL', 'https://localhost/Microsoft-Server-ActiveSync');
+    // Location of the trusted CA, e.g. '/etc/ssl/certs/EmailCA.pem'
+    // Uncomment and modify the following line if the validation of the certificates fails.
+    // define('CAINFO', '/etc/ssl/certs/EmailCA.pem');
 
     /*
      * Whether to use the complete email address as a login name
@@ -156,9 +161,18 @@
     define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
     $specialLogUsers = array();
 
-    // Location of the trusted CA, e.g. '/etc/ssl/certs/EmailCA.pem'
-    // Uncomment and modify the following line if the validation of the certificates fails.
-    // define('CAINFO', '/etc/ssl/certs/EmailCA.pem');
+    // If you want to disable log to file, and log to syslog instead
+    define('LOG_SYSLOG_ENABLED', false);
+    // false will log to local syslog, otherwise put the remote syslog IP here
+    define('LOG_SYSLOG_HOST', false);
+    // Syslog port
+    define('LOG_SYSLOG_PORT', 514);
+    // Program showed in the syslog. Useful if you have more than one instance login to the same syslog
+    define('LOG_SYSLOG_PROGRAM', '[z-push]');
+
+
+
+
 
 /**********************************************************************************
  *  Mobile settings
@@ -258,11 +272,35 @@
     // NOTE: THIS IS AN EXPERIMENTAL FEATURE WHICH COULD PREVENT YOUR MOBILES FROM SYNCHRONIZING.
     define('USE_PARTIAL_FOLDERSYNC', false);
 
+
+
 /**********************************************************************************
  *  Backend settings
  */
     // the backend data provider
     define('BACKEND_PROVIDER', '');
+
+    // top collector backend class name
+    //    Default is: TopCollector
+    //    Options: ["TopCollector", "TopCollectorRedis"]
+    define('TOP_COLLECTOR_BACKEND', 'TopCollector');
+
+    // ping tracking backend class name
+    //    Default is: PingTracking
+    //    Options: ["PingTracking", "PingTrackingRedis"]
+    define('PING_TRACKING_BACKEND', 'PingTracking');
+
+    // loop detection backend class name
+    //    Default is: LoopDetection
+    //    Options: ["LoopDetection", "LoopDetectionRedis"]
+    define('LOOP_DETECTION_BACKEND', 'LoopDetection');
+
+    // If using the Redis backends (for top, ping and lookp) make sure to set this values as necessary
+    define('IPC_REDIS_IP', '127.0.0.1');
+    define('IPC_REDIS_PORT', 6379);
+    // Database name/index in Redis: 0 by default
+        // NOTE: this database must be exclusive for z-push, since its content will be ERASED. You are warned.
+    define('IPC_REDIS_DATABASE', 0);
 
 /**********************************************************************************
  *  Search provider settings
@@ -331,5 +369,3 @@
         ),
 */
     );
-
-?>

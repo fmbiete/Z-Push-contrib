@@ -180,5 +180,3 @@ function listfolders_getlist ($adminStore, $session, $user) {
         }
     }
 }
-
-?>

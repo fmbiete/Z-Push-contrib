@@ -48,80 +48,8 @@ ob_start(null, 1048576);
 // ignore user abortions because this can lead to weird errors - see ZP-239
 ignore_user_abort(true);
 
-include_once('lib/exceptions/exceptions.php');
-include_once('lib/utils/utils.php');
-include_once('lib/utils/compat.php');
-include_once('lib/utils/timezoneutil.php');
-include_once('lib/core/zpushdefs.php');
-include_once('lib/core/stateobject.php');
-include_once('lib/core/interprocessdata.php');
-include_once('lib/core/pingtracking.php');
-include_once('lib/core/topcollector.php');
-include_once('lib/core/loopdetection.php');
-include_once('lib/core/asdevice.php');
-include_once('lib/core/statemanager.php');
-include_once('lib/core/devicemanager.php');
-include_once('lib/core/zpush.php');
-include_once('lib/core/zlog.php');
-include_once('lib/core/paddingfilter.php');
-include_once('lib/interface/ibackend.php');
-include_once('lib/interface/ichanges.php');
-include_once('lib/interface/iexportchanges.php');
-include_once('lib/interface/iimportchanges.php');
-include_once('lib/interface/isearchprovider.php');
-include_once('lib/interface/istatemachine.php');
-include_once('lib/core/streamer.php');
-include_once('lib/core/streamimporter.php');
-include_once('lib/core/synccollections.php');
-include_once('lib/core/hierarchycache.php');
-include_once('lib/core/changesmemorywrapper.php');
-include_once('lib/core/syncparameters.php');
-include_once('lib/core/bodypreference.php');
-include_once('lib/core/contentparameters.php');
-include_once('lib/wbxml/wbxmldefs.php');
-include_once('lib/wbxml/wbxmldecoder.php');
-include_once('lib/wbxml/wbxmlencoder.php');
-include_once('lib/syncobjects/syncobject.php');
-include_once('lib/syncobjects/syncbasebody.php');
-include_once('lib/syncobjects/syncbaseattachment.php');
-include_once('lib/syncobjects/syncmailflags.php');
-include_once('lib/syncobjects/syncrecurrence.php');
-include_once('lib/syncobjects/syncappointment.php');
-include_once('lib/syncobjects/syncappointmentexception.php');
-include_once('lib/syncobjects/syncattachment.php');
-include_once('lib/syncobjects/syncattendee.php');
-include_once('lib/syncobjects/syncmeetingrequestrecurrence.php');
-include_once('lib/syncobjects/syncmeetingrequest.php');
-include_once('lib/syncobjects/syncmail.php');
-include_once('lib/syncobjects/syncnote.php');
-include_once('lib/syncobjects/synccontact.php');
-include_once('lib/syncobjects/syncfolder.php');
-include_once('lib/syncobjects/syncprovisioning.php');
-include_once('lib/syncobjects/synctaskrecurrence.php');
-include_once('lib/syncobjects/synctask.php');
-include_once('lib/syncobjects/syncoofmessage.php');
-include_once('lib/syncobjects/syncoof.php');
-include_once('lib/syncobjects/syncuserinformation.php');
-include_once('lib/syncobjects/syncdeviceinformation.php');
-include_once('lib/syncobjects/syncdevicepassword.php');
-include_once('lib/syncobjects/syncitemoperationsattachment.php');
-include_once('lib/syncobjects/syncsendmail.php');
-include_once('lib/syncobjects/syncsendmailsource.php');
-include_once('lib/syncobjects/syncvalidatecert.php');
-include_once('lib/syncobjects/syncresolverecipients.php');
-include_once('lib/syncobjects/syncresolverecipient.php');
-include_once('lib/syncobjects/syncresolverecipientsoptions.php');
-include_once('lib/syncobjects/syncresolverecipientsavailability.php');
-include_once('lib/syncobjects/syncresolverecipientscertificates.php');
-include_once('lib/syncobjects/syncresolverecipientspicture.php');
-include_once('lib/default/backend.php');
-include_once('lib/default/searchprovider.php');
-include_once('lib/request/request.php');
-include_once('lib/request/requestprocessor.php');
-
-include_once('config.php');
-include_once('version.php');
-
+require_once 'vendor/autoload.php';
+require_once 'config.php';
 
     // Attempt to set maximum execution time
     ini_set('max_execution_time', SCRIPT_TIMEOUT);
@@ -213,36 +141,23 @@ include_once('version.php');
         foreach (RequestProcessor::GetSpecialHeaders() as $header)
             header($header);
 
-        // stream the data
-        $len = ob_get_length();
-        $data = ob_get_contents();
-        ob_end_clean();
-
         // log amount of data transferred
         // TODO check $len when streaming more data (e.g. Attachments), as the data will be send chunked
-        ZPush::GetDeviceManager()->SentData($len);
+        ZPush::GetDeviceManager()->SentData(ob_get_length());
 
-        // Unfortunately, even though Z-Push can stream the data to the client
-        // with a chunked encoding, using chunked encoding breaks the progress bar
-        // on the PDA. So the data is de-chunk here, written a content-length header and
-        // data send as a 'normal' packet. If the output packet exceeds 1MB (see ob_start)
-        // then it will be sent as a chunked packet anyway because PHP will have to flush
-        // the buffer.
-        if(!headers_sent())
-            header("Content-Length: $len");
-
-        // send vnd.ms-sync.wbxml content type header if there is no content
-        // otherwise text/html content type is added which might break some devices
-        if ($len == 0)
-            header("Content-Type: application/vnd.ms-sync.wbxml");
-
-        print $data;
+        ZPush::FinishResponse();
 
         // destruct backend after all data is on the stream
-        $backend->Logoff();
+        ZPush::GetBackend()->Logoff();
     }
 
     catch (NoPostRequestException $nopostex) {
+        $len = ob_get_length();
+        if ($len) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("Cleaning %d octets of data", $len));
+            ob_clean();
+        }
+
         if ($nopostex->getCode() == NoPostRequestException::OPTIONS_REQUEST) {
             header(ZPush::GetServerHeader());
             header(ZPush::GetSupportedProtocolVersions());
@@ -255,9 +170,17 @@ include_once('version.php');
             if (!headers_sent() && $nopostex->showLegalNotice())
                 ZPush::PrintZPushLegal('GET not supported', $nopostex->getMessage());
         }
+
+        ZPush::FinishResponse();
     }
 
     catch (Exception $ex) {
+        $len = ob_get_length();
+        if ($len) {
+            ZLog::Write(LOGLEVEL_WARN, sprintf("Cleaning %d octets of data", $len));
+            ob_clean();
+        }
+
         if (Request::GetUserAgent())
             ZLog::Write(LOGLEVEL_INFO, sprintf("User-agent: '%s'", Request::GetUserAgent()));
         $exclass = get_class($ex);
@@ -304,6 +227,8 @@ include_once('version.php');
 
         // Announce exception if the TopCollector if available
         ZPush::GetTopCollector()->AnnounceInformation(get_class($ex), true);
+
+        ZPush::FinishResponse();
     }
 
     // save device data if the DeviceManager is available
@@ -311,5 +236,7 @@ include_once('version.php');
         ZPush::GetDeviceManager()->Save();
 
     // end gracefully
-    ZLog::Write(LOGLEVEL_DEBUG, '-------- End');
-?>
+    if (version_compare(phpversion(), '5.4.0') < 0)
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(time() - $_SERVER["REQUEST_TIME"], 4), http_response_code()));
+    else
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"], 4), http_response_code()));

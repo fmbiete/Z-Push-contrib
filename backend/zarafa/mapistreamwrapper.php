@@ -144,5 +144,3 @@ class MAPIStreamWrapper {
 }
 
 stream_wrapper_register(MAPIStreamWrapper::PROTOCOL, "MAPIStreamWrapper");
-
-?>

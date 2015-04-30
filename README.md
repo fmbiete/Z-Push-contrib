@@ -1,6 +1,8 @@
 Z-Push-contrib
 ==============
 
+[![Join the chat at https://gitter.im/fmbiete/Z-Push-contrib](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fmbiete/Z-Push-contrib?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This is a Z-Push fork with changes that I will try to put into the contrib branch, so they can get into the official Z-Push
 
 IMPORTANT:
@@ -31,9 +33,9 @@ You can find some configuration guidelines in the Wiki https://github.com/fmbiet
 
 Requisites
 ==========
-- PHP 5.5 (5.3 should also work, 5.4 it's fine, but 5.5 is better)
+- PHP 5.x (5.3 it's the minimum supported) using PHP-FPM or MOD_PHP
+- HHVM 3.6 or newer, instead of PHP
 - NGINX or APACHE
-- PHP-FPM or MOD_PHP
 
 Configuration
 =============

@@ -48,8 +48,6 @@
 // config file
 require_once("backend/ldap/config.php");
 
-include_once('lib/default/diffbackend/diffbackend.php');
-
 class BackendLDAP extends BackendDiff {
 
     private $ldap_link;
@@ -581,4 +579,3 @@ class BackendLDAP extends BackendDiff {
         return ZPush::ASV_14;
     }
 }
-?>

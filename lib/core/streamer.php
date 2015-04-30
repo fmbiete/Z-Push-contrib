@@ -291,7 +291,7 @@ class Streamer implements Serializable {
                     if ($encoder->getMultipart() && isset($map[self::STREAMER_PROP]) && $map[self::STREAMER_PROP] == self::STREAMER_TYPE_MULTIPART) {
                         $encoder->addBodypartStream($this->$map[self::STREAMER_VAR]);
                         $encoder->startTag(SYNC_ITEMOPERATIONS_PART);
-                        $encoder->content(count($encoder->getBodypartsCount()));
+                        $encoder->content($encoder->getBodypartsCount());
                         $encoder->endTag();
                         continue;
                     }
@@ -315,22 +315,10 @@ class Streamer implements Serializable {
                         $encoder->content(strtoupper(bin2hex($this->$map[self::STREAMER_VAR])));
                     }
                     else if(isset($map[self::STREAMER_TYPE]) && $map[self::STREAMER_TYPE] == self::STREAMER_TYPE_STREAM) {
-                        //encode stream with base64
-                        $stream = $this->$map[self::STREAMER_VAR];
-                        $stat = fstat($stream);
-                        // the padding size muss be calculated for the entire stream,
-                        // the base64 filter seems to process 8192 byte chunks correctly itself
-                        $padding = (isset($stat['size']) && $stat['size'] > 8192) ? ($stat['size'] % 3) : 0;
-
-                        $paddingfilter = stream_filter_append($stream, 'padding.'.$padding);
-                        $base64filter = stream_filter_append($stream, 'convert.base64-encode');
-                        $d = "";
-                        while (!feof($stream)) {
-                            $d .= fgets($stream, 4096);
-                        }
-                        $encoder->content($d);
-                        stream_filter_remove($base64filter);
-                        stream_filter_remove($paddingfilter);
+                        //we need to encode in base64
+                        $encoder->content(Utils::EncodeBase64($this->$map[self::STREAMER_VAR]));
+                        //memory ...
+                        $this->$map[self::STREAMER_VAR] = null;
                     }
                     // implode comma or semicolon arrays into a string
                     else if(isset($map[self::STREAMER_TYPE]) && is_array($this->$map[self::STREAMER_VAR]) &&
@@ -461,5 +449,3 @@ class Streamer implements Serializable {
         return 0;
     }
 }
-
-?>

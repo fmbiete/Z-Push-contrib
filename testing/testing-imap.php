@@ -6,5 +6,3 @@ $mail = @imap_fetchheader($mbox, $id, FT_UID) . @imap_body($mbox, $id, FT_PEEK |
 
 printf("MAIL <%s>\n", $mail);
 printf("EMPTY <%b>\n", empty($mail));
-
-?>

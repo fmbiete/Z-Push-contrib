@@ -69,12 +69,12 @@ class SendMail extends RequestProcessor {
             if($el[EN_TYPE] != EN_TYPE_STARTTAG)
                 return false;
 
-
-            if($el[EN_TAG] == SYNC_COMPOSEMAIL_SENDMAIL)
+            $commandTag = $el[EN_TAG];
+            if($commandTag == SYNC_COMPOSEMAIL_SENDMAIL)
                 $sendmail = true;
-            else if($el[EN_TAG] == SYNC_COMPOSEMAIL_SMARTREPLY)
+            else if($commandTag == SYNC_COMPOSEMAIL_SMARTREPLY)
                 $smartreply = true;
-            else if($el[EN_TAG] == SYNC_COMPOSEMAIL_SMARTFORWARD)
+            else if($commandTag == SYNC_COMPOSEMAIL_SMARTFORWARD)
                 $smartforward = true;
 
             if(!$sendmail && !$smartreply && !$smartforward)
@@ -121,11 +121,10 @@ class SendMail extends RequestProcessor {
 
         if ($status != SYNC_COMMONSTATUS_SUCCESS) {
             if (self::$decoder->IsWBXML()) {
-                // TODO check no WBXML on SmartReply and SmartForward
                 self::$encoder->StartWBXML();
-                self::$encoder->startTag(SYNC_COMPOSEMAIL_SENDMAIL);
+                self::$encoder->startTag($commandTag);
                 self::$encoder->startTag(SYNC_COMPOSEMAIL_STATUS);
-                self::$encoder->content($status); //TODO return the correct status
+                self::$encoder->content($status);
                 self::$encoder->endTag();
                 self::$encoder->endTag();
             }
@@ -136,4 +135,3 @@ class SendMail extends RequestProcessor {
         return $status;
     }
 }
-?>

@@ -33,5 +33,3 @@ function cleanupDate($receiveddate) {
 
     return $receiveddate;
 }
-
-?>

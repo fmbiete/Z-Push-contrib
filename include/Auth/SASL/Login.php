@@ -46,8 +46,6 @@
 * @package Auth_SASL
 */
 
-require_once('include/Auth/SASL/Common.php');
-
 class Auth_SASL_Login extends Auth_SASL_Common
 {
     /**
@@ -62,4 +60,3 @@ class Auth_SASL_Login extends Auth_SASL_Common
         return sprintf('LOGIN %s %s', $user, $pass);
     }
 }
-?>

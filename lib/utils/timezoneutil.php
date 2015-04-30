@@ -1291,5 +1291,3 @@ class TimezoneUtil {
         return $packed;
     }
 }
-
-?>

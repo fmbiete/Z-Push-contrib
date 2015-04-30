@@ -3,11 +3,7 @@
 // Test CalDAV server
 // This code will do an initial sync and a second sync.
 
-include_once('include/z_caldav.php');
-
-include_once('lib/utils/utils.php');
-include_once('lib/core/zpushdefs.php');
-include_once('lib/core/zlog.php');
+require_once('vendor/autoload.php');
 
 define('LOGLEVEL', LOGLEVEL_DEBUG);
 define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
@@ -33,7 +29,7 @@ print_r($options);
 $calendars = $caldav->FindCalendars();
 print_r($calendars);
 
-$path = $caldav_path . "personal" . "/";
+$path = $caldav_path . CALDAV_PERSONAL . "/";
 $val = $caldav->GetCalendarDetails($path);
 print_r($val);
 
@@ -50,5 +46,3 @@ sleep(60);
 
 $results = $caldav->GetSync($path, false, CALDAV_SUPPORTS_SYNC);
 print_r($results);
-
-?>

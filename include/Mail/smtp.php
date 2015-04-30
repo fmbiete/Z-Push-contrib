@@ -175,6 +175,24 @@ class Mail_smtp extends Mail {
     var $pipelining;
 
     /**
+     * Require verification of SSL certificate used.
+     * @var bool
+     */
+    var $verify_peer = true;
+
+    /**
+     * Require verification of peer name
+     * @var bool
+     */
+    var $verify_peer_name = true;
+
+    /**
+     * Allow self-signed certificates. Requires verify_peer
+     * @var bool
+     */
+    var $allow_self_signed = false;
+
+    /**
      * Constructor.
      *
      * Instantiates a new Mail_smtp:: object based on the parameters
@@ -211,6 +229,9 @@ class Mail_smtp extends Mail {
         if (isset($params['debug'])) $this->debug = (bool)$params['debug'];
         if (isset($params['persist'])) $this->persist = (bool)$params['persist'];
         if (isset($params['pipelining'])) $this->pipelining = (bool)$params['pipelining'];
+        if (isset($params['verify_peer'])) $this->verify_peer = (bool)$params['verify_peer'];
+        if (isset($params['verify_peer_name'])) $this->verify_peer_name = (bool)$params['verify_peer_name'];
+        if (isset($params['allow_self_signed'])) $this->allow_self_signed = (bool)$params['allow_self_signed'];
 
         // Deprecated options
         if (isset($params['verp'])) {
@@ -378,11 +399,15 @@ class Mail_smtp extends Mail {
             return $this->_smtp;
         }
 
-        include_once 'include/Net/SMTP.php';
         $this->_smtp = &new Net_SMTP($this->host,
                                      $this->port,
                                      $this->localhost,
-                                     $this->pipelining);
+                                     $this->pipelining,
+                                     0, //timeout
+                                     null, //socket_options
+                                     $this->verify_peer,
+                                     $this->verify_peer_name,
+                                     $this->allow_self_signed);
 
         /* If we still don't have an SMTP object at this point, fail. */
         if (is_object($this->_smtp) === false) {
@@ -471,7 +496,8 @@ class Mail_smtp extends Mail {
 
         /* Build our standardized error string. */
         return $text
-            . ' [SMTP: ' . $error->getMessage()
+//            . ' [SMTP: ' . $error->getMessage()
+            . ' [SMTP: '
             . " (code: $code, response: $response)]";
     }
 

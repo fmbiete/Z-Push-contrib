@@ -73,7 +73,6 @@ class Request {
 
     static private $input;
     static private $output;
-    static private $headers;
     static private $getparameters;
     static private $command;
     static private $device;
@@ -195,37 +194,27 @@ class Request {
      * @return
      */
     static public function ProcessHeaders() {
-        self::$headers = array_change_key_case(apache_request_headers(), CASE_LOWER);
-        self::$useragent = (isset(self::$headers["user-agent"]))? self::$headers["user-agent"] : self::UNKNOWN;
+        self::$useragent = (isset($_SERVER['HTTP_USER_AGENT']))? $_SERVER['HTTP_USER_AGENT'] : self::UNKNOWN;
         if (!isset(self::$asProtocolVersion))
-            self::$asProtocolVersion = (isset(self::$headers["ms-asprotocolversion"]))? self::filterEvilInput(self::$headers["ms-asprotocolversion"], self::NUMBERSDOT_ONLY) : ZPush::GetLatestSupportedASVersion();
+            self::$asProtocolVersion = (isset($_SERVER['HTTP_MS_ASPROTOCOLVERSION']))? self::filterEvilInput($_SERVER['HTTP_MS_ASPROTOCOLVERSION'], self::NUMBERSDOT_ONLY) : ZPush::GetLatestSupportedASVersion();
 
         //if policykey is not yet set, try to set it from the header
         //the policy key might be set in Request::Initialize from the base64 encoded query
         if (!isset(self::$policykey)) {
-            if (isset(self::$headers["x-ms-policykey"]))
-                self::$policykey = (int) self::filterEvilInput(self::$headers["x-ms-policykey"], self::NUMBERS_ONLY);
+            if (isset($_SERVER['HTTP_X_MS_POLICYKEY']))
+                self::$policykey = (int) self::filterEvilInput($_SERVER['HTTP_X_MS_POLICYKEY'], self::NUMBERS_ONLY);
             else
                 self::$policykey = 0;
         }
 
-        if (!empty($_SERVER['QUERY_STRING']) && Utils::IsBase64String($_SERVER['QUERY_STRING'])) {
-            ZLog::Write(LOGLEVEL_DEBUG, "Using data from base64 encoded query string");
-            if (isset(self::$policykey))
-                self::$headers["x-ms-policykey"] = self::$policykey;
-
-            if (isset(self::$asProtocolVersion))
-                self::$headers["ms-asprotocolversion"] = self::$asProtocolVersion;
-        }
-
-        if (!isset(self::$acceptMultipart) && isset(self::$headers["ms-asacceptmultipart"]) && strtoupper(self::$headers["ms-asacceptmultipart"]) == "T") {
+        if (!isset(self::$acceptMultipart) && isset($_SERVER['HTTP_MS_ASACCEPTMULTIPART']) && strtoupper($_SERVER['HTTP_MS_ASACCEPTMULTIPART']) == "T") {
             self::$acceptMultipart = true;
         }
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("Request::ProcessHeaders() ASVersion: %s", self::$asProtocolVersion));
 
-        if (defined('USE_X_FORWARDED_FOR_HEADER') && USE_X_FORWARDED_FOR_HEADER == true && isset(self::$headers["x-forwarded-for"])) {
-            $forwardedIP = self::filterEvilInput(self::$headers["x-forwarded-for"], self::NUMBERSDOT_ONLY);
+        if (defined('USE_X_FORWARDED_FOR_HEADER') && USE_X_FORWARDED_FOR_HEADER == true && isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $forwardedIP = self::filterEvilInput($_SERVER['HTTP_X_FORWARDED_FOR'], self::NUMBERSDOT_ONLY);
             if ($forwardedIP) {
                 self::$remoteAddr = $forwardedIP;
                 ZLog::Write(LOGLEVEL_INFO, sprintf("'X-Forwarded-for' indicates remote IP: %s", self::$remoteAddr));
@@ -524,7 +513,7 @@ class Request {
      * @return boolean
      */
     static public function WasPolicyKeySent() {
-        return isset(self::$headers["x-ms-policykey"]);
+        return isset($_SERVER['HTTP_X_MS_POLICYKEY']);
     }
 
     /**
@@ -578,7 +567,7 @@ class Request {
      * @return int
      */
     static public function GetContentLength() {
-        return (isset(self::$headers["content-length"]))? (int) self::$headers["content-length"] : 0;
+        return (isset($_SERVER['HTTP_CONTENT_LENGTH']))? (int) $_SERVER['HTTP_CONTENT_LENGTH'] : 0;
     }
 
     /**
@@ -634,4 +623,3 @@ class Request {
         return ($re) ? preg_replace($re, $replacevalue, $input) : '';
     }
 }
-?>

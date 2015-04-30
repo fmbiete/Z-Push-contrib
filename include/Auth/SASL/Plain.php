@@ -43,8 +43,6 @@
 * @package Auth_SASL
 */
 
-require_once('include/Auth/SASL/Common.php');
-
 class Auth_SASL_Plain extends Auth_SASL_Common
 {
     /**
@@ -60,4 +58,3 @@ class Auth_SASL_Plain extends Auth_SASL_Common
         return $authzid . chr(0) . $authcid . chr(0) . $pass;
     }
 }
-?>

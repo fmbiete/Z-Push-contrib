@@ -43,8 +43,6 @@
 * @package Auth_SASL
 */
 
-require_once('include/Auth/SASL/Common.php');
-
 class Auth_SASL_CramMD5 extends Auth_SASL_Common
 {
     /**
@@ -65,4 +63,3 @@ class Auth_SASL_CramMD5 extends Auth_SASL_Common
         return $user . ' ' . $this->_HMAC_MD5($pass, $challenge);
     }
 }
-?>

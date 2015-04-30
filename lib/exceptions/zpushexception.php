@@ -55,8 +55,8 @@ class ZPushException extends Exception {
         if (!$logLevel)
             $logLevel = $this->defaultLogLevel;
 
-        ZLog::Write($logLevel, get_class($this) .': '. $message . ' - code: '. $code . ' - file: ' . $this->getFile() . ':' . $this->getLine());
         parent::__construct($message, (int) $code);
+        ZLog::Write($logLevel, sprintf("%s: %s - code: %s - file: %s:%s", get_class($this), $message, $code, $this->getFile(), $this->getLine()));
     }
 
     public function getHTTPCodeString() {
@@ -71,4 +71,3 @@ class ZPushException extends Exception {
         return $this->showLegal;
     }
 }
-?>

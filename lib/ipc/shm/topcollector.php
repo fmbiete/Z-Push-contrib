@@ -44,7 +44,7 @@
 * Consult LICENSE file for details
 ************************************************/
 
-class TopCollector extends InterProcessData {
+class TopCollector extends InterProcessData implements ITopCollector {
     const ENABLEDAT = 2;
     const TOPDATA = 3;
 
@@ -145,6 +145,7 @@ class TopCollector extends InterProcessData {
             $this->preserved[] = $addinfo;
 
         // exclusive block
+        $ok = true;
         if ($this->blockMutex()) {
 
             if ($this->isEnabled()) {
@@ -160,7 +161,7 @@ class TopCollector extends InterProcessData {
         }
         // end exclusive block
 
-        if ($this->isEnabled() === true && !$ok) {
+        if (!$ok) {
             ZLog::Write(LOGLEVEL_WARN, "TopCollector::AnnounceInformation(): could not write to shared memory. Z-Push top will not display this data.");
             return false;
         }
@@ -295,5 +296,3 @@ class TopCollector extends InterProcessData {
             $topdata[self::$devid][self::$user][self::$pid] = array();
     }
 }
-
-?>

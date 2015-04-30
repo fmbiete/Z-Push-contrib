@@ -187,4 +187,3 @@ class ExportChangesCombined implements IExportChanges {
         ZLog::Write(LOGLEVEL_DEBUG, "ExportChangesCombined->InitializeExporter(...) success");
     }
 }
-?>

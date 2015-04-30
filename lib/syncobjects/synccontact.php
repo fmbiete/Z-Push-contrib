@@ -113,7 +113,10 @@ class SyncContact extends SyncObject {
     public $nickname;
     public $mms;
 
-    function SyncContact() {
+    // AS 12 props
+    public $asbody;
+
+    public function __construct() {
         $mapping = array (
                     SYNC_POOMCONTACTS_ANNIVERSARY                       => array (  self::STREAMER_VAR      => "anniversary",
                                                                                     self::STREAMER_TYPE     => self::STREAMER_TYPE_DATE_DASHES  ),
@@ -123,9 +126,6 @@ class SyncContact extends SyncObject {
                     SYNC_POOMCONTACTS_BIRTHDAY                          => array (  self::STREAMER_VAR      => "birthday",
                                                                                     self::STREAMER_TYPE     => self::STREAMER_TYPE_DATE_DASHES  ),
 
-                    SYNC_POOMCONTACTS_BODY                              => array (  self::STREAMER_VAR      => "body"),
-                    SYNC_POOMCONTACTS_BODYSIZE                          => array (  self::STREAMER_VAR      => "bodysize"),
-                    SYNC_POOMCONTACTS_BODYTRUNCATED                     => array (  self::STREAMER_VAR      => "bodytruncated"),
                     SYNC_POOMCONTACTS_BUSINESS2PHONENUMBER              => array (  self::STREAMER_VAR      => "business2phonenumber"),
                     SYNC_POOMCONTACTS_BUSINESSCITY                      => array (  self::STREAMER_VAR      => "businesscity"),
                     SYNC_POOMCONTACTS_BUSINESSCOUNTRY                   => array (  self::STREAMER_VAR      => "businesscountry"),
@@ -178,31 +178,28 @@ class SyncContact extends SyncObject {
 
                     SYNC_POOMCONTACTS_CATEGORIES                        => array (  self::STREAMER_VAR      => "categories",
                                                                                     self::STREAMER_ARRAY    => SYNC_POOMCONTACTS_CATEGORY ),
-                );
 
-        if (Request::GetProtocolVersion() >= 2.5) {
-            $mapping[SYNC_POOMCONTACTS2_CUSTOMERID]                     = array (   self::STREAMER_VAR      => "customerid");
-            $mapping[SYNC_POOMCONTACTS2_GOVERNMENTID]                   = array (   self::STREAMER_VAR      => "governmentid");
-            $mapping[SYNC_POOMCONTACTS2_IMADDRESS]                      = array (   self::STREAMER_VAR      => "imaddress");
-            $mapping[SYNC_POOMCONTACTS2_IMADDRESS2]                     = array (   self::STREAMER_VAR      => "imaddress2");
-            $mapping[SYNC_POOMCONTACTS2_IMADDRESS3]                     = array (   self::STREAMER_VAR      => "imaddress3");
-            $mapping[SYNC_POOMCONTACTS2_MANAGERNAME]                    = array (   self::STREAMER_VAR      => "managername");
-            $mapping[SYNC_POOMCONTACTS2_COMPANYMAINPHONE]               = array (   self::STREAMER_VAR      => "companymainphone");
-            $mapping[SYNC_POOMCONTACTS2_ACCOUNTNAME]                    = array (   self::STREAMER_VAR      => "accountname");
-            $mapping[SYNC_POOMCONTACTS2_NICKNAME]                       = array (   self::STREAMER_VAR      => "nickname");
-            $mapping[SYNC_POOMCONTACTS2_MMS]                            = array (   self::STREAMER_VAR      => "mms");
-        }
+                    SYNC_POOMCONTACTS2_CUSTOMERID                       => array (  self::STREAMER_VAR      => "customerid"),
+                    SYNC_POOMCONTACTS2_GOVERNMENTID                     => array (  self::STREAMER_VAR      => "governmentid"),
+                    SYNC_POOMCONTACTS2_IMADDRESS                        => array (  self::STREAMER_VAR      => "imaddress"),
+                    SYNC_POOMCONTACTS2_IMADDRESS2                       => array (  self::STREAMER_VAR      => "imaddress2"),
+                    SYNC_POOMCONTACTS2_IMADDRESS3                       => array (  self::STREAMER_VAR      => "imaddress3"),
+                    SYNC_POOMCONTACTS2_MANAGERNAME                      => array (  self::STREAMER_VAR      => "managername"),
+                    SYNC_POOMCONTACTS2_COMPANYMAINPHONE                 => array (  self::STREAMER_VAR      => "companymainphone"),
+                    SYNC_POOMCONTACTS2_ACCOUNTNAME                      => array (  self::STREAMER_VAR      => "accountname"),
+                    SYNC_POOMCONTACTS2_NICKNAME                         => array (  self::STREAMER_VAR      => "nickname"),
+                    SYNC_POOMCONTACTS2_MMS                              => array (  self::STREAMER_VAR      => "mms"),
+                );
 
         if (Request::GetProtocolVersion() >= 12.0) {
             $mapping[SYNC_AIRSYNCBASE_BODY]                             = array (   self::STREAMER_VAR      => "asbody",
                                                                                     self::STREAMER_TYPE     => "SyncBaseBody");
-
-            //unset these properties because airsyncbase body and attachments will be used instead
-            unset($mapping[SYNC_POOMCONTACTS_BODY], $mapping[SYNC_POOMCONTACTS_BODYTRUNCATED]);
+        } else {
+            $mapping[SYNC_POOMCONTACTS_BODY]                            = array (  self::STREAMER_VAR      => "body");
+            $mapping[SYNC_POOMCONTACTS_BODYSIZE]                        = array (  self::STREAMER_VAR      => "bodysize");
+            $mapping[SYNC_POOMCONTACTS_BODYTRUNCATED]                   = array (  self::STREAMER_VAR      => "bodytruncated");
         }
 
         parent::SyncObject($mapping);
     }
 }
-
-?>

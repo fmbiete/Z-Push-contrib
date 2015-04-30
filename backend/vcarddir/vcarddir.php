@@ -44,8 +44,6 @@
 // config file
 require_once("backend/vcarddir/config.php");
 
-include_once('lib/default/diffbackend/diffbackend.php');
-
 class BackendVCardDir extends BackendDiff {
     /**----------------------------------------------------------------------------------------------------------
      * default backend methods
@@ -693,5 +691,4 @@ class BackendVCardDir extends BackendDiff {
         $data = str_replace(array('\\\\', '\\;', '\\,', '\\n','\\N'),array('\\', ';', ',', "\n", "\n"),$data);
         return $data;
     }
-};
-?>
+}

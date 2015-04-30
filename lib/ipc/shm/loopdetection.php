@@ -47,7 +47,7 @@
 ************************************************/
 
 
-class LoopDetection extends InterProcessData {
+class LoopDetection extends InterProcessData implements ILoopDetection {
     const INTERPROCESSLD = "ipldkey";
     const BROKENMSGS = "bromsgs";
     static private $processident;
@@ -106,9 +106,9 @@ class LoopDetection extends InterProcessData {
      * @access public
      * @return string
      */
-    public static function GetProcessIdentifier() {
+    private static function GetProcessIdentifier() {
         if (!isset(self::$processident))
-            self::$processident = sprintf('%04x%04', mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+            self::$processident = sprintf('%04x%04x', mt_rand(0, 0xffff), mt_rand(0, 0xffff));
 
         return self::$processident;
     }
@@ -119,7 +119,7 @@ class LoopDetection extends InterProcessData {
      * @access public
      * @return array
      */
-    public static function GetProcessEntry() {
+    private static function GetProcessEntry() {
         if (!isset(self::$processentry)) {
             self::$processentry = array();
             self::$processentry['id'] = self::GetProcessIdentifier();
@@ -932,5 +932,3 @@ class LoopDetection extends InterProcessData {
             $loopdata[self::$devid][self::$user][$folderid] = array();
     }
 }
-
-?>

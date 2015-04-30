@@ -41,19 +41,13 @@
 * Consult LICENSE file for details
 ************************************************/
 
-class SimpleMutex extends InterProcessData {
-    /**
-     * Constructor
-     */
-    public function SimpleMutex() {
-        // initialize super parameters
-        $this->allocate = 64;
-        $this->type = 5173;
-        parent::__construct();
+class SimpleMutex {
 
-        if (!$this->IsActive()) {
-            ZLog::Write(LOGLEVEL_ERROR, "SimpleMutex not available as InterProcessData is not available. This is not recommended on duty systems and may result in corrupt user/device linking.");
-        }
+    private $file;
+    private $fp;
+
+    public function __construct($file = __FILE__) {
+        $this->file = $file;
     }
 
     /**
@@ -65,11 +59,8 @@ class SimpleMutex extends InterProcessData {
      * @return boolean
      */
     public function Block() {
-        if ($this->IsActive())
-            return $this->blockMutex();
-
-        ZLog::Write(LOGLEVEL_WARN, "Could not enter mutex as InterProcessData is not available. This is not recommended on duty systems and may result in corrupt user/device linking!");
-        return true;
+        $this->fp = fopen($this->file, 'r');
+        return flock($this->fp, LOCK_EX);
     }
 
     /**
@@ -80,10 +71,6 @@ class SimpleMutex extends InterProcessData {
      * @return boolean
      */
     public function Release() {
-        if ($this->IsActive())
-            return $this->releaseMutex();
-
-        return true;
+        return flock($this->fp, LOCK_UN) && fclose($this->fp) && $this->fp = null;
     }
 }
-?>

@@ -146,5 +146,3 @@ class Auth_SASL
         return false;
     }
 }
-
-?>

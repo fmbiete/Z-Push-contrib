@@ -703,4 +703,3 @@ class ImportChangesICS implements IImportChanges {
         return $ret;
     }
 }
-?>

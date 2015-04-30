@@ -1,9 +1,7 @@
 <?php
 
-include_once('lib/utils/utils.php');
-include_once('lib/core/zpushdefs.php');
-include_once('lib/core/zlog.php');
-include_once('include/Mail.php');
+require_once 'vendor/autoload.php';
+
 define('LOGLEVEL', LOGLEVEL_DEBUG);
 define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 
@@ -34,5 +32,3 @@ ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): send return val
 if ($send !== true) {
     ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): The email could not be sent"));
 }
-
-?>

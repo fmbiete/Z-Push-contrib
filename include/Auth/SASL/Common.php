@@ -126,4 +126,3 @@ class Auth_SASL_Common
         return false;
     }
 }
-?>

@@ -3,7 +3,7 @@
 // Test CalDAV server
 // This code will do an initial sync and a second sync.
 
-require_once 'vendor/autoload.php';
+require_once('vendor/autoload.php');
 
 define('LOGLEVEL', LOGLEVEL_DEBUG);
 define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);

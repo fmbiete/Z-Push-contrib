@@ -947,7 +947,8 @@ EOFILTER;
     </D:prop>
 </D:sync-collection>
 EOXML;
-        } else {
+        }
+        else {
             $body = <<<EOXML
 <?xml version="1.0" encoding="utf-8" ?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -971,7 +972,8 @@ EOXML;
                 case 'DAV::response':
                     if ($v['type'] == 'open') {
                         $response = array();
-                    } elseif ($v['type'] == 'close') {
+                    }
+                    elseif ($v['type'] == 'close') {
                         $report[] = $response;
                     }
                     break;
@@ -981,7 +983,8 @@ EOXML;
                 case 'DAV::getlastmodified':
                     if (isset($v['value'])) {
                         $response['getlastmodified'] = $v['value'];
-                    } else {
+                    }
+                    else {
                         $response['getlastmodified'] = '';
                     }
                     break;

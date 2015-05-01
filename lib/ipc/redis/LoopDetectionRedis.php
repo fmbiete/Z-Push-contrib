@@ -13,12 +13,12 @@ class LoopDetectionRedis extends InterProcessRedis {
     public function __construct() {
         parent::__construct();
         if (!self::$keystack) {
-            $devuser = Request::GetDeviceID() . '|' . Request::GetAuthUser();
+            $devuser = self::$devid . '|' . self::$user;
             self::$keystack = "ZP-LOOP-STACK|" . $devuser;
             self::$keybroken = "ZP-LOOP-BROKEN|" . $devuser . '|';
             self::$keyfolder = "ZP-LOOP-FOLDER|" . $devuser . '|';
             self::$processentry = array();
-            self::$processentry['pid'] = getmypid();
+            self::$processentry['pid'] = self::$pid;
             self::$processentry['time'] = $_SERVER['REQUEST_TIME_FLOAT'];
             self::$processentry['id'] = self::$processentry['pid'] . '|' . self::$processentry['time'];
             self::$processentry['cc'] = Request::GetCommandCode();

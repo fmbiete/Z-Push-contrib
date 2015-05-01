@@ -10,18 +10,18 @@ class TopCollectorRedis extends InterProcessRedis {
         parent::__construct();
         $this->preserved = array();
         // static vars come from the parent class
-        $this->latest = array(  "pid"       => getmypid(),
+        $this->latest = array(  "pid"       => self::$pid,
                                 "ip"        => Request::GetRemoteAddr(),
-                                "user"      => Request::GetAuthUser(),
+                                "user"      => self::$user,
                                 "start"     => $_SERVER['REQUEST_TIME'],
                                 "devtype"   => Request::GetDeviceType(),
-                                "devid"     => Request::GetDeviceID(),
+                                "devid"     => self::$devid,
                                 "devagent"  => Request::GetUserAgent(),
                                 "command"   => Request::GetCommandCode(),
                                 "ended"     => 0,
                                 "push"      => false,
                         );
-        $this->key = self::PREFIX.Request::GetDeviceID().'|'.Request::GetAuthUser().'|'.getmypid();
+        $this->key = self::PREFIX . self::$devid . '|' . self::$user . '|' . self::$pid;
         $this->AnnounceInformation("initializing");
     }
 

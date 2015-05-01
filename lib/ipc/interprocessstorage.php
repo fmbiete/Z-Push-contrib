@@ -1,6 +1,11 @@
 <?php
 
 abstract class InterProcessStorage {
+    static protected $devid;
+    static protected $pid;
+    static protected $user;
+    static protected $start;
+    
     /**
      * Indicates if the inter-process mechanism is active
      *

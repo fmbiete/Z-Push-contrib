@@ -45,10 +45,6 @@
 abstract class InterProcessData extends InterProcessStorage {
     const CLEANUPTIME = 1;
 
-    static protected $devid;
-    static protected $pid;
-    static protected $user;
-    static protected $start;
     protected $type;
     protected $allocate;
     private $mutexid;

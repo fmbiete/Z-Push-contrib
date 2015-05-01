@@ -21,12 +21,10 @@ class PingTrackingRedis extends InterProcessRedis {
             self::$redis->watch($this->key);
             $savedtime = self::$redis->get($this->key);
             if ($savedtime === false || $savedtime < $_SERVER['REQUEST_TIME']) {
-                $res = self::$redis->multi()->setex($this->key,self::TTL, $_SERVER['REQUEST_TIME'])->exec();
+                $res = self::$redis->multi()->setex($this->key, self::TTL, $_SERVER['REQUEST_TIME'])->exec();
                 if ($res === false) {
                     ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout(): set just failed, retrying");
-                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() key: ".$this->key);
-                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() reqtime: ".$_SERVER['REQUEST_TIME']);
-                    ZLog::Write(LOGLEVEL_DEBUG, "DoForcePingTimeout() last: ".self::$redis->getLastError());
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("DoForcePingTimeout() key: '%s' reqtime: '%s' last_error: '%s'", $this->key, $_SERVER['REQUEST_TIME'], self::$redis->getLastError()));
                     continue;
                 }
                 else {

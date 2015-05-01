@@ -127,7 +127,7 @@ class TopCollectorRedis extends InterProcessRedis {
      */
     public function ClearLatest($all = false) {
         if ($all)
-            self::$redis->del(self::$redis->keys(self::PREFIX.'*'));
+            self::$redis->del(self::$redis->keys(self::PREFIX . '*'));
         return true;
     }
 

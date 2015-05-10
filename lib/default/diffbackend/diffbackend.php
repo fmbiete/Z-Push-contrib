@@ -332,25 +332,6 @@ abstract class BackendDiff extends Backend {
     public abstract function SetReadFlag($folderid, $id, $flags, $contentParameters);
 
     /**
-     * Changes the 'star' flag of a message on disk. The $flags
-     * parameter can only be '2' (starred) or '0' (unstarred). After a call to
-     * SetStarFlag(), GetMessageList() should return the message with the
-     * new 'flags' but should not modify the 'mod' parameter. If you do
-     * change 'mod', simply setting the message to 'starred' on the mobile will trigger
-     * a full resync of the item from the server.
-     *
-     * @param string        $folderid       id of the folder
-     * @param string        $id             id of the message
-     * @param int           $flags          star flag of the message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
-    public abstract function SetStarFlag($folderid, $id, $flags, $contentParameters);
-
-    /**
      * Called when the user has requested to delete (really delete) a message. Usually
      * this means just unlinking the file its in or somesuch. After this call has succeeded, a call to
      * GetMessageList() should no longer list the message. If it does, the message will be re-sent to the mobile

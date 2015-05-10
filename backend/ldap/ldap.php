@@ -519,10 +519,6 @@ class BackendLDAP extends BackendDiff {
         return false;
     }
 
-    public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
-        return false;
-    }
-
     public function DeleteMessage($folderid, $id, $contentParameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendLDAP->DeleteMessage('%s','%s')", $folderid, $id));
         $base_dns = explode("|", LDAP_BASE_DNS);

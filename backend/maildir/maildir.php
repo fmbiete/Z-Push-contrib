@@ -537,22 +537,6 @@ class BackendMaildir extends BackendDiff {
     }
 
     /**
-     * Changes the 'star' flag of a message on disk
-     *
-     * @param string        $folderid       id of the folder
-     * @param string        $id             id of the message
-     * @param int           $flags          star flag of the message
-     * @param ContentParameters   $contentParameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
-    public function SetStarFlag($folderid, $id, $flags, $contentParameters) {
-        return false;
-    }
-
-    /**
      * Called when the user has requested to delete (really delete) a message
      *
      * @param string              $folderid             id of the folder

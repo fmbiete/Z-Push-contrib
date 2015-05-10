@@ -1466,40 +1466,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     }
 
     /**
-     * Changes the 'star' flag of a message on disk
-     *
-     * @param string        $folderid       id of the folder
-     * @param string        $id             id of the message
-     * @param int           $flags          read flag of the message
-     * @param ContentParameters   $contentparameters
-     *
-     * @access public
-     * @return boolean                      status of the operation
-     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
-     */
-    public function SetStarFlag($folderid, $id, $flags, $contentparameters) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SetStarFlag('%s','%s','%s')", $folderid, $id, $flags));
-
-        $folderImapid = $this->getImapIdFromFolderId($folderid);
-        $this->imap_reopen_folder($folderImapid);
-
-        if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
-            if ($flags == 0) {
-                // set as "UnFlagged" (unstarred)
-                $status = @imap_clearflag_full($this->mbox, $id, "\\Flagged", ST_UID);
-            } else {
-                // set as "Flagged" (starred)
-                $status = @imap_setflag_full($this->mbox, $id, "\\Flagged", ST_UID);
-            }
-        }
-        else {
-            throw new StatusException(sprintf("BackendIMAP->SetStarFlag(): Message is outside the sync range"), SYNC_STATUS_OBJECTNOTFOUND);
-        }
-
-        return $status;
-    }
-
-    /**
      * Called when the user has requested to delete (really delete) a message
      *
      * @param string              $folderid             id of the folder

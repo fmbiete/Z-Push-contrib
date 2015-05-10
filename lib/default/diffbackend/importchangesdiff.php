@@ -186,35 +186,6 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
     }
 
     /**
-     * Imports a change in 'star' flag
-     * This can never conflict
-     *
-     * @param string        $id
-     * @param int           $flags - flagged/unflagged
-     *
-     * @access public
-     * @return boolean
-     * @throws StatusException
-     */
-    public function ImportMessageStarFlag($id, $flags) {
-        //do nothing if it is a dummy folder
-        if ($this->folderid == SYNC_FOLDER_TYPE_DUMMY)
-            throw new StatusException(sprintf("ImportChangesDiff->ImportMessageStarFlag('%s','%s'): can not be done on a dummy folder", $id, $flags), SYNC_STATUS_SYNCCANNOTBECOMPLETED);
-
-        // Update client state
-        $change = array();
-        $change["id"] = $id;
-        $change["star"] = $flags;
-        $this->updateState("star", $change);
-
-        $stat = $this->backend->SetStarFlag($this->folderid, $id, $flags, $this->contentparameters);
-        if (!$stat)
-            throw new StatusException(sprintf("ImportChangesDiff->ImportMessageStarFlag('%s','%s'): Error, unable retrieve message from backend", $id, $flags), SYNC_STATUS_OBJECTNOTFOUND);
-
-        return true;
-    }
-
-    /**
      * Imports a move of a message. This occurs when a user moves an item to another folder
      *
      * @param string        $id

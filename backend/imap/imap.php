@@ -216,12 +216,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the new message"));
         $mobj = new Mail_mimeDecode($sm->mime);
-        $message = $mobj->decode(array('decode_headers' => false, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
-        unset($mobj);
-
-        // We only need the headers TO and FROM decoded so we can validate the addresses
-        $mobj = new Mail_mimeDecode($sm->mime);
-        $message_headers_decoded = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => false, 'include_bodies' => false, 'charset' => 'utf-8'));
+        $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
         unset($mobj);
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): We get the From and To"));
@@ -229,22 +224,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $toaddr = "";
         $this->setFromHeaderValue($message->headers);
-        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message_headers_decoded->headers["from"]));
+        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
 
-        if (isset($message_headers_decoded->headers["to"])) {
-            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message_headers_decoded->headers["to"]));
+        if (isset($message->headers["to"])) {
+            $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["to"]));
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
         }
         unset($Mail_RFC822);
 
         // overwrite CC and BCC with the decoded versions, because we will parse/validate the address in the sending method
         if (isset($message->headers["cc"])) {
-            $message->headers["cc"] = $message_headers_decoded->headers["cc"];
+            $message->headers["cc"] = $message->headers["cc"];
         }
         if (isset($message->headers["bcc"])) {
-            $message->headers["bcc"] = $message_headers_decoded->headers["bcc"];
+            $message->headers["bcc"] = $message->headers["bcc"];
         }
-        unset($message_headers_decoded);
 
         $this->setReturnPathValue($message->headers, $fromaddr);
 

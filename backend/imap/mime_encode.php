@@ -70,6 +70,7 @@ function add_sub_part(&$email, $part) {
         }
         //FIXME: dfilename => filename
         if (isset($part->d_parameters)) {
+            $params['headers_charset'] = 'utf-8';
             foreach ($part->d_parameters as $k => $v) {
                 $params[$k] = $v;
             }

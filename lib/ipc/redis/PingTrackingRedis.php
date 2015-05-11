@@ -31,8 +31,8 @@ class PingTrackingRedis extends InterProcessRedis {
                     return false;
                 }
             }
-
-            if ($savedtime === $_SERVER['REQUEST_TIME']) {
+            // Don't compare types, only values
+            if ($savedtime == $_SERVER['REQUEST_TIME']) {
                 self::$redis->unwatch();
 
                 return false;

@@ -474,7 +474,7 @@ class BackendCombined extends Backend implements ISearchProvider {
 
         $notifications = array();
         if ($this->numberChangesSink == 0) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined doesn't include any Sinkable backends"));
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendCombined doesn't include any Sinkable backends");
         } else {
             $stopat = time() + $timeout - 1;
             //we will spend 2 seconds at least in each backend that support changessink

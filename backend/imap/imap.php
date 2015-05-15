@@ -60,6 +60,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $sinkfolders = array();
     private $sinkstates = array();
     private $changessinkinit = false;
+    private $folderhierarchy;
     private $excludedFolders;
     private static $mimeTypes = false;
 
@@ -581,6 +582,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $imapid = $this->getImapIdFromFolderId($folderid);
 
+        if (!$this->changessinkinit) {
+            // First folder, store the actual folder structure
+            $this->folderhierarchy = $this->get_folder_list();
+        }
+
         if ($imapid !== false) {
             $this->sinkfolders[] = $imapid;
             $this->changessinkinit = true;
@@ -612,6 +618,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return $notifications;
         }
 
+        // Check folder hierarchy and create change
+        if (count(array_diff($this->folderhierarchy, $this->get_folder_list())) > 0) {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): Changes in folder hierarchy detected!!");
+             throw new StatusException("BackendIMAP->ChangesSink(): HierarchySync required.", SyncCollections::ERROR_WRONG_HIERARCHY);
+        }
+
         while($stopat > time() && empty($notifications)) {
             foreach ($this->sinkfolders as $i => $imapid) {
                 $this->imap_reopen_folder($imapid);
@@ -633,7 +645,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     if ($this->sinkstates[$imapid] != $newstate) {
                         $notifications[] = $this->getFolderIdFromImapId($imapid);
                         $this->sinkstates[$imapid] = $newstate;
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangesSink(): ChangesSink detected!!"));
+                        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): ChangesSink detected!!");
                     }
                 }
             }
@@ -660,37 +672,26 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     public function GetFolderList() {
         $folders = array();
 
-        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
-        if (is_array($list)) {
-            // reverse list to obtain folders in right order
-            $list = array_reverse($list);
-
-            foreach ($list as $val) {
-                /* BEGIN fmbiete's contribution r1527, ZP-319 */
-                // don't return the excluded folders
-                $notExcluded = true;
-                for ($i = 0, $cnt = count($this->excludedFolders); $notExcluded && $i < $cnt; $i++) { // expr1, expr2 modified by mku ZP-329
-                    // fix exclude folders with special chars by mku ZP-329
-                    if (strpos(strtolower($val->name), strtolower(Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($this->excludedFolders[$i])))) !== false) {
-                        $notExcluded = false;
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("Pattern: <%s> found, excluding folder: '%s'", $this->excludedFolders[$i], $val->name)); // sprintf added by mku ZP-329
-                    }
-                }
-
-                if ($notExcluded) {
-                    $box = array();
-                    // cut off serverstring
-                    $imapid = substr($val->name, strlen($this->server));
-                    $box["id"] = $this->convertImapId($imapid);
-
-                    $folders[] = $box;
-                    /* END fmbiete's contribution r1527, ZP-319 */
+        $list = $this->get_folder_list();
+        foreach ($list as $val) {
+            // don't return the excluded folders
+            $notExcluded = true;
+            for ($i = 0, $cnt = count($this->excludedFolders); $notExcluded && $i < $cnt; $i++) { // expr1, expr2 modified by mku ZP-329
+                // fix exclude folders with special chars by mku ZP-329
+                if (strpos(strtolower($val), strtolower(Utils::Utf7_iconv_encode(Utils::Utf8_to_utf7($this->excludedFolders[$i])))) !== false) {
+                    $notExcluded = false;
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("Pattern: <%s> found, excluding folder: '%s'", $this->excludedFolders[$i], $val)); // sprintf added by mku ZP-329
                 }
             }
-        }
-        else {
-            ZLog::Write(LOGLEVEL_WARN, "BackendIMAP->GetFolderList(): imap_list failed: " . imap_last_error());
-            return false;
+
+            if ($notExcluded) {
+                $box = array();
+                // cut off serverstring
+                $imapid = substr($val, strlen($this->server));
+                $box["id"] = $this->convertImapId($imapid);
+
+                $folders[] = $box;
+            }
         }
 
         return $folders;
@@ -2867,5 +2868,25 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $userinformation->Status = SYNC_SETTINGSSTATUS_USERINFO_SUCCESS;
         $userinformation->emailaddresses[] = $this->username;
         return true;
+    }
+
+
+    /**
+     * Gets the folder list
+     *
+     * @access private
+     * @return array
+     */
+    private function get_folder_list() {
+        $folders = array();
+        $list = @imap_getmailboxes($this->mbox, $this->server, "*");
+        if (is_array($list)) {
+            $list = array_reverse($list);
+            foreach ($list as $l) {
+                $folders[] = $l->name;
+            }
+        }
+
+        return $folders;
     }
 };

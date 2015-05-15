@@ -683,33 +683,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $imapid = substr($val->name, strlen($this->server));
                     $box["id"] = $this->convertImapId($imapid);
 
-                    $fhir = explode($val->delimiter, $imapid);
-                    if (count($fhir) > 1) {
-                        if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0) {
-                            if (strcasecmp($fhir[0], IMAP_FOLDER_PREFIX) == 0) {
-                                // Discard prefix
-                                array_shift($fhir);
-                            }
-                        }
-
-                        if (count($fhir) == 1) {
-                            $box["mod"] = $fhir[0];
-                            $box["parent"] = "0";
-                        }
-                        else {
-                            $this->getModAndParentNames($fhir, $box["mod"], $imapparent);
-                            if ($imapparent === null) {
-                                $box["parent"] = "0";
-                            }
-                            else {
-                                $box["parent"] = $this->convertImapId($imapparent);
-                            }
-                        }
-                    }
-                    else {
-                        $box["mod"] = $imapid;
-                        $box["parent"] = "0";
-                    }
                     $folders[] = $box;
                     /* END fmbiete's contribution r1527, ZP-319 */
                 }

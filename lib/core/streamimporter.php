@@ -191,41 +191,6 @@ class ImportChangesStream implements IImportChanges {
     }
 
     /**
-     * Imports a change in 'star' flag
-     * Can only be applied to SyncMail (Email) requests
-     *
-     * @param string        $id
-     * @param int           $flags - flagged/unflagged
-     *
-     * @access public
-     * @return boolean
-     */
-    public function ImportMessageStarFlag($id, $flags) {
-        if(!($this->objclass instanceof SyncMail))
-            return false;
-
-        $this->importedMsgs++;
-
-        $this->encoder->startTag(SYNC_MODIFY);
-            $this->encoder->startTag(SYNC_SERVERENTRYID);
-                $this->encoder->content($id);
-            $this->encoder->endTag();
-            $this->encoder->startTag(SYNC_DATA);
-                $this->encoder->startTag(SYNC_POOMMAIL_FLAG);
-                    $this->encoder->startTag(SYNC_POOMMAIL_FLAGSTATUS);
-                        $this->encoder->content($flags == 1? "2" : "0");
-                    $this->encoder->endTag();
-                    $this->encoder->startTag(SYNC_POOMMAIL_FLAGTYPE);
-                        $this->encoder->content("FollowUp");
-                    $this->encoder->endTag();
-                $this->encoder->endTag();
-            $this->encoder->endTag();
-        $this->encoder->endTag();
-
-        return true;
-    }
-
-    /**
      * ImportMessageMove is not implemented, as this operation can not be streamed to a WBXMLEncoder
      *
      * @param string        $id

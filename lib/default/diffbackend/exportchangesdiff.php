@@ -195,10 +195,6 @@ class ExportChangesDiff extends DiffState implements IExportChanges{
                         if($this->flags & BACKEND_DISCARD_DATA || $this->importer->ImportMessageReadFlag($change["id"], $change["flags"]) == true)
                             $this->updateState("flags", $change);
                         break;
-                    case "star":
-                        if($this->flags & BACKEND_DISCARD_DATA || $this->importer->ImportMessageStarFlag($change["id"], $change["star"]) == true)
-                            $this->updateState("star", $change);
-                        break;
                     case "move":
                         if($this->flags & BACKEND_DISCARD_DATA || $this->importer->ImportMessageMove($change["id"], $change["parent"]) == true)
                             $this->updateState("move", $change);

@@ -131,23 +131,6 @@ class ImportChangesCombined implements IImportChanges {
         return $this->icc->ImportMessageReadFlag($id, $flags);
     }
 
-    /**
-     * Imports a change in 'star' flag
-     * This can never conflict
-     *
-     * @param string        $id
-     * @param int           $flags
-     *
-     * @access public
-     * @return boolean
-     */
-    public function ImportMessageStarFlag($id, $flags) {
-        if (!$this->icc) {
-            ZLog::Write(LOGLEVEL_ERROR, "ImportChangesCombined->ImportMessageReadFlag() icc not configured");
-            return false;
-        }
-        return $this->icc->ImportMessageStarFlag($id, $flags);
-    }
 
     /**
      * Imports a move of a message. This occurs when a user moves an item to another folder

@@ -452,21 +452,7 @@ class ImportChangesICS implements IImportChanges {
 
         return true;
     }
-    
-    /**
-     * Imports a change in 'star' flag
-     * This can never conflict
-     *
-     * @param string        $id
-     * @param int           $flags
-     *
-     * @access public
-     * @return boolean
-     * @throws StatusException
-     */
-    public function ImportMessageStarFlag($id, $flags) {
-        return false;
-    }
+
 
     /**
      * Imports a move of a message. This occurs when a user moves an item to another folder

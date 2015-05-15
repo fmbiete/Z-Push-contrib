@@ -543,7 +543,6 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         $message["mod"] = $this->contactsetag[$id];
         $message["id"] = $id;
         $message["flags"] = 1;
-        $message["star"] = 0;
 
         return $message;
     }

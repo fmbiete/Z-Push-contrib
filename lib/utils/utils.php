@@ -612,11 +612,15 @@ class Utils {
      */
     public static function EncodeBase64($input) {
         if (is_resource($input)) {
+            ZLog::Write(LOGLEVEL_DEBUG, "Utils::EncodeBase64(): is_resource");
             if (defined('BUG68532FIXED') && BUG68532FIXED === true) {
+                ZLog::Write(LOGLEVEL_DEBUG, "Utils::EncodeBase64(): BUG68532FIXED");
                 $stream = $input;
             } elseif ( ($meta = stream_get_meta_data($input)) && $meta['stream_type'] === 'STDIO') {
+                ZLog::Write(LOGLEVEL_DEBUG, "Utils::EncodeBase64(): STDIO");
                 $stream = $input;
             } else {
+                ZLog::Write(LOGLEVEL_DEBUG, "Utils::EncodeBase64(): else");
                 //because of bug #68532, we can't work with memory stream,
                 //so we copy input to a tmpfile
                 $stream = tmpfile();
@@ -630,6 +634,7 @@ class Utils {
             fclose($stream);
             return $base64;
         } elseif (is_string($input)) {
+            ZLog::Write(LOGLEVEL_DEBUG, "Utils::EncodeBase64(): is_string");
             return base64_encode($input);
         } else {
             throw new Exception("unsupported type : ".gettype($input));

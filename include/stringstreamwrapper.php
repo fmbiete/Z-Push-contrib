@@ -50,10 +50,12 @@ class StringStreamWrapper {
      * @return stream
      */
     public static function Open($string) {
-        ZLog::Write(LOGLEVEL_DEBUG, "StringStreamWrapper::Open(): len = ".strlen($string));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("StringStreamWrapper::Open(): len = %d", strlen($string)));
         if (defined('BUG68532FIXED') && BUG68532FIXED === true) {
+            ZLog::Write(LOGLEVEL_DEBUG, "StringStreamWrapper::Open(): Using php://temp");
             $stream = fopen('php://temp', 'r+');
         } else {
+            ZLog::Write(LOGLEVEL_DEBUG, "StringStreamWrapper::Open(): Using tmpfile()");
             $stream = tmpfile();
         }
         fwrite($stream, $string);

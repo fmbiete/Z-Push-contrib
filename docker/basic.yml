@@ -1,0 +1,13 @@
+phpfpm:
+    build: php-fpm/
+    volumes:
+        - ..:/var/www/z-push
+nginx:
+    build: nginx/
+    volumes:
+        - ..:/var/www/z-push
+    links:
+        - phpfpm:zpushphpfpm
+    ports:
+        - "80:80"
+        - "443:443"

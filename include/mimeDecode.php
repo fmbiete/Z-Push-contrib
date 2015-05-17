@@ -816,8 +816,8 @@ class Mail_mimeDecode
             restore_error_handler();
 
             if (strlen($input_converted) == 0 && strlen($input) != 0) {
-                ZLog::Write(LOGLEVEL_INFO, "Mail_mimeDecode() - Text cannot be correctly decoded, using original text. Expect encoding errors");
-                $input_converted = mb_convert_encoding($input, 'UTF-8', 'UTF-8');
+                ZLog::Write(LOGLEVEL_DEBUG, "Mail_mimeDecode()::_autoconvert_encoding(): Text cannot be correctly decoded, using original text. This will be ok if the part is not text, otherwise expect encoding errors");
+                $input_converted = $input;
             }
         }
 

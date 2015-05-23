@@ -342,11 +342,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $send = $this->sendMessage($fromaddr, $toaddr, $finalHeaders, $finalBody);
 
-        if (isset($sm->saveinsent)) {
-            $this->saveSentMessage($finalHeaders, $finalBody);
-        }
-        else {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
+        if ($send) {
+            if (isset($sm->saveinsent)) {
+                $this->saveSentMessage($finalHeaders, $finalBody);
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->SendMail(): Not saving in SentFolder");
+            }
         }
 
         unset($finalHeaders);

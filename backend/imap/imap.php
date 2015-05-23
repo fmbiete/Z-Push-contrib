@@ -2783,9 +2783,29 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
         }
+
+        if (is_array($toaddr)) {
+            $recipients = $toaddr;
+        }
+        else {
+            $recipients = array($toaddr);
+        }
+
+        // Cc and Bcc headers are sent, but we need to make sure that the recipient list contains them
+        foreach (array("CC", "cc", "Cc", "BCC", "Bcc", "bcc") as $key) {
+            if (!empty($headers[$key])) {
+                if (is_array($headers[$key])) {
+                    $recipients = array_merge($recipients, $headers[$key]);
+                }
+                else {
+                    $recipients[] = $headers[$key];
+                }
+            }
+        }
+
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): SendingMail with %s", $sendingMethod));
-        $mail =& Mail::factory($sendingMethod, $sendingMethod == 'mail' ? '-f '.$fromaddr : $imap_smtp_params);
-        $send = $mail->send($toaddr, $headers, $body);
+        $mail =& Mail::factory($sendingMethod, $sendingMethod == "mail" ? "-f " . $fromaddr : $imap_smtp_params);
+        $send = $mail->send($recipients, $headers, $body);
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->sendMessage(): send return value %s", $send));
 
         if ($send !== true) {

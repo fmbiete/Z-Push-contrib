@@ -278,6 +278,9 @@ class Mail
             }
         }
 
+        // Remove duplicated
+        $recipients = array_unique($recipients);
+
         return $recipients;
     }
 

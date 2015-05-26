@@ -176,6 +176,7 @@ class DiffState implements IChanges {
 
                 if(isset($this->syncstate[$iold]["star"]) && isset($new[$inew]["star"]) && $this->syncstate[$iold]["star"] != $new[$inew]["star"]) {
                     // Star changed
+                    $change = array();
                     $change["type"] = "star";
                     $change["id"] = $new[$inew]["id"];
                     $change["star"] = $new[$inew]["star"];

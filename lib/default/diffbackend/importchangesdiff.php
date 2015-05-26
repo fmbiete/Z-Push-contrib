@@ -100,7 +100,6 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
             $change["mod"] = 0; // dummy, will be updated later if the change succeeds
             $change["parent"] = $this->folderid;
             $change["flags"] = (isset($message->read)) ? $message->read : 0;
-            $change["star"] = (isset($message->flag) && isset($message->flag->flagstatus)) ? $message->flag->flagstatus : 0;
             $this->updateState("change", $change);
 
             if($conflict && $this->flags == SYNC_CONFLICT_OVERWRITE_PIM)

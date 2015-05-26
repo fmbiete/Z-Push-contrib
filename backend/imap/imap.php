@@ -255,7 +255,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 throw new StatusException(sprintf("BackendIMAP->SendMail(): Could not getSendArray for SMIME messages"), SYNC_COMMONSTATUS_MAILSUBMISSIONFAILED);
             }
             else {
-                list($recipents, $finalHeaders, $finalBody) = $parts;
+                list($recipients, $finalHeaders, $finalBody) = $parts;
 
                 $this->setFromHeaderValue($finalHeaders);
                 $this->setReturnPathValue($finalHeaders, $fromaddr);

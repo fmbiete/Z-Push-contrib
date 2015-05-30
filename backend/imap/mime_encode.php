@@ -287,8 +287,9 @@ function is_smime($message) {
     $res = false;
 
     if (isset($message->ctype_primary) && isset($message->ctype_secondary)) {
-        if (($message->ctype_primary == "multipart" && $message->ctype_secondary == "signed") || ($message->ctype_primary == "application" && $message->ctype_secondary == "pkcs7-mime")) {
-            $res = true;
+        $smime_types = array(array("multipart", "signed"), array("application", "pkcs7-mime"), array("application", "x-pkcs7-mime"), array("multipart", "encrypted"));
+        for ($i = 0; $i < count($smime_types) && !$res; $i++) {
+            $res = ($message->ctype_primary == $smime_types[$i][0] && $message->ctype_secondary == $smime_types[$i][1]);
         }
     }
 

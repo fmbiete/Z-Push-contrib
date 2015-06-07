@@ -203,9 +203,7 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         if ($newid === false)
             throw new StatusException("ImportChangesDiff->ImportMessageMove($id, $newfolder): MoveMessage failed (false)", SYNC_MOVEITEMSSTATUS_CANNOTMOVE);
 
-        //TODO: we should add newid to new folder, instead of a full folder resync
-        ZLog::Write(LOGLEVEL_DEBUG, "ImportMessageMove(): Force resync of dest folder ($newfolder)");
-        ZPushAdmin::ResyncFolder(Request::GetAuthUser(), Request::GetDeviceID(), $newfolder);
+        // Don't resync the folder here, since this can be called from the combined backed and $newfolder will not exist (backend prefix is missing)
         return $newid;
     }
 

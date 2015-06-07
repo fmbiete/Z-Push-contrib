@@ -151,7 +151,15 @@ class ImportChangesCombined implements IImportChanges {
             ZLog::Write(LOGLEVEL_WARN, "ImportChangesCombined->ImportMessageMove() cannot move message between two backends");
             return false;
         }
-        return $this->icc->ImportMessageMove($id, $this->backend->GetBackendFolder($newfolder));
+        $res = $this->icc->ImportMessageMove($id, $this->backend->GetBackendFolder($newfolder));
+
+        if ($res) {
+            //TODO: we should add newid to new folder, instead of a full folder resync
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("ImportChangesCombined->ImportMessageMove(): Force resync of dest folder (%s)", $newfolder));
+            ZPushAdmin::ResyncFolder(Request::GetAuthUser(), Request::GetDeviceID(), $newfolder);
+        }
+
+        return $res;
     }
 
 
@@ -170,7 +178,7 @@ class ImportChangesCombined implements IImportChanges {
     public function ImportFolderChange($folder) {
         $id = $folder->serverid;
         $parent = $folder->parentid;
-        ZLog::Write(LOGLEVEL_DEBUG, "ImportChangesCombined->ImportFolderChange() ".print_r($folder, 1));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("ImportChangesCombined->ImportFolderChange() id: '%s', parent: '%s'", $id, $parent));
         if($parent == '0') {
             if($id) {
                 $backendid = $this->backend->GetBackendId($id);

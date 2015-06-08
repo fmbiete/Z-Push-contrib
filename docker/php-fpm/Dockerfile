@@ -1,7 +1,11 @@
 FROM fbiete/centos_epel_php_fpm:5.6
 MAINTAINER Francisco Miguel Biete <fbiete@gmail.com>
 
-RUN cd /usr/local/src \
+RUN yum clean all \
+&& yum install -y --enablerepo=remi-php56 \
+php-pecl-memprof \
+&& yum clean all \
+&& cd /usr/local/src \
 && curl -LSs https://gitlab.com/davical-project/awl/repository/archive.tar.gz | tar xz \
 && echo "include_path=.:/usr/share/pear:/usr/share/php:/usr/local/src/awl.git/inc" >> /etc/php.ini \
 && sed -i 's/max_execution_time = 30/max_execution_time = 900/g' /etc/php.ini \

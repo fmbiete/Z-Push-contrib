@@ -45,6 +45,7 @@
 class WBXMLEncoder extends WBXMLDefs {
     private $_dtd;
     private $_out;
+    private $_outLog;
 
     private $_tagcp = 0;
 
@@ -66,6 +67,7 @@ class WBXMLEncoder extends WBXMLDefs {
         $this->log = defined('WBXML_DEBUG') && WBXML_DEBUG;
 
         $this->_out = $output;
+        $this->_outLog = StringStreamWrapper::Open("");
 
         // reverse-map the DTD
         foreach($this->dtd["namespaces"] as $nsid => $nsname) {
@@ -152,6 +154,8 @@ class WBXMLEncoder extends WBXMLDefs {
             if(count($this->_stack) == 0 && $this->multipart == true) {
                 $this->processMultipart();
             }
+            if(count($this->_stack) == 0)
+                $this->writeLog();
         }
     }
 
@@ -291,6 +295,7 @@ class WBXMLEncoder extends WBXMLDefs {
      */
     private function outByte($byte) {
         fwrite($this->_out, chr($byte));
+        fwrite($this->_outLog, chr($byte));
     }
 
     /**
@@ -325,6 +330,8 @@ class WBXMLEncoder extends WBXMLDefs {
     private function outTermStr($content) {
         fwrite($this->_out, $content);
         fwrite($this->_out, chr(0));
+        fwrite($this->_outLog, $content);
+        fwrite($this->_outLog, chr(0));
     }
 
     /**
@@ -470,15 +477,29 @@ class WBXMLEncoder extends WBXMLDefs {
 
         fwrite($this->_out, $data);
         fwrite($this->_out, $buffer);
+        fwrite($this->_outLog, $data);
+        fwrite($this->_outLog, $buffer);
         foreach($this->bodyparts as $bp) {
             if (is_resource($bp)) {
                 stream_copy_to_stream($bp, $this->_out);
+                stream_copy_to_stream($bp, $this->_outLog);
                 fclose($bp);
             } elseif (is_string($bp)) {
                 fwrite($this->_out, $bp);
+		fwrite($this->_outLog, $bp);
             } else {
                 throw new Exception("bp is a ".gettype($bp)."!?!");
             }
         }
+    }
+
+    /**
+     * Writes the sent WBXML data to the log
+     *
+     * @access private
+     * @return void
+     */
+    private function writeLog() {
+        ZLog::Write(LOGLEVEL_WBXML, "WBXML-OUT: ". base64_encode(stream_get_contents($this->_outLog, -1,0)), false);
     }
 }

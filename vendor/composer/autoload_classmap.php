@@ -91,7 +91,7 @@ return array(
     'StateObject' => $baseDir . '/lib/core/stateobject.php',
     'StatusException' => $baseDir . '/lib/exceptions/statusexception.php',
     'Streamer' => $baseDir . '/lib/core/streamer.php',
-    'StringStreamWrapper' => $baseDir . '/include/stringstreamwrapper.php',
+    'StringStreamWrapper' => $baseDir . '/lib/utils/stringstreamwrapper.php',
     'Sync' => $baseDir . '/lib/request/sync.php',
     'SyncAppointment' => $baseDir . '/lib/syncobjects/syncappointment.php',
     'SyncAppointmentException' => $baseDir . '/lib/syncobjects/syncappointmentexception.php',

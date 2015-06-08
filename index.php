@@ -43,6 +43,7 @@
 * Consult LICENSE file for details
 ************************************************/
 
+
 ob_start(null, 1048576);
 
 // ignore user abortions because this can lead to weird errors - see ZP-239
@@ -50,6 +51,15 @@ ignore_user_abort(true);
 
 require_once 'vendor/autoload.php';
 require_once 'config.php';
+
+if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
+    if (function_exists('memprof_enable')) {
+        memprof_enable();
+    }
+    else {
+        ZLog::Write(LOGLEVEL_WARN, "Memory profiler is enabled but the php-pecl-memprof extension was not found. Install and enable it");
+    }
+}
 
     // Attempt to set maximum execution time
     ini_set('max_execution_time', SCRIPT_TIMEOUT);
@@ -134,8 +144,7 @@ require_once 'config.php';
         }
 
         RequestProcessor::Initialize();
-        if(!RequestProcessor::HandleRequest())
-            throw new WBXMLException(ZLog::GetWBXMLDebugInfo());
+        RequestProcessor::HandleRequest();
 
         // eventually the RequestProcessor wants to send other headers to the mobile
         foreach (RequestProcessor::GetSpecialHeaders() as $header)
@@ -208,7 +217,7 @@ require_once 'config.php';
 
         // This could be a WBXML problem.. try to get the complete request
         else if ($ex instanceof WBXMLException) {
-            ZLog::Write(LOGLEVEL_FATAL, "Request could not be processed correctly due to a WBXMLException. Please report this.");
+            ZLog::Write(LOGLEVEL_FATAL, "Request could not be processed correctly due to a WBXMLException. Please report this including WBXML debug data logged. Be aware that the debug data could contain confidential information.");
         }
 
         // Try to output some kind of error information. This is only possible if
@@ -240,3 +249,10 @@ require_once 'config.php';
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(time() - $_SERVER["REQUEST_TIME"], 4), http_response_code()));
     else
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("-------- End - max mem: %s/%s - time: %s - code: %s", memory_get_peak_usage(false), memory_get_peak_usage(true), number_format(microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"], 4), http_response_code()));
+
+if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
+    if (function_exists('memprof_enable')) {
+        // Be aware that the pid is not unique, so we will overwrite the output in some cases. But using the pid will be easier to relate the dump with the log lines
+        memprof_dump_callgrind(fopen(LOG_MEMORY_PROFILER_FILE . "_" . getmypid(), "w"));
+    }
+}

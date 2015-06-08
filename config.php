@@ -55,7 +55,7 @@
 
     // Your PHP could have a bug when base64 encoding: https://bugs.php.net/bug.php?id=68532
     // NOTE: Run "php testing/testing-bug68532fixed.php" to know what value put here
-    define('BUG68532FIXED', false);
+    define('BUG68532FIXED', true);
 
     // When accessing through a proxy, the "X-Forwarded-For" header contains the original remote IP
     define('USE_X_FORWARDED_FOR_HEADER', false);
@@ -76,7 +76,7 @@
      * false - use the username only (default).
      * true - use the complete email address.
      */
-    define('USE_FULLEMAIL_FOR_LOGIN', false);
+    define('USE_FULLEMAIL_FOR_LOGIN', true);
 
 /**********************************************************************************
  * Device pre-authorization. Useful when using Z-Push as a standalone product.
@@ -171,8 +171,8 @@
     define('LOG_SYSLOG_PROGRAM', '[z-push]');
 
 
-
-
+    define('LOG_MEMORY_PROFILER', true);
+    define('LOG_MEMORY_PROFILER_FILE', '/var/log/z-push/memory_profile');
 
 /**********************************************************************************
  *  Mobile settings
@@ -255,8 +255,8 @@
     // in the semantic sanity checks and contacts with larger photos are not synchronized.
     // This limitation is not being followed by the ActiveSync clients which set much bigger
     // contact photos. You can override the default value of the max photo size.
-    // default: 49152 - 48 KB default max photo size in bytes
-    define('SYNC_CONTACTS_MAXPICTURESIZE', 49152);
+    // default: 5242880 - 5 MB default max photo size in bytes
+    define('SYNC_CONTACTS_MAXPICTURESIZE', 5242880);
 
     // Over the WebserviceUsers command it is possible to retrieve a list of all
     // known devices and users on this Z-Push system. The authenticated user needs to have
@@ -271,8 +271,6 @@
     // Device compatibility for this procedure is not fully understood.
     // NOTE: THIS IS AN EXPERIMENTAL FEATURE WHICH COULD PREVENT YOUR MOBILES FROM SYNCHRONIZING.
     define('USE_PARTIAL_FOLDERSYNC', false);
-
-
 
 /**********************************************************************************
  *  Backend settings

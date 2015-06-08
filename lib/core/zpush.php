@@ -49,6 +49,7 @@ class ZPush {
     const WEBSERVICECOMMAND = 4;
     const HIERARCHYCOMMAND = 5;
     const PLAININPUT = 6;
+    const REQUESTHANDLER = 7;
     const CLASS_NAME = 1;
     const CLASS_REQUIRESPROTOCOLVERSION = 2;
     const CLASS_DEFAULTTYPE = 3;
@@ -102,8 +103,8 @@ class ZPush {
                     "BackendMaildir"
                 );
 
+    // Versions 1.0, 2.0, 2.1 and 2.5 are deprecated (ZP-604)
     static private $supportedASVersions = array(
-                    self::ASV_25,
                     self::ASV_12,
                     self::ASV_121,
                     self::ASV_14,
@@ -337,6 +338,9 @@ class ZPush {
         }
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("Used timezone '%s'", date_default_timezone_get()));
+
+        // get the statemachine, which will also try to load the backend.. This could throw errors
+        self::GetStateMachine();
     }
 
     /**

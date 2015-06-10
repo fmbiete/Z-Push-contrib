@@ -234,6 +234,19 @@ class WBXMLDecoder extends WBXMLDefs {
     }
 
 
+    /**
+     * Returns the WBXML data read from the stream
+     *
+     * @access public
+     * @return string - base64 encoded wbxml
+     */
+    public function getWBXMLLog() {
+        $out = "";
+        if ($this->inLog) {
+            $out = base64_encode(stream_get_contents($this->inLog, -1,0));
+        }
+        return $out;
+    }
 
     /**----------------------------------------------------------------------------------------------------------
      * Private WBXMLDecoder stuff

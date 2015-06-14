@@ -887,15 +887,16 @@ class Mail_mimeDecode
                     $detected_encoding = $supposed_encoding;
                 }
                 $input_converted = iconv($detected_encoding, $this->_charset, $input);
-                if ($input_converted === false || mb_strlen($input_converted, $this->_charset) !== mb_strlen($input, $detected_encoding)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, "Mail_mimeDecode()::_autoconvert_encoding(): Text cannot be correctly decoded, using original text. This will be ok if the part is not text, otherwise expect encoding errors");
-                    $input_converted = $input;
-                }
             }
             catch(Exception $ex) {
                 $this->raiseError($ex->getMessage());
             }
             restore_error_handler();
+
+            if ($input_converted === false || mb_strlen($input_converted, $this->_charset) !== mb_strlen($input, $detected_encoding)) {
+                ZLog::Write(LOGLEVEL_DEBUG, "Mail_mimeDecode()::_autoconvert_encoding(): Text cannot be correctly decoded, using original text. This will be ok if the part is not text, otherwise expect encoding errors");
+                $input_converted = $input;
+            }
         }
 
         return $input_converted;

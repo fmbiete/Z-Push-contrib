@@ -389,7 +389,7 @@ abstract class SyncObject extends Streamer {
 
                         $output = array();
                         foreach ($mails as $mail) {
-                            if (! Utils::CheckEmail($mail)) {
+                            if (!Utils::CheckEmail($mail) && !CheckEmailEmptyGroup($mail)) {
                                 ZLog::Write(LOGLEVEL_WARN, sprintf("SyncObject->Check(): object from type %s: parameter '%s' contains an invalid email address '%s'. Address is removed.", $objClass, $v[self::STREAMER_VAR], $mail));
                             }
                             else

@@ -1240,25 +1240,29 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 else {
                     foreach($addrlist as $addr) {
-                        if (isset($addr->mailbox) && isset($addr->host) && isset($addr->personal)) {
-                            $address = $addr->mailbox . "@" . $addr->host;
-                            $name = $addr->personal;
-
-                            if (!isset($output->displayto) && $name != "")
-                                $output->displayto = $name;
-
-                            if($name == "" || $name == $address)
-                                $fulladdr = $address;
-                            else {
-                                if (substr($name, 0, 1) != '"' && substr($name, -1) != '"') {
-                                    $fulladdr = "\"" . $name ."\" <" . $address . ">";
-                                }
-                                else {
-                                    $fulladdr = $name ." <" . $address . ">";
+                        // If the address was a group we have "groupname" and "addresses" atributes
+                        if (isset($addr->addresses)) {
+                            if (count($addr->addresses) == 0) {
+                                array_push($output->$type, $addr->groupname);
+                                if (!isset($output->displayto) && strlen($addr->groupname) > 0) {
+                                    $output->displayto = $addr->groupname;
                                 }
                             }
-
-                            array_push($output->$type, $fulladdr);
+                            else {
+                                foreach($addr->addresses as $addr_group) {
+                                    $name = add_address_to_list($output->$type, $addr_group);
+                                    if (!isset($output->displayto) && strlen($name) > 0) {
+                                        $output->displayto = $name;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            // Not a group
+                            $name = add_address_to_list($output->$type, $addr);
+                            if (!isset($output->displayto) && strlen($name) > 0) {
+                                $output->displayto = $name;
+                            }
                         }
                     }
                 }
@@ -2985,5 +2989,38 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         return $folders;
+    }
+
+    /**
+     * Add one address to the list
+     *
+     * @access private
+     * @param array $addresses
+     * @param RFC822 address object $addr
+     * @return string
+     */
+    private function add_address_to_list(&$addresses, $addr) {
+        $name = "";
+
+        if (isset($addr->mailbox) && isset($addr->host) && isset($addr->personal)) {
+            $address = sprintf("%s@%s", $addr->mailbox, $addr->host);
+            $name = $addr->personal;
+
+            if(strlen($name) == 0 || $name == $address) {
+                $fulladdr = $address;
+            }
+            else {
+                if (preg_match('/^\".*\"$/', $name)) {
+                    $fulladdr = sprintf("%s <%s>", $name, $address);
+                }
+                else {
+                    $fulladdr = sprintf("\"%s\" <%s>", $name, $address);
+                }
+            }
+
+            array_push($addresses, $fulladdr);
+        }
+
+        return $name;
     }
 };

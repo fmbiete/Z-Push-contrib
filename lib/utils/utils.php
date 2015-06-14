@@ -545,6 +545,19 @@ class Utils {
     }
 
     /**
+     * Checks for valid empty group of email
+     * e.g.: undisclosed-recipients:;
+     *
+     * @param string $email
+     *
+     * @access public
+     * @return boolean
+     */
+    static public function CheckEmailEmptyGroup($email) {
+        return (bool) preg_match('/.*:;/', $email);
+    }
+
+    /**
      * Checks if a string is base64 encoded
      *
      * @param string $string    the string to be checked

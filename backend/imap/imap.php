@@ -1095,6 +1095,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
+                        // #190, KD 2015-06-04 - If message body is encrypted we'd drop it as data should only be in the attachment but... there's no good way to let only headers through...
+                        if (is_encrypted($message)) {
+                                $output->asbody->data = $mail;
+                                $truncsize = 500;
+                                break;
+                        }
+
                         if (is_smime($message)) {
                             $output->asbody->data = $mail;
                         }
@@ -1157,8 +1164,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
 
             $output->datereceived = isset($message->headers["date"]) ? $this->cleanupDate($message->headers["date"]) : null;
+
             if (is_smime($message)) {
-                $output->messageclass = "IPM.Note.SMIME.MultipartSigned";
+                // #190, KD 2015-06-04 - Add Encrypted (and possibly signed) to the classifications emitted
+                if (is_encrypted($message)) {
+                    $output->messageclass = "IPM.Note.SMIME";
+                }
+                else {
+                    $output->messageclass = "IPM.Note.SMIME.MultipartSigned";
+                }
             }
             else {
                 $output->messageclass = "IPM.Note";

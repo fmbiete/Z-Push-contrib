@@ -44,7 +44,13 @@
 ************************************************/
 
 
-ob_start(null, 1048576);
+// #190, KD 2015-06-08 - We are missing the flags to truncate the buffer in PHP >= 5.4
+if (version_compare(phpversion(), '5.4.0') < 0) {
+    ob_start(null, 1048576);
+}
+else {
+    ob_start(null, 1048576, PHP_OUTPUT_HANDLER_STDFLAGS);
+}
 
 // ignore user abortions because this can lead to weird errors - see ZP-239
 ignore_user_abort(true);

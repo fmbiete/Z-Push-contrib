@@ -333,6 +333,7 @@ class Mail_mimeDecode
                     break;
 
                 case 'multipart/signed': // PGP
+                case 'multipart/encrypted':
                     $parts = $this->_boundarySplit($body, $content_type['other']['boundary'], true);
                     $return->parts['msg_body'] = $parts[0];
                     list($part_header, $part_body) = $this->_splitBodyHeader($parts[1]);
@@ -380,6 +381,24 @@ class Mail_mimeDecode
                                                           'decode_headers' => $this->_decode_headers));
                     unset($obj);
                     break;
+
+                    // #190, KD 2015-06-09 - Add type for S/MIME Encrypted messages; these must have the filename set explicitly (it won't work otherwise)
+                        //and then falls through for the rest on purpose.
+                case 'application/x-pkcs7-mime':
+                case 'application/pkcs7-mime':
+                    if (!isset($content_transfer_encoding['value'])) {
+                        $content_transfer_encoding['value'] = 'base64';
+                    }
+                    // if there is no explicit charset, then don't try to convert to default charset, and make sure that only text mimetypes are converted
+                    $charset = (isset($return->ctype_parameters['charset']) && ((isset($return->ctype_primary) && $return->ctype_primary == 'text') || !isset($return->ctype_primary)) ) ? $return->ctype_parameters['charset'] : '';
+                    $part->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset) : $body);
+                    $ctype = explode('/', strtolower($content_type['value']));
+                    $part->ctype_parameters['name'] = 'smime.p7m';
+                    $part->ctype_primary = $ctype[0];
+                    $part->ctype_secondary = $ctype[1];
+                    $part->d_parameters['size'] = strlen($part->body);
+                    $return->parts[] = $part;
+                    // Fall through intentionally
 
                 default:
                     if(!isset($content_transfer_encoding['value']))

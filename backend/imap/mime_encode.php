@@ -276,8 +276,6 @@ function is_calendar($message) {
 
 /**
  * Detect if the message-part is SMIME
- * Content-Type: multipart/signed;
- * Content-Type: application/pkcs7-mime;
  *
  * @param Mail_mimeDecode $message
  * @return boolean
@@ -290,6 +288,26 @@ function is_smime($message) {
         $smime_types = array(array("multipart", "signed"), array("application", "pkcs7-mime"), array("application", "x-pkcs7-mime"), array("multipart", "encrypted"));
         for ($i = 0; $i < count($smime_types) && !$res; $i++) {
             $res = ($message->ctype_primary == $smime_types[$i][0] && $message->ctype_secondary == $smime_types[$i][1]);
+        }
+    }
+
+    return $res;
+}
+
+
+/**
+ * Detect if the message-part is SMIME, encrypted but not signed
+ * #190, KD 2015-06-04
+ *
+ * @param Mail_mimeDecode $message
+ * @return boolean
+ * @access public
+ */
+function is_encrypted($message) {
+    $res = false;
+
+    if (is_smime && !($message->ctype_primary == "multipart" && $message->ctype_secondary == "signed")) {
+            $res = true;
         }
     }
 

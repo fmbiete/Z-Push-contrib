@@ -1250,7 +1250,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                             }
                             else {
                                 foreach($addr->addresses as $addr_group) {
-                                    $name = add_address_to_list($output->$type, $addr_group);
+                                    $name = $this->add_address_to_list($output->$type, $addr_group);
                                     if (!isset($output->displayto) && strlen($name) > 0) {
                                         $output->displayto = $name;
                                     }
@@ -1259,7 +1259,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         else {
                             // Not a group
-                            $name = add_address_to_list($output->$type, $addr);
+                            $name = $this->add_address_to_list($output->$type, $addr);
                             if (!isset($output->displayto) && strlen($name) > 0) {
                                 $output->displayto = $name;
                             }

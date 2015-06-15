@@ -307,8 +307,7 @@ function is_encrypted($message) {
     $res = false;
 
     if (is_smime && !($message->ctype_primary == "multipart" && $message->ctype_secondary == "signed")) {
-            $res = true;
-        }
+        $res = true;
     }
 
     return $res;

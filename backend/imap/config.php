@@ -212,6 +212,12 @@ $imap_smtp_params = array();
 //$imap_smtp_params = array('host' => 'ssl://localhost', 'port' => 465, 'auth' => true, 'username' => 'imap_username', 'password' => 'imap_password');
 
 
+
 // If you are using IMAP_SMTP_METHOD = mail or sendmail and your sent messages are not correctly displayed you can change this to "\n".
 //   BUT, it doesn't comply with RFC 2822 and will break if using smtp method
 define('MAIL_MIMEPART_CRLF', "\r\n");
+
+
+// Set this to true, if you prefer returning MIME to your users.
+//  IMPORTANT: Using MIME will use more bandwidth since the attachment will be send twice: Once with the message and when the user select to open it
+define('MAIL_PREFER_MIME_TYPE', false);

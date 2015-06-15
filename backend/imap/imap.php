@@ -1053,9 +1053,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             $mobj = new Mail_mimeDecode($mail);
             $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
+            $is_smime = is_smime($message);
 
             /* BEGIN fmbiete's contribution r1528, ZP-320 */
             $output = new SyncMail();
+            $textBody = "";
 
             //Select body type preference
             $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
@@ -1064,35 +1066,36 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - getBodyPreferenceBestMatch: %d", $bpReturnType));
 
-            if (is_smime($message)) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Message is SMIME, forcing to work with MIME"));
+            // #198 - KD 2015-06-11 If we have a multipart message and the config file wants it set
+                // default to MIME; this is 2015 and you ought to get the pretty if possible.
+            if ($is_smime || (defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE && is_multipart($message))) {
                 $bpReturnType = SYNC_BODYPREFERENCE_MIME;
             }
+            else {
+                Mail_mimeDecode::getBodyRecursive($message, "html", $textBody);
+                $textBody = str_replace("\n", "\r\n", str_replace("\r", "", $textBody));
 
-            //Get body data
-            Mail_mimeDecode::getBodyRecursive($message, "plain", $plainBody);
-            Mail_mimeDecode::getBodyRecursive($message, "html", $htmlBody);
-            if ($plainBody == "") {
-                $plainBody = Utils::ConvertHtmlToText($htmlBody);
+                // #198 - KD 2015-06-11 If we have HTML in the main body, use it.
+                if (strlen($textBody) > 0) {
+                    $bpReturnType = SYNC_BODYPREFERENCE_HTML;
+                }
+                else {
+                    Mail_mimeDecode::getBodyRecursive($message, "plain", $textBody);
+                    $textBody = str_replace("\n", "\r\n", str_replace("\r", "", $textBody));
+
+                    $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
+                }
             }
-            $htmlBody = str_replace("\n","\r\n", str_replace("\r","",$htmlBody));
-            $plainBody = str_replace("\n","\r\n", str_replace("\r","",$plainBody));
 
             if (Request::GetProtocolVersion() >= 12.0) {
                 $output->asbody = new SyncBaseBody();
 
                 switch($bpReturnType) {
                     case SYNC_BODYPREFERENCE_PLAIN:
-                        $output->asbody->data = $plainBody;
+                        $output->asbody->data = $textBody;
                         break;
                     case SYNC_BODYPREFERENCE_HTML:
-                        if ($htmlBody == "") {
-                            $output->asbody->data = $plainBody;
-                            $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
-                        }
-                        else {
-                            $output->asbody->data = $htmlBody;
-                        }
+                        $output->asbody->data = $textBody;
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
                         // #190, KD 2015-06-04 - If message body is encrypted we'd drop it as data should only be in the attachment but... there's no good way to let only headers through...
@@ -1102,7 +1105,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                 break;
                         }
 
-                        if (is_smime($message)) {
+                        if ($is_smime) {
                             $output->asbody->data = $mail;
                         }
                         else {
@@ -1111,7 +1114,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         break;
                     case SYNC_BODYPREFERENCE_RTF:
                         ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->GetMessage RTF Format NOT CHECKED");
-                        $output->asbody->data = base64_encode($plainBody);
+                        $output->asbody->data = base64_encode($textBody);
                         break;
                 }
                 // truncate body, if requested, but never truncate MIME messages
@@ -1135,11 +1138,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
                 $bpo = $contentparameters->BodyPreference($output->asbody->type);
                 if (Request::GetProtocolVersion() >= 14.0 && $bpo->GetPreview()) {
-                    $output->asbody->preview = Utils::Utf8_truncate(Utils::ConvertHtmlToText($plainBody), $bpo->GetPreview());
+                    $output->asbody->preview = Utils::Utf8_truncate(Utils::ConvertHtmlToText($textBody), $bpo->GetPreview());
                 }
             }
             /* END fmbiete's contribution r1528, ZP-320 */
             else { // ASV_2.5
+                //DEPRECATED : very old devices, and incomplete code
+
                 $output->bodytruncated = 0;
                 /* BEGIN fmbiete's contribution r1528, ZP-320 */
                 if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
@@ -1150,12 +1155,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
                 else {
                     // truncate body, if requested
-                    if (strlen($plainBody) > $truncsize) {
-                        $output->body = Utils::Utf8_truncate($plainBody, $truncsize);
+                    if (strlen($textBody) > $truncsize) {
+                        $output->body = Utils::Utf8_truncate($textBody, $truncsize);
                         $output->bodytruncated = 1;
                     }
                     else {
-                        $output->body = $plainBody;
+                        $output->body = $textBody;
                         $output->bodytruncated = 0;
                     }
                     $output->bodysize = strlen($output->body);
@@ -1163,9 +1168,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 /* END fmbiete's contribution r1528, ZP-320 */
             }
 
+            unset($textBody);
+
             $output->datereceived = isset($message->headers["date"]) ? $this->cleanupDate($message->headers["date"]) : null;
 
-            if (is_smime($message)) {
+            if ($is_smime) {
                 // #190, KD 2015-06-04 - Add Encrypted (and possibly signed) to the classifications emitted
                 if (is_encrypted($message)) {
                     $output->messageclass = "IPM.Note.SMIME";
@@ -1370,9 +1377,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     }
                 }
             }
-            // unset mimedecoder & mail
+
+            unset($message);
             unset($mobj);
             unset($mail);
+
             return $output;
         }
 

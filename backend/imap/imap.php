@@ -1243,7 +1243,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         // If the address was a group we have "groupname" and "addresses" atributes
                         if (isset($addr->addresses)) {
                             if (count($addr->addresses) == 0) {
-                                array_push($output->$type, $addr->groupname);
+                                // readd the empty group delimiter
+                                array_push($output->$type, sprintf("%s:;", $addr->groupname));
                                 if (!isset($output->displayto) && strlen($addr->groupname) > 0) {
                                     $output->displayto = $addr->groupname;
                                 }

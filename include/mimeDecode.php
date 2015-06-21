@@ -333,14 +333,7 @@ class Mail_mimeDecode
                     break;
 
                 case 'multipart/signed': // PGP
-                case 'multipart/encrypted':
-                    $parts = $this->_boundarySplit($body, $content_type['other']['boundary'], true);
-                    $return->parts['msg_body'] = $parts[0];
-                    list($part_header, $part_body) = $this->_splitBodyHeader($parts[1]);
-                    $return->parts['sig_hdr'] = $part_header;
-                    $return->parts['sig_body'] = $part_body;
-                    break;
-
+                case 'multipart/encrypted': // #190 encrypted parts will be treated as normal ones
                 case 'multipart/parallel':
                 case 'multipart/appledouble': // Appledouble mail
                 case 'multipart/report': // RFC1892

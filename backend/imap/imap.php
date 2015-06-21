@@ -1054,6 +1054,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $mobj = new Mail_mimeDecode($mail);
             $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'charset' => 'utf-8'));
             $is_smime = is_smime($message);
+            $is_encrypted = $is_smime ? is_encrypted($message) : false;
 
             /* BEGIN fmbiete's contribution r1528, ZP-320 */
             $output = new SyncMail();
@@ -1098,15 +1099,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->asbody->data = $textBody;
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
-                        // #190, KD 2015-06-04 - If message body is encrypted we'd drop it as data should only be in the attachment but... there's no good way to let only headers through...
-                        if (is_encrypted($message)) {
-                                $output->asbody->data = $mail;
-                                $truncsize = 500;
-                                break;
-                        }
-
                         if ($is_smime) {
                             $output->asbody->data = $mail;
+                            if ($is_encrypted) {
+                                // #190, KD 2015-06-04 - If message body is encrypted we'd drop it as data should only be in the attachment but... there's no good way to let only headers through...
+                                $truncsize = 500;
+                            }
                         }
                         else {
                             $output->asbody->data = build_mime_message($message);
@@ -1117,8 +1115,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->asbody->data = base64_encode($textBody);
                         break;
                 }
-                // truncate body, if requested, but never truncate MIME messages
-                if($bpReturnType !== SYNC_BODYPREFERENCE_MIME && strlen($output->asbody->data) > $truncsize) {
+                // truncate body, if requested.
+                // MIME should not be truncated, but encrypted messages are truncated always to a minimal fixed size
+                if(($bpReturnType !== SYNC_BODYPREFERENCE_MIME || $is_encrypted) && strlen($output->asbody->data) > $truncsize) {
                     $output->asbody->data = Utils::Utf8_truncate($output->asbody->data, $truncsize);
                     $output->asbody->truncated = 1;
                 }

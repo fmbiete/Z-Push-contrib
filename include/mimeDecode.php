@@ -290,7 +290,12 @@ class Mail_mimeDecode
                 case 'content-type':
                     $content_type = $this->_parseHeaderValue($headers[$key]['value']);
 
-                    if (preg_match('/([0-9a-z+.-]+)\/([0-9a-z+.-]+)/i', $content_type['value'], $regs)) {
+                    if (preg_match('/([0-9a-z+.-]+)\/([0-9a-z+.-]+)\; name=\"([0-9a-z+.-]+)/i', $headers[$key]['value'], $regs)) {
+                        $return->ctype_primary   = $regs[1];
+                        $return->ctype_secondary = $regs[2];
+                        $return->filename = $regs[3];
+                    }
+                    elseif (preg_match('/([0-9a-z+.-]+)\/([0-9a-z+.-]+)/i', $content_type['value'], $regs)) {
                         $return->ctype_primary   = $regs[1];
                         $return->ctype_secondary = $regs[2];
                     }

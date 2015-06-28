@@ -1346,7 +1346,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                                 $attachment->displayname = "inline_".$i.".".BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary];
                                             }
                                             else {
-                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in /etc/mime.types'!!"));
+                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in '%s'!!", SYSTEM_MIME_TYPES_MAPPING));
                                             }
                                         }
                                         else {
@@ -2595,9 +2595,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     private function SystemExtensionMimeTypes() {
         $out = array();
-        $mime_file = '/etc/mime.types';
-        if (file_exists($mime_file)) {
-            $file = fopen($mime_file, 'r');
+        if (file_exists(SYSTEM_MIME_TYPES_MAPPING)) {
+            $file = fopen(SYSTEM_MIME_TYPES_MAPPING, 'r');
             while(($line = fgets($file)) !== false) {
                 $line = trim(preg_replace('/#.*/', '', $line));
                 if(!$line)

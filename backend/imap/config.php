@@ -225,4 +225,4 @@ define('MAIL_PREFER_MIME_TYPE', false);
 
 // A file containing file mime types->extension mappings.
 //  SELINUX users: make sure the file has a security context accesible by your apache/php-fpm process
-defined('SYSTEM_MIME_TYPES_MAPPING', '/etc/mime.types');
+define('SYSTEM_MIME_TYPES_MAPPING', '/etc/mime.types');

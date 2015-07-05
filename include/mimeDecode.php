@@ -378,6 +378,9 @@ class Mail_mimeDecode
                                                           'decode_bodies'  => $this->_decode_bodies,
                                                           'decode_headers' => $this->_decode_headers));
                     unset($obj);
+
+                    // #213, KD 2015-06-29 - Always inline them because there is no "type" to them (they're text)
+                    $return->disposition = 'inline';
                     break;
 
                     // #190, KD 2015-06-09 - Add type for S/MIME Encrypted messages; these must have the filename set explicitly (it won't work otherwise)

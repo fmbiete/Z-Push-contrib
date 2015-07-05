@@ -882,9 +882,14 @@ class Mail_mimeDecode
         if (function_exists("mb_detect_order")) {
             $mb_order = array_merge(array($supposed_encoding), mb_detect_order());
             set_error_handler('Mail_mimeDecode::_iconv_notice_handler');
+
+            // Default value in case of error
+            $detected_encoding = $supposed_encoding;
+
             try {
                 $detected_encoding = mb_detect_encoding($input, $mb_order, true);
-                if ($detected_encoding === false) {
+                // In some cases mb_detect_encoding returns an empty string
+                if ($detected_encoding === false || strlen($detected_encoding) == 0) {
                     $detected_encoding = $supposed_encoding;
                 }
                 $input_converted = iconv($detected_encoding, $this->_charset, $input);

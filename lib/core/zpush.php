@@ -855,15 +855,20 @@ END;
         return $defcapa;
     }
 
+    /**
+     * End Response
+     *
+     * @access public
+     */
     public static function FinishResponse() {
         $len = ob_get_length();
         if ($len !== false) {
             if (!headers_sent()) {
-                header("Content-Length: $len");
+                header(sprintf("Content-Length: %s", $len));
                 if ($len == 0)
                     header("Content-Type:");
             }
-            ZLog::Write(LOGLEVEL_DEBUG, "Flushing $len, headers already sent ? ".(headers_sent()?'true':'false'));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("Flushing %d, headers already sent? %s", $len , headers_sent()));
             if (!ob_end_flush())
                 ZLog::Write(LOGLEVEL_ERROR, "Unable to flush buffer!?");
         }

@@ -2169,6 +2169,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean      if folder is opened
      */
     protected function imap_reopen_folder($folderid, $force = false) {
+        // Reconnect
+        $this->imap_reconnect();
+
         // to see changes, the folder has to be reopened!
         if ($this->mboxFolder != $folderid || $force) {
             $s = @imap_reopen($this->mbox, $this->server . $folderid);

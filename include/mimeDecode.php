@@ -328,13 +328,13 @@ class Mail_mimeDecode
                 case 'text/plain':
                     $encoding = isset($content_transfer_encoding) ? $content_transfer_encoding['value'] : '7bit';
                     $charset = isset($return->ctype_parameters['charset']) ? $return->ctype_parameters['charset'] : $this->_charset;
-                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset) : $body) : null;
+                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset, true) : $body) : null;
                     break;
 
                 case 'text/html':
                     $encoding = isset($content_transfer_encoding) ? $content_transfer_encoding['value'] : '7bit';
                     $charset = isset($return->ctype_parameters['charset']) ? $return->ctype_parameters['charset'] : $this->_charset;
-                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset) : $body) : null;
+                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $encoding, $charset, true) : $body) : null;
                     break;
 
                 case 'multipart/signed': // PGP
@@ -392,7 +392,7 @@ class Mail_mimeDecode
                     }
                     // if there is no explicit charset, then don't try to convert to default charset, and make sure that only text mimetypes are converted
                     $charset = (isset($return->ctype_parameters['charset']) && ((isset($return->ctype_primary) && $return->ctype_primary == 'text') || !isset($return->ctype_primary)) ) ? $return->ctype_parameters['charset'] : '';
-                    $part->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset) : $body);
+                    $part->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset, false) : $body);
                     $ctype = explode('/', strtolower($content_type['value']));
                     $part->ctype_parameters['name'] = 'smime.p7m';
                     $part->ctype_primary = $ctype[0];
@@ -406,7 +406,7 @@ class Mail_mimeDecode
                         $content_transfer_encoding['value'] = '7bit';
                     // if there is no explicit charset, then don't try to convert to default charset, and make sure that only text mimetypes are converted
                     $charset = (isset($return->ctype_parameters['charset']) && ((isset($return->ctype_primary) && $return->ctype_primary == 'text') || !isset($return->ctype_primary)) )? $return->ctype_parameters['charset']: '';
-                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset) : $body) : null;
+                    $this->_include_bodies ? $return->body = ($this->_decode_bodies ? $this->_decodeBody($body, $content_transfer_encoding['value'], $charset, false) : $body) : null;
                     break;
             }
 

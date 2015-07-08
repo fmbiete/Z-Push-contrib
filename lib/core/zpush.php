@@ -868,7 +868,7 @@ END;
                 if ($len == 0)
                     header("Content-Type:");
             }
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("Flushing %d, headers already sent? %s", $len , headers_sent()));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("Flushing %d, headers already sent? %s", $len , headers_sent() ? "yes" : "no"));
             if (!ob_end_flush())
                 ZLog::Write(LOGLEVEL_ERROR, "Unable to flush buffer!?");
         }

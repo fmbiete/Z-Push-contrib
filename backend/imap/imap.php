@@ -681,40 +681,49 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             return $notifications;
         }
 
+        // Reconnect IMAP server
+        $this->imap_reconnect();
+
         // Check folder hierarchy and create change
         if (count(array_diff($this->folderhierarchy, $this->get_folder_list())) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): Changes in folder hierarchy detected!!");
              throw new StatusException("BackendIMAP->ChangesSink(): HierarchySync required.", SyncCollections::HIERARCHY_CHANGED);
         }
 
-        while($stopat > time() && empty($notifications)) {
-            foreach ($this->sinkfolders as $i => $imapid) {
-                $this->imap_reopen_folder($imapid);
+        // only check once to reduce pressure in the IMAP server
+        foreach ($this->sinkfolders as $i => $imapid) {
+            $this->imap_reopen_folder($imapid);
 
-                // courier-imap only clears the status cache after checking
-                @imap_check($this->mbox);
+            // courier-imap only clears the status cache after checking
+            @imap_check($this->mbox);
 
-                $status = @imap_status($this->mbox, $this->server . $imapid, SA_ALL);
-                if (!$status) {
-                    ZLog::Write(LOGLEVEL_WARN, sprintf("ChangesSink: could not stat folder '%s': %s ", $this->getFolderIdFromImapId($imapid), imap_last_error()));
+            $status = @imap_status($this->mbox, $this->server . $imapid, SA_ALL);
+            if (!$status) {
+                ZLog::Write(LOGLEVEL_WARN, sprintf("ChangesSink: could not stat folder '%s': %s ", $this->getFolderIdFromImapId($imapid), imap_last_error()));
+            }
+            else {
+                $newstate = "M:". $status->messages ."-R:". $status->recent ."-U:". $status->unseen;
+
+                if (! isset($this->sinkstates[$imapid]) ) {
+                    $this->sinkstates[$imapid] = $newstate;
                 }
-                else {
-                    $newstate = "M:". $status->messages ."-R:". $status->recent ."-U:". $status->unseen;
 
-                    if (! isset($this->sinkstates[$imapid]) ) {
-                        $this->sinkstates[$imapid] = $newstate;
-                    }
-
-                    if ($this->sinkstates[$imapid] != $newstate) {
-                        $notifications[] = $this->getFolderIdFromImapId($imapid);
-                        $this->sinkstates[$imapid] = $newstate;
-                        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): ChangesSink detected!!");
-                    }
+                if ($this->sinkstates[$imapid] != $newstate) {
+                    $notifications[] = $this->getFolderIdFromImapId($imapid);
+                    $this->sinkstates[$imapid] = $newstate;
+                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): ChangesSink detected!!");
                 }
             }
+        }
+        // Close IMAP connection, we will reconnect in the next execution. This will reduce IMAP pressure
+        imap_close($this->mbox);
+        $this->mbox = false;
 
-            if (empty($notifications))
-                sleep(5);
+        // Wait to timeout
+        if (empty($notifications)) {
+            while ($stopat > time()) {
+                sleep(1);
+            }
         }
 
         return $notifications;
@@ -1036,7 +1045,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $truncsize = Utils::GetTruncSize($contentparameters->GetTruncation());
         $mimesupport = $contentparameters->GetMimeSupport();
         $bodypreference = $contentparameters->GetBodyPreference(); /* fmbiete's contribution r1528, ZP-320 */
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage('%s','%s')", $folderid,  $id));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage('%s', '%s', '%s')", $folderid,  $id, implode(",", $bodypreference)));
 
         $folderImapid = $this->getImapIdFromFolderId($folderid);
 
@@ -1069,7 +1078,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             // #198 - KD 2015-06-11 If we have a multipart message and the config file wants it set
                 // default to MIME; this is 2015 and you ought to get the pretty if possible.
-            if ($is_smime || (defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE && is_multipart($message))) {
+                // FMBIETE; but some old mobiles don't support MIME, so only use if the device has told us that it's supported
+            if ($is_smime || (in_array(SYNC_BODYPREFERENCE_MIME, $bodypreference) && defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE && is_multipart($message))) {
                 $bpReturnType = SYNC_BODYPREFERENCE_MIME;
             }
             else {
@@ -1127,8 +1137,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
                 $output->asbody->type = $bpReturnType;
                 if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
+                    // NativeBodyType can be only (1 => PLAIN, 2 => HTML, 3 => RTF). MIME uses 1
                     $output->nativebodytype = SYNC_BODYPREFERENCE_PLAIN;
-                    // http://msdn.microsoft.com/en-us/library/ee220018%28v=exchg.80%29.aspx
                 }
                 else {
                     $output->nativebodytype = $bpReturnType;
@@ -2159,12 +2169,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean      if folder is opened
      */
     protected function imap_reopen_folder($folderid, $force = false) {
-        // if the stream is not alive, we open it again
-        if (!@imap_ping($this->mbox)) {
-            $this->mbox = @imap_open($this->server, $this->username, $this->password, OP_HALFOPEN);
-            $this->mboxFolder = "";
-        }
-
         // to see changes, the folder has to be reopened!
         if ($this->mboxFolder != $folderid || $force) {
             $s = @imap_reopen($this->mbox, $this->server . $folderid);
@@ -2179,6 +2183,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         return true;
     }
 
+    /**
+     * Reconnect IMAP connection if needed
+     *
+     * @access private
+     */
+    private function imap_reconnect() {
+        if ($this->mbox) {
+            imap_ping($this->mbox);
+        }
+        else {
+            $this->mbox = @imap_open($this->server, $this->username, $this->password, OP_HALFOPEN);
+            $this->mboxFolder = "";
+        }
+    }
 
     /**
      * Creates a new IMAP folder.

@@ -422,57 +422,59 @@ class BackendCalDAV extends BackendDiff {
             return $notifications;
         }
 
-        while($stopat > time() && empty($notifications)) {
+        // only check once to reduce pressure in the DAV server
+        foreach ($this->sinkdata as $k => $v) {
+            $changed = false;
 
-            foreach ($this->sinkdata as $k => $v) {
-                $changed = false;
+            $url = $this->_caldav_path . substr($k, 1) . "/";
+            $response = $this->_caldav->GetSync($url, false, CALDAV_SUPPORTS_SYNC);
 
-                $url = $this->_caldav_path . substr($k, 1) . "/";
-                $response = $this->_caldav->GetSync($url, false, CALDAV_SUPPORTS_SYNC);
-
-                if (CALDAV_SUPPORTS_SYNC) {
-                    if (count($response) > 0) {
-                        $changed = true;
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
-                    }
+            if (CALDAV_SUPPORTS_SYNC) {
+                if (count($response) > 0) {
+                    $changed = true;
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
+                }
+            }
+            else {
+                // If the numbers of events are different, we know for sure, there are changes
+                if (count($response) != count($v)) {
+                    $changed = true;
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
                 }
                 else {
-                    // If the numbers of events are different, we know for sure, there are changes
-                    if (count($response) != count($v)) {
-                        $changed = true;
+                    // If the numbers of events are equals, we compare the biggest date
+                    // FIXME: we are comparing strings no dates
+                    if (!isset($this->sinkmax[$k])) {
+                        $this->sinkmax[$k] = '';
+                        for ($i = 0; $i < count($v); $i++) {
+                            if ($v[$i]['getlastmodified'] > $this->sinkmax[$k]) {
+                                $this->sinkmax[$k] = $v[$i]['getlastmodified'];
+                            }
+                        }
+                    }
+
+                    for ($i = 0; $i < count($response); $i++) {
+                        if ($response[$i]['getlastmodified'] > $this->sinkmax[$k]) {
+                            $changed = true;
+                        }
+                    }
+
+                    if ($changed) {
                         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
                     }
-                    else {
-                        // If the numbers of events are equals, we compare the biggest date
-                        // FIXME: we are comparing strings no dates
-                        if (!isset($this->sinkmax[$k])) {
-                            $this->sinkmax[$k] = '';
-                            for ($i = 0; $i < count($v); $i++) {
-                                if ($v[$i]['getlastmodified'] > $this->sinkmax[$k]) {
-                                    $this->sinkmax[$k] = $v[$i]['getlastmodified'];
-                                }
-                            }
-                        }
-
-                        for ($i = 0; $i < count($response); $i++) {
-                            if ($response[$i]['getlastmodified'] > $this->sinkmax[$k]) {
-                                $changed = true;
-                            }
-                        }
-
-                        if ($changed) {
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->ChangesSink - Changes detected"));
-                        }
-                    }
-                }
-
-                if ($changed) {
-                    $notifications[] = $k;
                 }
             }
 
-            if (empty($notifications))
-                sleep(5);
+            if ($changed) {
+                $notifications[] = $k;
+            }
+        }
+
+        // Wait to timeout
+        if (empty($notifications)) {
+            while ($stopat > time()) {
+                sleep(1);
+            }
         }
 
         return $notifications;

@@ -259,58 +259,61 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
             return $notifications;
         }
 
-        while ($stopat > time() && empty($notifications)) {
-            foreach ($this->addressbooks as $addressbook) {
-                $vcards = false;
-                try {
-                    $this->server->set_url($addressbook);
-                    $vcards = $this->server->do_sync(false, false, CARDDAV_SUPPORTS_SYNC);
-                }
-                catch (Exception $ex) {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error resyncing vcards: %s", $ex->getMessage()));
-                }
-
-                if ($vcards === false) {
-                    ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the changes"));
-                    return false;
-                }
-                else {
-                    $xml_vcards = new SimpleXMLElement($vcards);
-
-                    if (CARDDAV_SUPPORTS_SYNC) {
-                        if (count($xml_vcards->element) > 0) {
-                            $changed = true;
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
-                        }
-                    }
-                    else {
-                        $xml_sinkdata = new SimpleXMLElement($this->sinkdata[$addressbook]);
-                        if (count($xml_vcards->element) != count($xml_sinkdata->element)) {
-                            // If the number of cards is different, we know for sure, there are changes
-                            $changed = true;
-                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
-                        }
-                        else {
-                            // If it's the same we need to check vcard to vcard, or the original strings
-                            if (strcmp($this->sinkdata[$addressbook], $vcards) != 0) {
-                                $changed = true;
-                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
-                            }
-                        }
-                        unset($xml_sinkdata);
-                    }
-
-                    unset($vcards);
-                    unset($xml_vcards);
-                }
-
-                if ($changed) {
-                    $notifications[] = $this->foldername;
-                }
+        // only check once to reduce pressure in the DAV server
+        foreach ($this->addressbooks as $addressbook) {
+            $vcards = false;
+            try {
+                $this->server->set_url($addressbook);
+                $vcards = $this->server->do_sync(false, false, CARDDAV_SUPPORTS_SYNC);
+            }
+            catch (Exception $ex) {
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error resyncing vcards: %s", $ex->getMessage()));
             }
 
-            if (empty($notifications))
-                sleep(5);
+            if ($vcards === false) {
+                ZLog::Write(LOGLEVEL_ERROR, sprintf("BackendCardDAV->ChangesSink - Error getting the changes"));
+                return false;
+            }
+            else {
+                $xml_vcards = new SimpleXMLElement($vcards);
+
+                if (CARDDAV_SUPPORTS_SYNC) {
+                    if (count($xml_vcards->element) > 0) {
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                    }
+                }
+                else {
+                    $xml_sinkdata = new SimpleXMLElement($this->sinkdata[$addressbook]);
+                    if (count($xml_vcards->element) != count($xml_sinkdata->element)) {
+                        // If the number of cards is different, we know for sure, there are changes
+                        $changed = true;
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                    }
+                    else {
+                        // If it's the same we need to check vcard to vcard, or the original strings
+                        if (strcmp($this->sinkdata[$addressbook], $vcards) != 0) {
+                            $changed = true;
+                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->ChangesSink - Changes detected"));
+                        }
+                    }
+                    unset($xml_sinkdata);
+                }
+
+                unset($vcards);
+                unset($xml_vcards);
+            }
+
+            if ($changed) {
+                $notifications[] = $this->foldername;
+            }
+        }
+
+        // Wait to timeout
+        if (empty($notifications)) {
+            while ($stopat > time()) {
+                sleep(1);
+            }
         }
 
         return $notifications;

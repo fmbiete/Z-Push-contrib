@@ -393,22 +393,25 @@ class FileStateMachine implements IStateMachine {
      * @return array(mixed)
      */
     public function GetAllStatesForDevice($devid) {
+        $types = array(IStateMachine::DEVICEDATA, IStateMachine::FOLDERDATA, IStateMachine::FAILSAVE, IStateMachine::HIERARCHY, IStateMachine::BACKENDSTORAGE);
+	$typematch = implode("|", $types);
         $out = array();
         $devdir = $this->getDirectoryForDevice($devid) . "/$devid-";
 
         foreach (glob($devdir . "*", GLOB_NOSORT) as $devdata) {
             $str = substr($devdata, strlen($devdir)-1);
             $matches = array();
-            $typematch = IStateMachine::DEVICEDATA.'|'.IStateMachine::FOLDERDATA.'|'.IStateMachine::FAILSAVE.'|'.IStateMachine::HIERARCHY.'|'.IStateMachine::BACKENDSTORAGE;
+
             if (!preg_match("/^(?:-(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}))?(?:-($typematch))?(?:-(\d+))?$/", $str, $matches))
-                throw new Exception("we didn't matched the regexp !!!: $str");
-            $state = array(
-                'uuid' => (isset($matches[1])?$matches[1]:false),
-                'type' => (isset($matches[2])?$matches[2]:false),
-                'counter' => (isset($matches[3])?$matches[3]:false),
+                throw new Exception(sprintf("GetAllStatesForDevice(): didn't match the regexp !!!: %s", $str));
+
+            $out[] = array(
+                'uuid' => (isset($matches[1]) ? $matches[1] : false),
+                'type' => (isset($matches[2]) ? $matches[2] : false),
+                'counter' => (isset($matches[3]) ? $matches[3] : false),
             );
-            $out[] = $state;
         }
+
         return $out;
     }
 

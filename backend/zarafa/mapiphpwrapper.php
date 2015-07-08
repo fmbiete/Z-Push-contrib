@@ -12,7 +12,7 @@
 *
 * Created   :   14.02.2011
 *
-* Copyright 2007 - 2013 Zarafa Deutschland GmbH
+* Copyright 2007 - 2015 Zarafa Deutschland GmbH
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License, version 3,
@@ -59,6 +59,7 @@ class PHPWrapper {
     private $mapiprovider;
     private $store;
     private $contentparameters;
+    private $folderid;
 
 
     /**
@@ -66,15 +67,17 @@ class PHPWrapper {
      *
      * @param ressource         $session
      * @param ressource         $store
-     * @param IImportChanges    $importer       incoming changes from ICS are forwarded here
+     * @param IImportChanges    $importer       incoming changes from ICS are forwarded here.
+     * @param string            $folderid       the folder this wrapper was configured for.
      *
      * @access public
      * @return
      */
-    public function PHPWrapper($session, $store, $importer) {
+    public function PHPWrapper($session, $store, $importer, $folderid) {
         $this->importer = &$importer;
         $this->store = $store;
         $this->mapiprovider = new MAPIProvider($session, $this->store);
+        $this->folderid = $folderid;
     }
 
     /**
@@ -117,6 +120,7 @@ class PHPWrapper {
 
         $mapimessage = mapi_msgstore_openentry($this->store, $entryid);
         try {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("PHPWrapper->ImportMessageChange(): Getting message from MAPIProvider, sourcekey: '%s', parentsourcekey: '%s', entryid: '%s'", bin2hex($sourcekey), bin2hex($parentsourcekey), bin2hex($entryid)));
             $message = $this->mapiprovider->GetMessage($mapimessage, $this->contentparameters);
         }
         catch (SyncObjectBrokenException $mbe) {
@@ -156,6 +160,13 @@ class PHPWrapper {
      * @return
      */
     public function ImportMessageDeletion($flags, $sourcekeys) {
+        $amount = count($sourcekeys);
+        if ($amount > 1000) {
+            throw new StatusException(sprintf("PHPWrapper->ImportMessageDeletion(): Received %d remove requests from ICS for folder '%s' (max. 1000 allowed). Triggering folder re-sync.", $amount, bin2hex($this->folderid)), SYNC_STATUS_INVALIDSYNCKEY, null, LOGLEVEL_ERROR);
+        }
+        else {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("PHPWrapper->ImportMessageDeletion(): Received %d remove requests from ICS", $amount));
+        }
         foreach($sourcekeys as $sourcekey) {
             $this->importer->ImportMessageDeletion(bin2hex($sourcekey));
         }

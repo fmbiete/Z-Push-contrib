@@ -4,6 +4,7 @@ MAINTAINER Francisco Miguel Biete <fbiete@gmail.com>
 RUN yum clean all \
 && yum install -y --enablerepo=remi-php56 \
 php-pecl-memprof \
+mailcap \
 && yum clean all \
 && cd /usr/local/src \
 && curl -LSs https://gitlab.com/davical-project/awl/repository/archive.tar.gz | tar xz \

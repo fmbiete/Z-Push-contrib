@@ -684,14 +684,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // Check folder hierarchy and create change
         if (count(array_diff($this->folderhierarchy, $this->get_folder_list())) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->ChangesSink(): Changes in folder hierarchy detected!!");
-             throw new StatusException("BackendIMAP->ChangesSink(): HierarchySync required.", SyncCollections::ERROR_WRONG_HIERARCHY);
+             throw new StatusException("BackendIMAP->ChangesSink(): HierarchySync required.", SyncCollections::HIERARCHY_CHANGED);
         }
 
         while($stopat > time() && empty($notifications)) {
             foreach ($this->sinkfolders as $i => $imapid) {
                 $this->imap_reopen_folder($imapid);
 
-                // courier-imap only cleares the status cache after checking
+                // courier-imap only clears the status cache after checking
                 @imap_check($this->mbox);
 
                 $status = @imap_status($this->mbox, $this->server . $imapid, SA_ALL);

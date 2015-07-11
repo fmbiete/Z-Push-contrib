@@ -160,7 +160,7 @@ class carddav_backend
      *
      * @var	resource
      */
-    private $curl;
+    private $curl = false;
 
     /**
      * Debug on or off
@@ -770,7 +770,7 @@ EOFXSL;
      * @return void
      */
     public function curl_init() {
-        if (empty($this->curl)) {
+        if ($this->curl === false) {
             $this->curl = curl_init();
             curl_setopt($this->curl, CURLOPT_HEADER, true);
             curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -884,8 +884,17 @@ EOFXSL;
      * @return	void
      */
     public function __destruct() {
-        if (!empty($this->curl)) {
+        $this->disconnect();
+    }
+
+    /**
+     * Disconnect curl connection
+     *
+     */
+    public function disconnect() {
+        if ($this->curl !== false) {
             curl_close($this->curl);
+            $this->curl = false;
         }
     }
 }

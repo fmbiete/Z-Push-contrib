@@ -77,12 +77,13 @@ class BackendCalDAV extends BackendDiff {
      */
     public function Logon($username, $domain, $password) {
         $this->_caldav_path = str_replace('%u', $username, CALDAV_PATH);
-        $this->_caldav = new CalDAVClient(CALDAV_PROTOCOL . '://' . CALDAV_SERVER . ':' . CALDAV_PORT . $this->_caldav_path, $username, $password);
+        $url = sprintf("%s://%s:%d%s", CALDAV_PROTOCOL, CALDAV_SERVER, CALDAV_PORT, $this->_caldav_path);
+        $this->_caldav = new CalDAVClient($url, $username, $password);
         if ($connected = $this->_caldav->CheckConnection()) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logon(): User '%s' is authenticated on CalDAV '%s'", $username, $this->_caldav_path));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logon(): User '%s' is authenticated on CalDAV '%s'", $username, $url));
         }
         else {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendCalDAV->Logon(): User '%s' is not authenticated on CalDAV '%s'", $username, $this->_caldav_path));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendCalDAV->Logon(): User '%s' is not authenticated on CalDAV '%s'", $username, $url));
         }
 
         return $connected;
@@ -93,13 +94,15 @@ class BackendCalDAV extends BackendDiff {
      * @see IBackend::Logoff()
      */
     public function Logoff() {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logoff()"));
-        $this->_caldav = null;
+        $this->_caldav->Disconnect();
+        unset($this->_caldav);
 
         $this->SaveStorages();
 
         unset($this->sinkdata);
         unset($this->sinkmax);
+
+        ZLog::Write(LOGLEVEL_DEBUG, "BackendCalDAV->Logoff(): disconnected from CALDAV server");
 
         return true;
     }

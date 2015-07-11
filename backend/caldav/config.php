@@ -45,17 +45,20 @@
 //  BackendCalDAV settings
 // ************************
 
-// Server address
-define('CALDAV_SERVER', 'http://calendar.domain.com');
+// Server protocol: http or https
+define('CALDAV_PROTOCOL', 'https');
 
-// Port
-define('CALDAV_PORT', '80');
+// Server name
+define('CALDAV_SERVER', 'caldavserver.domain.com');
+
+// Server port
+define('CALDAV_PORT', '443');
 
 // Path
 define('CALDAV_PATH', '/caldav.php/%u/');
 
 // Default CalDAV folder (calendar folder/principal). This will be marked as the default calendar in the mobile
-define('CALDAV_PERSONAL', 'home');
+define('CALDAV_PERSONAL', 'PRINCIPAL');
 
 // If the CalDAV server supports the sync-collection operation
 // DAViCal, SOGo and SabreDav support it

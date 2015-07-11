@@ -77,12 +77,12 @@ class BackendCalDAV extends BackendDiff {
      */
     public function Logon($username, $domain, $password) {
         $this->_caldav_path = str_replace('%u', $username, CALDAV_PATH);
-        $this->_caldav = new CalDAVClient(CALDAV_SERVER . ":" . CALDAV_PORT . $this->_caldav_path, $username, $password);
+        $this->_caldav = new CalDAVClient(CALDAV_PROTOCOL . '://' . CALDAV_SERVER . ':' . CALDAV_PORT . $this->_caldav_path, $username, $password);
         if ($connected = $this->_caldav->CheckConnection()) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logon(): User '%s' is authenticated on CalDAV", $username));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->Logon(): User '%s' is authenticated on CalDAV '%s'", $username, $this->_caldav_path));
         }
         else {
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendCalDAV->Logon(): User '%s' is not authenticated on CalDAV", $username));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendCalDAV->Logon(): User '%s' is not authenticated on CalDAV '%s'", $username, $this->_caldav_path));
         }
 
         return $connected;

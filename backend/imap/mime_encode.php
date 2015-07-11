@@ -315,7 +315,7 @@ function is_encrypted($message) {
 
 
 /**
- * Detect if the message is multipart alternative or related.
+ * Detect if the message is multipart.
  * #198, KD 2015-06-15
  *
  * @param Mail_mimeDecode $message
@@ -323,13 +323,5 @@ function is_encrypted($message) {
  * @access public
  */
 function is_multipart($message) {
-    $res = false;
-
-    if (isset($message->ctype_primary) && isset($message->ctype_secondary)) {
-        if ($message->ctype_primary == "multipart" && ($message->ctype_secondary == "alternative" || $message->ctype_secondary == "related")) {
-            $res = true;
-        }
-    }
-
-    return $res;
+    return isset($message->ctype_primary) && $message->ctype_primary == "multipart";
 }

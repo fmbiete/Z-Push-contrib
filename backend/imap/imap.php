@@ -1062,8 +1062,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             $mobj = new Mail_mimeDecode($mail);
             $message = $mobj->decode(array('decode_headers' => true, 'decode_bodies' => true, 'include_bodies' => true, 'rfc_822bodies' => true, 'charset' => 'utf-8'));
+
+            $is_multipart = is_multipart($message);
             $is_smime = is_smime($message);
             $is_encrypted = $is_smime ? is_encrypted($message) : false;
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): Message is multipart: %d, smime: %d, smime encrypted: %d", $is_multipart, $is_smime, $is_encrypted));
+
 
             /* BEGIN fmbiete's contribution r1528, ZP-320 */
             $output = new SyncMail();
@@ -1079,7 +1083,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // #198 - KD 2015-06-11 If we have a multipart message and the config file wants it set
                 // default to MIME; this is 2015 and you ought to get the pretty if possible.
                 // FMBIETE; but some old mobiles don't support MIME, so only use if the device has told us that it's supported
-            if ($is_smime || (in_array(SYNC_BODYPREFERENCE_MIME, $bodypreference) && defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE && is_multipart($message))) {
+                //      also if the mobile ask for MIME, use MIME even if the other cases fail
+            if ($bpReturnType == SYNC_BODYPREFERENCE_MIME || $is_smime ||
+                    ($is_multipart && in_array(SYNC_BODYPREFERENCE_MIME, $bodypreference) && defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE)) {
                 $bpReturnType = SYNC_BODYPREFERENCE_MIME;
             }
             else {
@@ -1097,6 +1103,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
                 }
             }
+
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - after thinking a bit we will use: %d", $bpReturnType));
 
             if (Request::GetProtocolVersion() >= 12.0) {
                 $output->asbody = new SyncBaseBody();

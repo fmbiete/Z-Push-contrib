@@ -131,8 +131,10 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function Logoff() {
-        $this->server->disconnect();
-        unset($this->server);
+        if ($this->server != null) {
+            $this->server->disconnect();
+            unset($this->server);
+        }
 
         $this->SaveStorages();
 

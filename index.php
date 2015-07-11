@@ -159,11 +159,6 @@ if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
         // log amount of data transferred
         // TODO check $len when streaming more data (e.g. Attachments), as the data will be send chunked
         ZPush::GetDeviceManager()->SentData(ob_get_length());
-
-        ZPush::FinishResponse();
-
-        // destruct backend after all data is on the stream
-        ZPush::GetBackend()->Logoff();
     }
 
     catch (NoPostRequestException $nopostex) {
@@ -185,8 +180,6 @@ if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
             if (!headers_sent() && $nopostex->showLegalNotice())
                 ZPush::PrintZPushLegal('GET not supported', $nopostex->getMessage());
         }
-
-        ZPush::FinishResponse();
     }
 
     catch (Exception $ex) {
@@ -242,9 +235,12 @@ if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
 
         // Announce exception if the TopCollector if available
         ZPush::GetTopCollector()->AnnounceInformation(get_class($ex), true);
-
-        ZPush::FinishResponse();
     }
+
+    // FinishResponse
+    ZPush::FinishResponse();
+    // destruct backend after all data is on the stream
+    ZPush::GetBackend()->Logoff();
 
     // save device data if the DeviceManager is available
     if (ZPush::GetDeviceManager(false))

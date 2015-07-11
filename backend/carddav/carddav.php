@@ -131,14 +131,16 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function Logoff() {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV->Logoff()"));
-        $this->server = null;
+        $this->server->disconnect();
+        unset($this->server);
 
         $this->SaveStorages();
 
         unset($this->contactsetag);
         unset($this->sinkdata);
         unset($this->addressbooks);
+
+        ZLog::Write(LOGLEVEL_DEBUG, "BackendCardDAV->Logoff(): disconnected from CARDDAV server");
 
         return true;
     }

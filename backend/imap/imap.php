@@ -1183,7 +1183,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             if ($is_smime) {
                 // #190, KD 2015-06-04 - Add Encrypted (and possibly signed) to the classifications emitted
-                if (is_encrypted($message)) {
+                if ($is_encrypted) {
                     $output->messageclass = "IPM.Note.SMIME";
                 }
                 else {

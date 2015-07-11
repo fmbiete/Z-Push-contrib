@@ -67,6 +67,8 @@ class BackendCombined extends Backend implements ISearchProvider {
     private $activeBackendID;
     private $numberChangesSink;
 
+    private $logon_done = false;
+
     /**
      * Constructor of the combined backend
      *
@@ -133,6 +135,7 @@ class BackendCombined extends Backend implements ISearchProvider {
             $this->backends[$i]->SetOriginalUsername($username);
         }
 
+        $this->logon_done = true;
         ZLog::Write(LOGLEVEL_DEBUG, "Combined->Logon() success");
         return true;
     }
@@ -182,6 +185,10 @@ class BackendCombined extends Backend implements ISearchProvider {
      * @return boolean
      */
     public function Logoff() {
+        // If no Logon in done, omit Logoff
+        if (!$this->logon_done)
+            return true;
+
         ZLog::Write(LOGLEVEL_DEBUG, "Combined->Logoff()");
         foreach ($this->backends as $i => $b){
             $this->backends[$i]->Logoff();

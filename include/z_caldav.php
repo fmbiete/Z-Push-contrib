@@ -94,7 +94,7 @@ class CalDAVClient {
 	 *
 	 * @var	resource
 	 */
-	private $curl;
+	private $curl = false;
 
     private $synctoken = array();
 
@@ -135,19 +135,30 @@ class CalDAVClient {
      * @return  boolean
      */
     public function CheckConnection() {
-//         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV->caldav_backend->check_connection"));
         $result = $this->DoRequest($this->url, 'OPTIONS');
 
-        $status = false;
-        switch($this->httpResponseCode) {
+        switch ($this->httpResponseCode) {
             case 200:
             case 207:
             case 401:
                 $status = true;
                 break;
+            default:
+                $status = false;
         }
 
         return $status;
+    }
+
+    /**
+     * Disconnect curl connection
+     *
+     */
+    public function Disconnect() {
+        if ($this->curl !== false) {
+            curl_close($this->curl);
+            $this->curl = false;
+        }
     }
 
 
@@ -207,7 +218,7 @@ class CalDAVClient {
 
 
 	public function curl_init() {
-		if (empty($this->curl)) {
+		if ($this->curl === false) {
 			$this->curl = curl_init();
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -261,9 +272,9 @@ class CalDAVClient {
 
 		$this->xmlResponse = '';
 
-		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("Request:\n%s\n", $content));
+// 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("Request:\n%s\n", $content));
 		$response					= curl_exec($this->curl);
-		//ZLog::Write(LOGLEVEL_DEBUG, sprintf("Reponse:\n%s\n", $response));
+// 		ZLog::Write(LOGLEVEL_DEBUG, sprintf("Reponse:\n%s\n", $response));
 		$header_size				= curl_getinfo($this->curl, CURLINFO_HEADER_SIZE);
 		$this->httpResponseCode		= curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
 		$this->httpResponseHeaders	= trim(substr($response, 0, $header_size));

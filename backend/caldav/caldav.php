@@ -94,8 +94,10 @@ class BackendCalDAV extends BackendDiff {
      * @see IBackend::Logoff()
      */
     public function Logoff() {
-        $this->_caldav->Disconnect();
-        unset($this->_caldav);
+        if ($this->_caldav != null) {
+            $this->_caldav->Disconnect();
+            unset($this->_caldav);
+        }
 
         $this->SaveStorages();
 

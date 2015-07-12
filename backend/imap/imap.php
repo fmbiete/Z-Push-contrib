@@ -1078,7 +1078,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             if ($bodypreference !== false) {
                 $bpReturnType = Utils::GetBodyPreferenceBestMatch($bodypreference); // changed by mku ZP-330
             }
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - getBodyPreferenceBestMatch: %d", $bpReturnType));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): getBodyPreferenceBestMatch: %d", $bpReturnType));
 
             // #198 - KD 2015-06-11 If we have a multipart message and the config file wants it set
                 // default to MIME; this is 2015 and you ought to get the pretty if possible.
@@ -1104,7 +1104,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
 
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - after thinking a bit we will use: %d", $bpReturnType));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): after thinking a bit we will use: %d", $bpReturnType));
 
             if (Request::GetProtocolVersion() >= 12.0) {
                 $output->asbody = new SyncBaseBody();

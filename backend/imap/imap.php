@@ -156,7 +156,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
             }
             @imap_close($this->mbox);
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->Logoff(): IMAP connection closed");
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->Logoff(): disconnected from IMAP server");
         }
         $this->SaveStorages();
     }

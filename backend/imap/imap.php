@@ -1129,7 +1129,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         }
                         break;
                     case SYNC_BODYPREFERENCE_RTF:
-                        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->GetMessage RTF Format NOT CHECKED");
+                        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->GetMessage(): RTF Format NOT CHECKED");
                         $output->asbody->data = base64_encode($textBody);
                         break;
                 }
@@ -1321,7 +1321,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         continue;
                     }
                     if (is_calendar($part)) {
-                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - text/calendar part found, trying to convert"));
+                        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): text/calendar part found, trying to convert"));
                         $output->meetingrequest = new SyncMeetingRequest();
                         $this->parseMeetingCalendar($part, $output);
                     }
@@ -1358,17 +1358,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                                         // We try to fix the name for the inline file.
                                         // FIXME: This is a dirty hack as the used in the Zarafa backend, if you have a better method let me know!
                                         if (isset($part->ctype_primary) && isset($part->ctype_secondary)) {
-                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - Guessing extension for inline attachment [primary_type %s secondary_type %s]", $part->ctype_primary, $part->ctype_secondary));
+                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): Guessing extension for inline attachment [primary_type %s secondary_type %s]", $part->ctype_primary, $part->ctype_secondary));
                                             if (isset(BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary])) {
-                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - primary_type %s secondary_type %s", $part->ctype_primary, $part->ctype_secondary));
+                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): primary_type %s secondary_type %s", $part->ctype_primary, $part->ctype_secondary));
                                                 $attachment->displayname = "inline_".$i.".".BackendIMAP::$mimeTypes[$part->ctype_primary.'/'.$part->ctype_secondary];
                                             }
                                             else {
-                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no extension found in '%s'!!", SYSTEM_MIME_TYPES_MAPPING));
+                                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): no extension found in '%s'!!", SYSTEM_MIME_TYPES_MAPPING));
                                             }
                                         }
                                         else {
-                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage - no primary_type or secondary_type"));
+                                            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): no primary_type or secondary_type"));
                                         }
                                     }
                                 }

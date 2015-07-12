@@ -1068,11 +1068,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $is_encrypted = $is_smime ? is_encrypted($message) : false;
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): Message is multipart: %d, smime: %d, smime encrypted: %d", $is_multipart, $is_smime, $is_encrypted));
 
-
-            /* BEGIN fmbiete's contribution r1528, ZP-320 */
-            $output = new SyncMail();
-            $textBody = "";
-
             //Select body type preference
             $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
             if ($bodypreference !== false) {
@@ -1080,31 +1075,26 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): getBodyPreferenceBestMatch: %d", $bpReturnType));
 
-            // #198 - KD 2015-06-11 If we have a multipart message and the config file wants it set
-                // default to MIME; this is 2015 and you ought to get the pretty if possible.
-                // FMBIETE; but some old mobiles don't support MIME, so only use if the device has told us that it's supported
-                //      also if the mobile ask for MIME, use MIME even if the other cases fail
-            if ($bpReturnType == SYNC_BODYPREFERENCE_MIME || $is_smime ||
-                    ($is_multipart && in_array(SYNC_BODYPREFERENCE_MIME, $bodypreference) && defined('MAIL_PREFER_MIME_TYPE') && MAIL_PREFER_MIME_TYPE)) {
+            // Prefered format is MIME -OR- message is SMIME -OR- the device supports MIME (iPhone) and doesn't really understand HTML
+            if ($bpReturnType == SYNC_BODYPREFERENCE_MIME || $is_smime || in_array(SYNC_BODYPREFERENCE_MIME, $bodypreference)) {
                 $bpReturnType = SYNC_BODYPREFERENCE_MIME;
             }
+
+            // We need the text body even though MIME is used, for the preview
+            $textBody = "";
+            Mail_mimeDecode::getBodyRecursive($message, "html", $textBody, true);
+            if (strlen($textBody) > 0) {
+                $bpReturnType = SYNC_BODYPREFERENCE_HTML;
+            }
             else {
-                Mail_mimeDecode::getBodyRecursive($message, "html", $textBody);
-                $textBody = str_replace("\n", "\r\n", str_replace("\r", "", $textBody));
-
-                // #198 - KD 2015-06-11 If we have HTML in the main body, use it.
-                if (strlen($textBody) > 0) {
-                    $bpReturnType = SYNC_BODYPREFERENCE_HTML;
-                }
-                else {
-                    Mail_mimeDecode::getBodyRecursive($message, "plain", $textBody);
-                    $textBody = str_replace("\n", "\r\n", str_replace("\r", "", $textBody));
-
-                    $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
-                }
+                Mail_mimeDecode::getBodyRecursive($message, "plain", $textBody, true);
+                $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
             }
 
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): after thinking a bit we will use: %d", $bpReturnType));
+
+
+            $output = new SyncMail();
 
             if (Request::GetProtocolVersion() >= 12.0) {
                 $output->asbody = new SyncBaseBody();

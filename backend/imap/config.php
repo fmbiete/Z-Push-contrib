@@ -218,11 +218,6 @@ $imap_smtp_params = array();
 define('MAIL_MIMEPART_CRLF', "\r\n");
 
 
-// Set this to true, if you prefer returning MIME to your users.
-//  IMPORTANT: Using MIME will use more bandwidth since the attachment will be send twice: Once with the message and when the user select to open it
-define('MAIL_PREFER_MIME_TYPE', false);
-
-
 // A file containing file mime types->extension mappings.
 //  SELINUX users: make sure the file has a security context accesible by your apache/php-fpm process
 define('SYSTEM_MIME_TYPES_MAPPING', '/etc/mime.types');

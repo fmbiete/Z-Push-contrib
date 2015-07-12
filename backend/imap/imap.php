@@ -1084,11 +1084,15 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $textBody = "";
             Mail_mimeDecode::getBodyRecursive($message, "html", $textBody, true);
             if (strlen($textBody) > 0) {
-                $bpReturnType = SYNC_BODYPREFERENCE_HTML;
+                if ($bpReturnType != SYNC_BODYPREFERENCE_MIME) {
+                    $bpReturnType = SYNC_BODYPREFERENCE_HTML;
+                }
             }
             else {
                 Mail_mimeDecode::getBodyRecursive($message, "plain", $textBody, true);
-                $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
+                if ($bpReturnType != SYNC_BODYPREFERENCE_MIME) {
+                    $bpReturnType = SYNC_BODYPREFERENCE_PLAIN;
+                }
             }
 
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): after thinking a bit we will use: %d", $bpReturnType));

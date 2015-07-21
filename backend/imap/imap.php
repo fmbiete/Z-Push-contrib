@@ -1054,7 +1054,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if ($stat) {
             $this->imap_reopen_folder($folderImapid);
-            $mail = @imap_fetchheader($this->mbox, $id, FT_UID) . @imap_body($this->mbox, $id, FT_PEEK | FT_UID);
+            $mail_headers = @imap_fetchheader($this->mbox, $id, FT_UID);
+            $mail =  $mail_headers . @imap_body($this->mbox, $id, FT_PEEK | FT_UID);
 
             if (empty($mail)) {
                 throw new StatusException(sprintf("BackendIMAP->GetMessage(): Error, message not found, maybe was moved"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
@@ -1112,10 +1113,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         break;
                     case SYNC_BODYPREFERENCE_MIME:
                         if ($is_smime) {
-                            $output->asbody->data = $mail;
                             if ($is_encrypted) {
-                                // #190, KD 2015-06-04 - If message body is encrypted we'd drop it as data should only be in the attachment but... there's no good way to let only headers through...
-                                $truncsize = 500;
+                                // #190, KD 2015-06-04 - If message body is encrypted only send the headers, as data should only be in the attachment
+                                $output->asbody->data = $mail_headers;
+                            }
+                            else {
+                                $output->asbody->data = $mail;
                             }
                         }
                         else {
@@ -1127,14 +1130,25 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->asbody->data = base64_encode($textBody);
                         break;
                 }
+
                 // truncate body, if requested.
-                // MIME should not be truncated, but encrypted messages are truncated always to a minimal fixed size
-                if(($bpReturnType !== SYNC_BODYPREFERENCE_MIME || $is_encrypted) && strlen($output->asbody->data) > $truncsize) {
-                    $output->asbody->data = Utils::Utf8_truncate($output->asbody->data, $truncsize);
-                    $output->asbody->truncated = 1;
+                // MIME should not be truncated, but encrypted messages are truncated always to the headers size
+                if ($bpReturnType == SYNC_BODYPREFERENCE_MIME) {
+                    if ($is_encrypted) {
+                        $output->asbody->truncated = 1;
+                    }
+                    else {
+                        $output->asbody->truncated = 0;
+                    }
                 }
                 else {
-                    $output->asbody->truncated = 0;
+                    if (strlen($output->asbody->data) > $truncsize) {
+                        $output->asbody->data = Utils::Utf8_truncate($output->asbody->data, $truncsize);
+                        $output->asbody->truncated = 1;
+                    }
+                    else {
+                        $output->asbody->truncated = 0;
+                    }
                 }
 
                 $output->asbody->type = $bpReturnType;
@@ -1180,6 +1194,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
 
             unset($textBody);
+            unset($mail_headers);
 
             $output->datereceived = isset($message->headers["date"]) ? $this->cleanupDate($message->headers["date"]) : null;
 

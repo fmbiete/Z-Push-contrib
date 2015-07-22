@@ -1321,14 +1321,19 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // Attachments are also needed for MIME messages
             if(isset($message->parts)) {
                 $mparts = $message->parts;
-                for ($i=0; $i<count($mparts); $i++) {
+                for ($i=0; $i < count($mparts); $i++) {
                     $part = $mparts[$i];
-                    //recursively add parts
+
+                    //recursively add subparts to later processing
                     if ((isset($part->ctype_primary) && $part->ctype_primary == "multipart") && (isset($part->ctype_secondary) && ($part->ctype_secondary == "mixed" || $part->ctype_secondary == "alternative"  || $part->ctype_secondary == "related"))) {
-                        foreach($part->parts as $spart)
-                            $mparts[] = $spart;
+                        if (isset($part->parts)) {
+                            foreach($part->parts as $spart)
+                                $mparts[] = $spart;
+                        }
+                        // Go to the for again
                         continue;
                     }
+
                     if (is_calendar($part)) {
                         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMessage(): text/calendar part found, trying to convert"));
                         $output->meetingrequest = new SyncMeetingRequest();

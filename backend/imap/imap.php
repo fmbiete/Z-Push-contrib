@@ -141,23 +141,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     public function Logoff() {
-        if ($this->mbox) {
-            // list all errors
-            $errors = imap_errors();
-            if (is_array($errors)) {
-                foreach ($errors as $e) {
-                    if (stripos($e, "fail") !== false) {
-                        $level = LOGLEVEL_WARN;
-                    }
-                    else {
-                        $level = LOGLEVEL_DEBUG;
-                    }
-                    ZLog::Write($level, "BackendIMAP->Logoff(): IMAP said: " . $e);
-                }
-            }
-            @imap_close($this->mbox);
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->Logoff(): disconnected from IMAP server");
-        }
+        $this->close_connection();
         $this->SaveStorages();
     }
 
@@ -716,8 +700,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
         }
         // Close IMAP connection, we will reconnect in the next execution. This will reduce IMAP pressure
-        imap_close($this->mbox);
-        $this->mbox = false;
+        $this->close_connection();
 
         // Wait to timeout
         if (empty($notifications)) {
@@ -3083,5 +3066,31 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         return $name;
+    }
+
+    /**
+     * Close the IMAP connection.
+     *
+     * @access private
+     */
+    private function close_connection() {
+        if ($this->mbox) {
+            // list all errors
+            $errors = imap_errors();
+            if (is_array($errors)) {
+                foreach ($errors as $e) {
+                    if (stripos($e, "fail") !== false) {
+                        $level = LOGLEVEL_WARN;
+                    }
+                    else {
+                        $level = LOGLEVEL_DEBUG;
+                    }
+                    ZLog::Write($level, "BackendIMAP->close_connection(): IMAP said: " . $e);
+                }
+            }
+            @imap_close($this->mbox);
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->close_connection(): disconnected from IMAP server");
+            $this->mbox = false;
+        }
     }
 };

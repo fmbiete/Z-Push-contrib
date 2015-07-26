@@ -2,6 +2,9 @@
 
 require_once 'vendor/autoload.php';
 
+define('LOGLEVEL', LOGLEVEL_DEBUG);
+define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
+
 $body = file_get_contents('testing/samples/meeting_request.txt');
 
 $ical = new iCalComponent();
@@ -24,7 +27,7 @@ $ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", "ACCEPTED");
 printf("%s\n", $ical->Render());
 
 
-$mail = new Mail_mimepart();
+$mail = new Mail_mimePart();
 $headers = array("MIME-version" => "1.0",
                 "From" => $mail->encodeHeader("from", "Pedro Picapiedra <pedro.picapiedra@zpush.org>", "UTF-8"),
                 "To" => $mail->encodeHeader("to", "Pablo Marmol <pablo.marmol@zpush.org>", "UTF-8"),
@@ -32,7 +35,7 @@ $headers = array("MIME-version" => "1.0",
                 "Subject" => $mail->encodeHeader("subject", "This is a subject", "UTF-8"),
                 "Content-class" => "urn:content-classes:calendarmessage",
                 "Content-transfer-encoding" => "8BIT");
-$mail = new Mail_mimepart($ical->Render(), array("content_type" => "text/calendar; method=REPLY; charset=UTF-8", "headers" => $headers));
+$mail = new Mail_mimePart($ical->Render(), array("content_type" => "text/calendar; method=REPLY; charset=UTF-8", "headers" => $headers));
 
 $message = "";
 $encoded_mail = $mail->encode();
@@ -43,9 +46,6 @@ $message .= "\r\n" . $encoded_mail["body"] . "\r\n";
 
 printf("%s\n", $message);
 
-
-define('LOGLEVEL', LOGLEVEL_DEBUG);
-define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 
 $props = $ical->GetPropertiesByPath("VTIMEZONE/TZID");
 if (count($props) > 0) {

@@ -1689,7 +1689,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $mail = @imap_fetchheader($this->mbox, $requestid, FT_UID) . @imap_body($this->mbox, $requestid, FT_PEEK | FT_UID);
 
         if (empty($mail)) {
-            throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, message not found, maybe was moved"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+            throw new StatusException("BackendIMAP->MeetingResponse(): Error, message not found, maybe was moved", SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
         }
 
         $mobj = new Mail_mimeDecode($mail);
@@ -1709,7 +1709,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $to_header = $message->headers["return-path"];
             }
             else {
-                throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, no reply address"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+                throw new StatusException("BackendIMAP->MeetingResponse(): Error, no reply address", SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
             }
         }
         $toaddr = $this->parseAddr($Mail_RFC822->parseAddressList($to_header));
@@ -1733,7 +1733,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 if (is_calendar($part)) {
-                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - text/calendar part found, trying to reply"));
+                    ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->MeetingResponse - text/calendar part found, trying to reply");
                     $body_part = $this->replyMeetingCalendar($part, $response);
                 }
             }
@@ -1742,11 +1742,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($message);
 
         if ($body_part === null) {
-            throw new StatusException(sprintf("BackendIMAP->MeetingResponse(): Error, no calendar part modified"), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+            throw new StatusException("BackendIMAP->MeetingResponse(): Error, no calendar part modified", SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
         }
 
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - Creating response message"));
-        $mail = new Mail_mimepart();
+        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->MeetingResponse() - Creating response message");
+        $mail = new Mail_mimePart();
         $headers = array("MIME-version" => "1.0",
                 "From" => $mail->encodeHeader("from", $from_header, "UTF-8"),
                 "To" => $mail->encodeHeader("to", $to_header, "UTF-8"),
@@ -1755,22 +1755,29 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 "Content-class" => "urn:content-classes:calendarmessage",
                 "Content-transfer-encoding" => "8BIT");
         unset($mail);
-        $mail = new Mail_mimepart($body_part, array("content_type" => "text/calendar; method=REPLY; charset=UTF-8", "headers" => $headers));
+        $mail = new Mail_mimePart($body_part, array("content_type" => "text/calendar; method=REPLY; charset=UTF-8", "headers" => $headers));
 
         $encoded_mail = $mail->encode();
         unset($mail);
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse - Response message"));
+        ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->MeetingResponse() - Response message");
         foreach ($encoded_mail["headers"] as $k => $v) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("%s: %s", $k, $v));
         }
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("%s", $encoded_mail["body"]));
 
         $send = $this->sendMessage($fromaddr, $toaddr, $encoded_mail["headers"], $encoded_mail["body"]);
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->MeetingResponse() - Response message is sent %d", $send));
 
         if ($send) {
+            ZLog::Write(LOGLEVEL_DEBUG, "BackendIMAP->MeetingResponse() - Saving response message in Sent folder");
             $this->saveSentMessage($encoded_mail["headers"], $encoded_mail["body"]);
         }
         unset($encoded_mail);
+
+        // TODO
+        // Remove Original message
+        // Create event in calendar
+        // Resync Sent and folderid
 
         return $send;
     }

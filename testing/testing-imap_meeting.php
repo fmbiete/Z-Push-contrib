@@ -10,19 +10,30 @@ $body = file_get_contents('testing/samples/meeting_request.txt');
 $ical = new iCalComponent();
 $ical->ParseFrom($body);
 
-
-$props = $ical->GetPropertiesByPath('!VTIMEZONE/ATTENDEE');
-if (count($props) == 1) {
-    if (isset($props[0]->Parameters()["PARTSTAT"])) {
-        printf("DOES THIS CAUSE ERROR? %s\n", $props[0]->Parameters()["PARTSTAT"]);
-    }
+$props = $ical->GetPropertiesByPath("VEVENT/UID");
+if (count($props) > 0) {
+    $uid = $props[0]->Value();
+    printf("UID: %s\n", $uid);
 }
+else {
+    printf("NO UID\n");
+}
+
+$new_attendees = array();
+$props = $ical->GetPropertiesByPath('VEVENT/ATTENDEE');
+for ($i = 0; $i < count($props); $i++) {
+    printf("Attendee Mailto '%s' Status '%s'\n", str_ireplace("MAILTO:", "", $props[$i]->Value()), $props[$i]->Parameters()["PARTSTAT"]);
+}
+
+$ical->SetCPParameterValue("VEVENT", "ATTENDEE", "RSVP", null);
 
 // MODIFICATIONS
     // METHOD
 $ical->SetPValue("METHOD", "REPLY");
     //ATTENDEE
 $ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", "ACCEPTED");
+$ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", "TENTATIVE", "MAILTO:user2@zpush.org");
+
 
 printf("%s\n", $ical->Render());
 
@@ -50,6 +61,6 @@ printf("%s\n", $message);
 $props = $ical->GetPropertiesByPath("VTIMEZONE/TZID");
 if (count($props) > 0) {
     $tzid = $props[0]->Value();
-//     printf("TZID %s\n", $props[0]->Value());
+    printf("TZID %s\n", $props[0]->Value());
 }
-// print_r(TimezoneUtil::GetFullTZFromTZName($tzid));
+print_r(TimezoneUtil::GetFullTZFromTZName($tzid));

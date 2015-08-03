@@ -221,3 +221,7 @@ define('MAIL_MIMEPART_CRLF', "\r\n");
 // A file containing file mime types->extension mappings.
 //  SELINUX users: make sure the file has a security context accesible by your apache/php-fpm process
 define('SYSTEM_MIME_TYPES_MAPPING', '/etc/mime.types');
+
+
+// Use BackendCalDAV for Meetings. You cannot hope to get that functionality working without a caldav backend.
+define('IMAP_MEETING_USE_CALDAV', false);

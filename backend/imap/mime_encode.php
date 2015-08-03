@@ -253,26 +253,6 @@ function build_mime_message($message) {
     return $built_message;
 }
 
-/**
- * Detect if the message-part is VCALENDAR
- * Content-Type: text/calendar;
- *
- * @param Mail_mimeDecode $message
- * @return boolean
- * @access public
- */
-function is_calendar($message) {
-    $res = false;
-
-    if (isset($message->ctype_primary) && isset($message->ctype_secondary)) {
-        if ($message->ctype_primary == "text" && $message->ctype_secondary == "calendar") {
-            $res = true;
-        }
-    }
-
-    return $res;
-}
-
 
 /**
  * Detect if the message-part is SMIME

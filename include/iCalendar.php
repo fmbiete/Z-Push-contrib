@@ -119,7 +119,16 @@ class iCalProp {
    * @param string $propstring The string from the iCalendar which contains this property.
    */
   function ParseFrom( $propstring ) {
-    $this->rendered = (strlen($propstring) < 72 ? $propstring : null);  // Only pre-rendered if we didn't unescape it
+//     $this->rendered = (strlen($propstring) < 72 ? $propstring : null);  // Only pre-rendered if we didn't unescape it
+    // FMBIETE - unset rendered content; if we alter some properties inside an object (VEVENT/ATTENDEE for example) we won't see the changes calling Render
+    // FIXME: if you find the bug, let me know
+        //$ical = new iCalComponent();
+        //$ical->ParseFrom(VCALENDAR DATA);
+            // Doing this will refresh the rendered data, but if this line is not executed, you won't see PARTSTAT changed
+        //$ical->SetPValue("METHOD", "REPLY");
+        //$ical->SetCPParameterValue("VEVENT", "ATTENDEE", "PARTSTAT", "ACCEPTED");
+        //printf("%s\n", $ical->Render());
+    unset($this->rendered);
 
     $unescaped = preg_replace( '{\\\\[nN]}', "\n", $propstring);
 
@@ -227,7 +236,13 @@ class iCalProp {
    */
   function SetParameterValue( $name, $value ) {
     if ( isset($this->rendered) ) unset($this->rendered);
-    $this->parameters[$name] = $value;
+    // Unset parameter
+    if ($value === null) {
+        unset($this->parameters[$name]);
+    }
+    else {
+        $this->parameters[$name] = $value;
+    }
   }
 
   /**
@@ -553,7 +568,13 @@ class iCalComponent {
     for ( $i = 0; $i < count($this->properties); $i++ ) {
       if ( $this->properties[$i]->Name() == $type ) {
         if ( isset($this->rendered) ) unset($this->rendered);
-        $this->properties[$i]->Value($value);
+        // FMBIETE - unset property
+        if ($value == null) {
+          unset($this->properties[$i]);
+        }
+        else {
+          $this->properties[$i]->Value($value);
+        }
       }
     }
   }
@@ -566,14 +587,22 @@ class iCalComponent {
   * @param string $property_name Type/Name of the property
   * @param string $parameter_name Type/Name of the parameter
   * @param string $value New value of the parameter
+  * @param string $condition_value Change the parameter_value only if the property_value is equals to condition_value
   */
-  function SetCPParameterValue( $component_type, $property_name, $parameter_name, $value ) {
+  function SetCPParameterValue( $component_type, $property_name, $parameter_name, $value, $condition_value = null ) {
     for ( $j = 0; $j < count($this->components); $j++ ) {
       if ( $this->components[$j]->GetType() == $component_type ) {
         for ( $i = 0; $i < count($this->components[$j]->properties); $i++ ) {
           if ( $this->components[$j]->properties[$i]->Name() == $property_name ) {
             if ( isset($this->components[$j]->rendered) ) unset($this->components[$j]->rendered);
-            $this->components[$j]->properties[$i]->SetParameterValue($parameter_name, $value);
+            if ($condition_value === null) {
+              $this->components[$j]->properties[$i]->SetParameterValue($parameter_name, $value);
+            }
+            else {
+              if (strcasecmp($this->components[$j]->properties[$i]->Value(), $condition_value) == 0) {
+                $this->components[$j]->properties[$i]->SetParameterValue($parameter_name, $value);
+              }
+            }
           }
         }
       }

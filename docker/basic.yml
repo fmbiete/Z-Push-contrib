@@ -1,11 +1,11 @@
 phpfpm:
     build: php-fpm/
     volumes:
-        - ..:/var/www/z-push
+        - ..:/var/www/z-push:Z
 nginx:
     build: nginx/
-    volumes:
-        - ..:/var/www/z-push
+    volumes_from:
+        - phpfpm
     links:
         - phpfpm:zpushphpfpm
     ports:

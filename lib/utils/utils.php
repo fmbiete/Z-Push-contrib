@@ -1043,7 +1043,7 @@ class Utils {
         if (preg_match('/\/[.[:word:]]+\/\w+\/(\w+)\/([\w\/]+)/', $timezone, $matches)) {
             return $matches[1] . "/" . $matches[2];
         }
-        return trim($timezone, '"');
+        return TimezoneUtil::getMSTZnameFromTZName(trim($timezone, '"'));
     }
 
     /**

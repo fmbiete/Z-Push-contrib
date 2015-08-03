@@ -1222,7 +1222,7 @@ class TimezoneUtil {
      * @access public
      * @return string
      */
-    static private function getMSTZnameFromTZName($name) {
+    static public function getMSTZnameFromTZName($name) {
         foreach (self::$mstzones as $mskey => $msdefs) {
             if ($name == $msdefs[0])
                 return $msdefs[1];

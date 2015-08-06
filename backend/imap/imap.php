@@ -429,7 +429,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             Mail_mimeDecode::getBodyRecursive($message, $type, $body);
             if (strlen($body) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextPartsMessage(): The message has %s body", $type));
-                $altEmail->addSubPart($htmlBody, array('content_type' => sprintf("text/%s; charset=utf-8", $type), 'encoding' => 'base64'));
+                $altEmail->addSubPart($body, array('content_type' => sprintf("text/%s; charset=utf-8", $type), 'encoding' => 'base64'));
             }
         }
         unset($body);

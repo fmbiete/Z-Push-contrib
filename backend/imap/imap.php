@@ -2470,7 +2470,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         if ($this->sentID === false) {
-            $this->sendID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_SENT));
+            $this->sentID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_SENT));
         }
 
         $saved = false;

@@ -1,0 +1,21 @@
+Installing and updating from GIT can be time consuming, because we will have conflicts
+with the config.php files.
+Until upstream finds a good solution we can use this trick:
+
+
+Setup
+
+    Clone the repository to your web server
+    git checkout -b config to create the new config branch with the local configuration
+
+Updating
+
+    Backup the local repository (or even better: also do this on a non-live copy)
+    git checkout master
+    git pull origin master to update the local master branch
+    git checkout config
+    git rebase master to rebase the offline config branch
+    Solve the conflicts (which will occur if the configuration files have been changed in the master)
+
+
+Instructions provided by Martin Porcheron (@mporcheron)

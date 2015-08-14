@@ -233,6 +233,16 @@ class WBXMLDecoder extends WBXMLDefs {
         return $this->isWBXML;
     }
 
+    /**
+     * Reads the remaning data from the input stream
+     *
+     * @access public
+     * @return void
+     */
+    public function readRemainingData() {
+        ZLog::Write(LOGLEVEL_DEBUG, "WBXMLDecoder->readRemainingData() reading remaining data from input stream");
+        while ($this->getElement());
+    }
 
     /**
      * Returns the WBXML data read from the stream

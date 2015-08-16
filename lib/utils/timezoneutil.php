@@ -1112,6 +1112,11 @@ class TimezoneUtil {
      * @return array
      */
     static public function GetFullTZFromTZName($tzname) {
+        if (!array_key_exists($tzname, self::$tzonesoffsets)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("TimezoneUtil::GetFullTZFromTZName('%s'): Is a PHP TimeZone, converting", $tzname));
+            $tzname = self::guessTZNameFromPHPName($tzname);
+        }
+
         $offset = self::$tzonesoffsets[$tzname];
 
         $tz = array(

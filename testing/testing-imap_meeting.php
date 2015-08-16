@@ -5,6 +5,8 @@ require_once 'vendor/autoload.php';
 define('LOGLEVEL', LOGLEVEL_DEBUG);
 define('LOGUSERLEVEL', LOGLEVEL_DEVICEID);
 
+date_default_timezone_set('Europe/Madrid');
+
 $body = file_get_contents('testing/samples/meeting_request.txt');
 
 $ical = new iCalComponent();

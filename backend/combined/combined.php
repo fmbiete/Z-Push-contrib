@@ -451,7 +451,7 @@ class BackendCombined extends Backend implements ISearchProvider {
 
         $backend = $this->GetBackend($folderid);
         if($backend === false) {
-            // if not backend is found we return true, we don't want this to never cause an error
+            // if not backend is found we return true, we don't want this to cause an error
             return true;
         }
 
@@ -459,10 +459,9 @@ class BackendCombined extends Backend implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCombined->ChangesSinkInitialize('%s') is supported, initializing", $folderid));
             return $backend->ChangesSinkInitialize($this->GetBackendFolder($folderid));
         }
-        else {
-            // if the backend doesn't support ChangesSink, we also return true so we don't get an error
-            return true;
-        }
+            
+        // if the backend doesn't support ChangesSink, we also return true so we don't get an error
+        return true;
      }
 
     /**

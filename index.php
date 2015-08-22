@@ -89,7 +89,7 @@ if (defined('LOG_MEMORY_PROFILER') && LOG_MEMORY_PROFILER) {
         // Stop here if this is an OPTIONS request
         if (Request::IsMethodOPTIONS()) {
             if (!$autenticationInfo || !$GETUser) {
-                throw new AuthenticationRequiredException("Access denied. Please send authorisation information");
+                throw new AuthenticationRequiredException("Access denied. Please send authentication information");
             }
             else {
                 throw new NoPostRequestException("Options request", NoPostRequestException::OPTIONS_REQUEST);

@@ -1841,7 +1841,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $search = true;
 
         if (empty($searchFolderId)) {
-            $searchFolderId = $this->getFolderIdFromImapId('INBOX');
+            $searchFolderId = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_INBOX), false);
         }
 
         // Convert searchFolderId to IMAP id
@@ -2049,20 +2049,36 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @access protected
      * @return string       hex folder id
      */
-    protected function getFolderIdFromImapId($imapid) {
+    protected function getFolderIdFromImapId($imapid, $case_sensitive = true) {
         $this->InitializePermanentStorage();
 
-        if (isset($this->permanentStorage->fmFimapFid)) {
-            if (isset($this->permanentStorage->fmFimapFid[$imapid])) {
-                $folderid = $this->permanentStorage->fmFimapFid[$imapid];
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s') = %s", $imapid, $folderid));
-                return $folderid;
-            }
-            else {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s') = %s", $imapid, 'not found'));
-                return false;
+        if ($case_sensitive) {
+            if (isset($this->permanentStorage->fmFimapFid)) {
+                if (isset($this->permanentStorage->fmFimapFid[$imapid])) {
+                    $folderid = $this->permanentStorage->fmFimapFid[$imapid];
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s') = %s", $imapid, $folderid));
+                    return $folderid;
+                }
+                else {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s') = %s", $imapid, 'not found'));
+                    return false;
+                }
             }
         }
+        else {
+            if (isset($this->permanentStorage->fmFimapFidLowercase)) {
+                if (isset($this->permanentStorage->fmFimapFidLowercase[strtolower($imapid)])) {
+                    $folderid = $this->permanentStorage->fmFimapFidLowercase[strtolower($imapid)];
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s', false) = %s", $imapid, $folderid));
+                    return $folderid;
+                }
+                else {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s', false) = %s", $imapid, 'not found'));
+                    return false;
+                }
+            }
+        }
+
         ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getFolderIdFromImapId('%s') = %s", $imapid, 'not initialized!'));
         return false;
     }
@@ -2103,6 +2119,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $b = $this->permanentStorage->fmFimapFid;
             $b[$imapid] = $folderid;
             $this->permanentStorage->fmFimapFid = $b;
+
+            if (!isset($this->permanentStorage->fmFimapFidLowercase))
+                $this->permanentStorage->fmFimapFidLowercase = array();
+
+            $c = $this->permanentStorage->fmFimapFidLowercase;
+            $c[strtolower($imapid)] = $folderid;
+            $this->permanentStorage->fmFimapFidLowercase = $c;
         }
 
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->convertImapId('%s') = %s", $imapid, $folderid));
@@ -2328,7 +2351,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     protected function checkIfIMAPFolder($folderName) {
         $folder_name = $folderName;
-        if (defined(IMAP_FOLDER_PREFIX) && strlen(IMAP_FOLDER_PREFIX) > 0) {
+        if (defined('IMAP_FOLDER_PREFIX') && strlen(IMAP_FOLDER_PREFIX) > 0) {
             // TODO: We don't care about the inbox exception with the prefix, because we won't check inbox
             $folder_name = IMAP_FOLDER_PREFIX . $this->getServerDelimiter() . $folder_name;
         }
@@ -2470,7 +2493,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         if ($this->sentID === false) {
-            $this->sentID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_SENT));
+            $this->sentID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_SENT), false);
         }
 
         $saved = false;

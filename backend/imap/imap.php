@@ -1731,6 +1731,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
 
     /**
+     * Resolves recipients
+     *
+     * @param SyncObject        $resolveRecipients
+     *
+     * @access public
+     * @return SyncObject       $resolveRecipients
+     */
+    public function ResolveRecipients($resolveRecipients) {
+        // TODO:
+        return false;
+    }
+
+
+    /**
      * Returns the email address and the display name of the user. Used by autodiscover.
      *
      * @param string        $username           The username

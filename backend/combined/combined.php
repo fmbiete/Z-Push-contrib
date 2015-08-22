@@ -393,6 +393,19 @@ class BackendCombined extends Backend implements ISearchProvider {
         return $backend->MeetingResponse($requestid, $this->GetBackendFolder($folderid), $response);
     }
 
+    /**
+     * Resolves recipients
+     *
+     * @param SyncObject        $resolveRecipients
+     *
+     * @access public
+     * @return SyncObject       $resolveRecipients
+     */
+    public function ResolveRecipients($resolveRecipients) {
+        // TODO:
+        return false;
+    }
+
 
     /**
      * Deletes all contents of the specified folder.

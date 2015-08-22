@@ -395,6 +395,19 @@ class BackendCalDAV extends BackendDiff {
     }
 
     /**
+     * Resolves recipients
+     *
+     * @param SyncObject        $resolveRecipients
+     *
+     * @access public
+     * @return SyncObject       $resolveRecipients
+     */
+    public function ResolveRecipients($resolveRecipients) {
+        // TODO:
+        return false;
+    }
+
+    /**
      * Indicates which AS version is supported by the backend.
      *
      * @access public

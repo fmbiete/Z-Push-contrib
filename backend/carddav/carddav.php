@@ -703,6 +703,20 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
 
     /**
+     * Resolves recipients
+     *
+     * @param SyncObject        $resolveRecipients
+     *
+     * @access public
+     * @return SyncObject       $resolveRecipients
+     */
+    public function ResolveRecipients($resolveRecipients) {
+        // TODO:
+        return false;
+    }
+
+
+    /**
      * Indicates which AS version is supported by the backend.
      *
      * @access public

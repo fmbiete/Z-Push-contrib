@@ -9,8 +9,8 @@
 * Created   :   07.04.2012
 *
 * Copyright 2012 - 2014 Jean-Louis Dupond
-*
 * Jean-Louis Dupond released this code as AGPLv3 here: https://github.com/dupondje/PHP-Push-2/issues/93
+* Copyright 2015 - Francisco Miguel Biete
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License, version 3,
@@ -562,6 +562,19 @@ class BackendLDAP extends BackendDiff {
                 return ldap_rename($this->ldap_link, $dn, $newdn[0], true);
             }
         }
+        return false;
+    }
+
+    /**
+     * Resolves recipients
+     *
+     * @param SyncObject        $resolveRecipients
+     *
+     * @access public
+     * @return SyncObject       $resolveRecipients
+     */
+    public function ResolveRecipients($resolveRecipients) {
+        // TODO:
         return false;
     }
 

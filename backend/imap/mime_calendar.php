@@ -158,8 +158,25 @@ function parse_meeting_calendar($part, &$output, $is_sent_folder) {
         $uid = $props[0]->Value();
     }
 
-    if (isset($part->ctype_parameters["method"])) {
-        switch (strtolower($part->ctype_parameters["method"])) {
+    $method = false;
+    $props = $ical->GetPropertiesByPath("VCALENDAR/METHOD");
+    if (count($props) > 0) {
+        $method = strtolower($props[0]->Value());
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parse_meeting_calendar(): Using method from vcalendar object: %s", $method));
+    }
+    else {
+        if (isset($part->ctype_parameters["method"])) {
+            $method = strtolower($part->ctype_parameters["method"])
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parse_meeting_calendar(): Using method from mime part object: %s", $method));
+        }
+    }
+
+    if ($method === false) {
+        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->parse_meeting_calendar() - No method header, please report it to the developers"));
+        $output->messageclass = "IPM.Appointment";
+    }
+    else {
+        switch ($method) {
             case "cancel":
                 $output->messageclass = "IPM.Schedule.Meeting.Canceled";
                 $output->meetingrequest->disallownewtimeproposal = 1;
@@ -226,10 +243,6 @@ function parse_meeting_calendar($part, &$output, $is_sent_folder) {
                 $output->meetingrequest->disallownewtimeproposal = 0;
                 break;
         }
-    }
-    else {
-        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->parse_meeting_calendar() - No method header, please report it to the developers"));
-        $output->messageclass = "IPM.Appointment";
     }
 
     $props = $ical->GetPropertiesByPath('VEVENT/DTSTAMP');

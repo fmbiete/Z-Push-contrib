@@ -166,7 +166,7 @@ function parse_meeting_calendar($part, &$output, $is_sent_folder) {
     }
     else {
         if (isset($part->ctype_parameters["method"])) {
-            $method = strtolower($part->ctype_parameters["method"])
+            $method = strtolower($part->ctype_parameters["method"]);
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->parse_meeting_calendar(): Using method from mime part object: %s", $method));
         }
     }

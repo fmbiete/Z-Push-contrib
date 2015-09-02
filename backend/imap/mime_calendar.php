@@ -304,7 +304,7 @@ function parse_meeting_calendar($part, &$output, $is_sent_folder) {
     else {
         $tz = TimezoneUtil::GetFullTZ();
     }
-    $output->meetingrequest->timezone = base64_encode(TimezoneUtil::getSyncBlobFromTZ($tz));
+    $output->meetingrequest->timezone = base64_encode(TimezoneUtil::GetSyncBlobFromTZ($tz));
 
     // Fixed values
     $output->meetingrequest->instancetype = 0;

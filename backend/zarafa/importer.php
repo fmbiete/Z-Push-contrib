@@ -453,7 +453,6 @@ class ImportChangesICS implements IImportChanges {
         return true;
     }
 
-
     /**
      * Imports a move of a message. This occurs when a user moves an item to another folder
      *

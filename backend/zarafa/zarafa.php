@@ -63,7 +63,6 @@ include_once('backend/zarafa/mapi/class.meetingrequest.php');
 include_once('backend/zarafa/mapi/class.freebusypublish.php');
 
 // processing of RFC822 messages
-include_once('include/mimeDecode.php');
 require_once('include/z_RFC822.php');
 
 // components of Zarafa backend
@@ -167,7 +166,7 @@ class BackendZarafa implements IBackend, ISearchProvider {
                 // send Z-Push version and user agent to ZCP - ZP-589
                 if (Utils::CheckMapiExtVersion('7.2.0')) {
                     $zpush_version = 'Z-Push_' . @constant('ZPUSH_VERSION');
-                    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+                    $user_agent = ZPush::GetDeviceManager()->GetUserAgent();
                     $this->session = @mapi_logon_zarafa($user, $pass, MAPI_SERVER, null, null, 0, $zpush_version, $user_agent);
                 }
                 else {

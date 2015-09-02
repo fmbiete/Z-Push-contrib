@@ -44,7 +44,6 @@
 class ImportChangesStream implements IImportChanges {
     private $encoder;
     private $objclass;
-    private $classAsString;
     private $seenObjects;
     private $importedMsgs;
     private $checkForIgnoredMessages;

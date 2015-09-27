@@ -1144,7 +1144,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
                 $bpo = $contentparameters->BodyPreference($output->asbody->type);
                 if (Request::GetProtocolVersion() >= 14.0 && $bpo->GetPreview()) {
-                    $output->asbody->preview = Utils::Utf8_truncate(Utils::ConvertHtmlToText($textBody), $bpo->GetPreview());
+                    // Preview must be always plaintext
+                    $previewText = "";
+                    Mail_mimeDecode::getBodyRecursive($message, "plain", $previewText, true);
+                    if (strlen($previewText) == 0) {
+                        Mail_mimeDecode::getBodyRecursive($message, "html", $previewText, true);
+                        $previewText = Utils::ConvertHtmlToText($previewText);
+                    }
+                    $output->asbody->preview = Utils::Utf8_truncate($previewText, $bpo->GetPreview());
                 }
             }
             /* END fmbiete's contribution r1528, ZP-320 */

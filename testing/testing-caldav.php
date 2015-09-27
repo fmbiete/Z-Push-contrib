@@ -34,7 +34,7 @@ $val = $caldav->GetCalendarDetails($path);
 print_r($val);
 
 $begin = gmdate("Ymd\THis\Z", time() - 24*7*60*60);
-$finish = gmdate("Ymd\THis\Z", 2147483647);
+$finish = gmdate("Ymd\THis\Z", CALDAV_MAX_SYNC_PERIOD);
 $msgs = $caldav->GetEvents($begin, $finish, $path);
 print_r($msgs);
 

@@ -65,3 +65,8 @@ define('CALDAV_PERSONAL', 'PRINCIPAL');
 // SabreDav version must be at least 1.9.0, otherwise set this to false
 // Setting this to false will work with most servers, but it will be slower
 define('CALDAV_SUPPORTS_SYNC', false);
+
+
+// Maximum period to sync.
+// Some servers don't support more than 10 years so you will need to change this
+define('CALDAV_MAX_SYNC_PERIOD', 2147483647);

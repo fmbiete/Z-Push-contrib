@@ -389,13 +389,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         if (strlen($plainBody) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The message has PLAIN body"));
-            if (strlen($htmlSource) > 0) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had HTML body, we cast new PLAIN to HTML"));
-                $altEmail->addSubPart('<html><body><p>' . str_replace("\n", "<br/>", str_replace("\r\n", "\n", $plainBody)) . "</p>" . $separatorHtml . $htmlSource . $separatorHtmlEnd, array('content_type' => 'text/html; charset=utf-8', 'encoding' => 'base64'));
-            }
             if (strlen($plainSource) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had PLAIN body"));
-                $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> ".$plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
+                $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> " . $plainSource), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
+            }
+            else {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->addTextParts(): The original message had not PLAIN body, we use original HTML body to create PLAIN"));
+                $altEmail->addSubPart($plainBody . $separator . str_replace("\n", "\n> ", "> " . Utils::ConvertHtmlToText($htmlSource)), array('content_type' => 'text/plain; charset=utf-8', 'encoding' => 'base64'));
             }
         }
 

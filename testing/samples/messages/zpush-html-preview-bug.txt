@@ -1,0 +1,66 @@
+Envelope-to: TOUSER@DOMAIN.COM
+Delivery-date: Wed, 04 Nov 2015 18:55:14 -0500
+From: "FROMUSER" <FROMUSER@DOMAIN.NET>
+To: "TOUSER" <TOUSER@DOMAIN.COM>
+Subject: Jane's back
+Date: Wed, 4 Nov 2015 17:54:35 -0600
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_05F0_01D11729.DDC49140"
+X-Priority: 3
+X-MSMail-Priority: Normal
+Importance: Normal
+X-Mailer: Microsoft Windows Live Mail 15.4.3508.1109
+X-MimeOLE: Produced By Microsoft MimeOLE V15.4.3508.1109
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_05F0_01D11729.DDC49140
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+How is she doing?
+
+Dad
+
+---
+This email has been checked for viruses by Avast antivirus software.
+https://www.avast.com/antivirus
+
+------=_NextPart_000_05F0_01D11729.DDC49140
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<HTML><HEAD></HEAD>
+<BODY dir=3Dltr>
+<DIV dir=3Dltr>
+<DIV style=3D"FONT-SIZE: 12pt; FONT-FAMILY: 'Calibri'; COLOR: #000000">
+<DIV>How is she doing?</DIV>
+<DIV>&nbsp;</DIV>
+<DIV>Dad</DIV></DIV></DIV>
+<br /><br />
+<hr style=3D'border:none; color:#909090; background-color:#B0B0B0; height: =
+1px; width: 99%;' />
+<table style=3D'border-collapse:collapse;border:none;'>
+	<tr>
+		<td style=3D'border:none;padding:0px 15px 0px 8px'>
+			<a href=3D"https://www.avast.com/antivirus">
+				<img border=3D0 src=3D"http://static.avast.com/emails/avast-mail-stamp.=
+png" alt=3D"Avast logo" />
+			</a>
+		</td>
+		<td>
+			<p style=3D'color:#3d4d5a; font-family:"Calibri","Verdana","Arial","Helv=
+etica"; font-size:12pt;'>
+				This email has been checked for viruses by Avast antivirus software.
+				<br><a href=3D"https://www.avast.com/antivirus">www.avast.com</a>
+			</p>
+		</td>
+	</tr>
+</table>
+<br />
+</BODY></HTML>
+
+------=_NextPart_000_05F0_01D11729.DDC49140--

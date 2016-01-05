@@ -2075,6 +2075,13 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (!isset($this->permanentStorage->fmFimapFid)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFolderIdFromImapId('%s') IMAP cache folder not found, creating one", $imapid));
+            // folderId to folderImap mapping
+            $this->permanentStorage->fmFidFimap = array();
+            // folderImap to folderId mapping
+            $this->permanentStorage->fmFimapFid = array();
+            // folderImap to folderId mapping - lowercase
+            $this->permanentStorage->fmFimapFidLowercase = array();
+
             $this->GetFolderList();
         }
 
@@ -2126,24 +2133,24 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             // generate folderid and add it to the mapping
             $folderid = sprintf('%04x%04x', mt_rand( 0, 0xffff ), mt_rand( 0, 0xffff ));
 
-            // folderId to folderImap mapping
-            if (!isset($this->permanentStorage->fmFidFimap))
-                $this->permanentStorage->fmFidFimap = array();
+//             // folderId to folderImap mapping
+//             if (!isset($this->permanentStorage->fmFidFimap))
+//                 $this->permanentStorage->fmFidFimap = array();
 
             $a = $this->permanentStorage->fmFidFimap;
             $a[$folderid] = $imapid;
             $this->permanentStorage->fmFidFimap = $a;
 
-            // folderImap to folderid mapping
-            if (!isset($this->permanentStorage->fmFimapFid))
-                $this->permanentStorage->fmFimapFid = array();
+//             // folderImap to folderid mapping
+//             if (!isset($this->permanentStorage->fmFimapFid))
+//                 $this->permanentStorage->fmFimapFid = array();
 
             $b = $this->permanentStorage->fmFimapFid;
             $b[$imapid] = $folderid;
             $this->permanentStorage->fmFimapFid = $b;
 
-            if (!isset($this->permanentStorage->fmFimapFidLowercase))
-                $this->permanentStorage->fmFimapFidLowercase = array();
+//             if (!isset($this->permanentStorage->fmFimapFidLowercase))
+//                 $this->permanentStorage->fmFimapFidLowercase = array();
 
             $c = $this->permanentStorage->fmFimapFidLowercase;
             $c[strtolower($imapid)] = $folderid;

@@ -6,7 +6,7 @@
 *
 * Created   :   16.03.2013
 *
-* Copyright 2007 - 2013 Zarafa Deutschland GmbH
+* Copyright 2013 - 2016 Francisco Miguel Biete
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License, version 3,

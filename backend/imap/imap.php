@@ -2550,14 +2550,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     private function setFromHeaderValue(&$headers) {
         $from = getDefaultFromValue($this->username, $this->domain);
 
-        if (isset($headers["from"])) {
+        if (isset($headers["from"]) && strlen($headers["from"]) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): from defined: %s", $headers["from"]));
             if (strlen(IMAP_DEFAULTFROM) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): Overwriting From: %s", $from));
                 $headers["from"] = $from;
             }
         }
-        elseif (isset($headers["From"])) {
+        elseif (isset($headers["From"]) && strlen($headers["From"]) > 0) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): From defined: %s", $headers["From"]));
             if (strlen(IMAP_DEFAULTFROM) > 0) {
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFromHeaderValue(): Overwriting From: %s", $from));

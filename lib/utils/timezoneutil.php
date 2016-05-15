@@ -1255,8 +1255,12 @@ class TimezoneUtil {
             }
         }
 
-        ZLog::Write(LOGLEVEL_WARN, sprintf("TimezoneUtil::getMSTZnameFromTZName() no MS name found for '%s'. Returning '(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London'", $name));
-        return self::$mstzones["085"][1];
+	// Timezone '' has to be interpreted as default timezone
+        $servertzname = self::guessTZNameFromPHPName($name);
+        return self::GetFullTZFromTZName($servertzname);
+
+        // ZLog::Write(LOGLEVEL_WARN, sprintf("TimezoneUtil::getMSTZnameFromTZName() no MS name found for '%s'. Returning '(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London'", $name));
+        // return self::$mstzones["085"][1];
     }
 
     /**

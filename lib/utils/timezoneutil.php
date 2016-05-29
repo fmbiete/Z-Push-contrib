@@ -1234,6 +1234,12 @@ class TimezoneUtil {
             }
         }
 
+        // '' stands for "Local Time" in Lightning
+        // Use the server default timezone
+        if($name == '') {
+            $name = TIMEZONE;
+        }
+
         // Not found? Then retrieve the correct TZName first and try again.
         // That's ugly and needs a proper fix. But for now this method can convert
         // - Europe/Berlin

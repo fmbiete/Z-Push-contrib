@@ -606,7 +606,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTSTART":
-                    $message->starttime = Utils::MakeUTCDate($property->Value(), Utils::ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->starttime = Utils::MakeUTCDate($property->Value(), $property->GetParameterValue("TZID"));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }
@@ -634,7 +634,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
 
                 case "DTEND":
-                    $message->endtime = Utils::MakeUTCDate($property->Value(), Utils::ParseTimezone($property->GetParameterValue("TZID")));
+                    $message->endtime = Utils::MakeUTCDate($property->Value(), $property->GetParameterValue("TZID"));
                     if (strlen($property->Value()) == 8) {
                         $message->alldayevent = "1";
                     }

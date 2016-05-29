@@ -1234,6 +1234,12 @@ class TimezoneUtil {
             }
         }
 
+        // '' stands for "Local Time" in Lightning
+        // Use the server default timezone
+        if($name == '') {
+            $name = TIMEZONE;
+        }
+
         // Not found? Then retrieve the correct TZName first and try again.
         // That's ugly and needs a proper fix. But for now this method can convert
         // - Europe/Berlin
@@ -1255,12 +1261,8 @@ class TimezoneUtil {
             }
         }
 
-	// Timezone '' has to be interpreted as default timezone
-        $servertzname = self::guessTZNameFromPHPName($name);
-        return self::GetFullTZFromTZName($servertzname);
-
-        // ZLog::Write(LOGLEVEL_WARN, sprintf("TimezoneUtil::getMSTZnameFromTZName() no MS name found for '%s'. Returning '(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London'", $name));
-        // return self::$mstzones["085"][1];
+        ZLog::Write(LOGLEVEL_WARN, sprintf("TimezoneUtil::getMSTZnameFromTZName() no MS name found for '%s'. Returning '(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London'", $name));
+        return self::$mstzones["085"][1];
     }
 
     /**

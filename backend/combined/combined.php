@@ -493,7 +493,8 @@ class BackendCombined extends Backend implements ISearchProvider {
 
         $notifications = array();
         if ($this->numberChangesSink == 0) {
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendCombined doesn't include any Sinkable backends");
+            // Remove this debug, this can fill the log with LOGLEVEL_DEBUG
+            // ZLog::Write(LOGLEVEL_DEBUG, "BackendCombined doesn't include any Sinkable backends");
         } else {
             $time_each = $timeout / $this->numberChangesSink;
             foreach ($this->backends as $i => $b) {

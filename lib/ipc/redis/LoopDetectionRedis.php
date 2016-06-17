@@ -382,9 +382,14 @@ class LoopDetectionRedis extends InterProcessRedis {
      */
     public function IsSyncStateObsolete($folderid, $uuid, $counter) {
         $current = self::$redis->hGetAll(self::$keyfolder . $folderid);
-        if (empty($current))
+        if (empty($current)) {
             return false;
-        $current = unserialize($current);
+        }
+
+        if (is_string($current)) {
+            $current = unserialize($current);
+        }
+
         if (!empty($current)) {
             if (!isset($current["uuid"]) || $current["uuid"] != $uuid) {
                 ZLog::Write(LOGLEVEL_DEBUG, "LoopDetection->IsSyncStateObsolete(): yes, uuid changed or not set");

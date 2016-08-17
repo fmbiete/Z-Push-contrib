@@ -3,5 +3,7 @@ php-imap
 php-mbstring (optional but recommended)
 libawl-php
 
+INSTALL:
+Add your awl folder to the include_path variable (/etc/php.ini or similar)
 
 IMAP server (Dovecot, Courier...)

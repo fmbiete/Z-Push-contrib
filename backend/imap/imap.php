@@ -1985,7 +1985,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $searchLess = strftime("%Y-%m-%d", strtotime($cpo->GetSearchValueLess()));
 
         $filter = '';
-        if ($searchGreater != '') {
+        if ($cpo->GetSearchValueGreater() != '') {
             $filter .= ' SINCE "' . $searchGreater . '"';
         } else {
             // Only search in sync messages
@@ -2022,7 +2022,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $filter .= ' SINCE "' . ($limitdate->format("d M Y")) . '"';
             }
         }
-        if ($searchLess != '') {
+        if ($cpo->GetSearchValueLess() != '') {
             $filter .= ' BEFORE "' . $searchLess . '"';
         }
 

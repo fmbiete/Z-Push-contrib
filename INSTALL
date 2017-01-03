@@ -98,7 +98,7 @@ mobile device, which will definitely break your mobile device synchronisation.
 Lastly, make sure that PHP has the following settings:
 
     php_flag magic_quotes_gpc off
-    php_flag register_globals off
+    php_flag register_globals on
     php_flag magic_quotes_runtime off
     php_flag short_open_tag on
 
@@ -109,7 +109,7 @@ If you have several php applications on the same system, you could specify the
 z-push directory so these settings are considered only there.
     <Directory /usr/share/z-push>
         php_flag magic_quotes_gpc off
-        php_flag register_globals off
+        php_flag register_globals on
         php_flag magic_quotes_runtime off
         php_flag short_open_tag on
     </Directory>
